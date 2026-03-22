@@ -1,0 +1,1025 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wavee - Моя волна</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500;600;700&family=Onest:wght@300;400;500&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg-dark: #0f0f0f;
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --glass-bg: rgba(255, 255, 255, 0.03);
+        --wave-primary: #92A9E1;
+        --wave-accent: #ffbf69;
+        --wave-accent-rgb: 255, 191, 105;
+        --wave-accent-soft: rgba(255, 191, 105, 0.34);
+        --wave-accent-muted: rgba(255, 191, 105, 0.14);
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 12% 10%, rgba(var(--wave-accent-rgb), 0.16) 0%, transparent 28%),
+          radial-gradient(circle at 84% 12%, rgba(146, 169, 225, 0.16) 0%, transparent 30%),
+          radial-gradient(circle at 50% -12%, rgba(255, 255, 255, 0.05) 0%, transparent 42%),
+          var(--bg-dark);
+        background-attachment: fixed;
+        color: #fff;
+        font-family: 'Onest', sans-serif;
+        overflow-x: hidden;
+        transition: background 0.45s ease;
+      }
+      body::before,
+      body::after {
+        content: '';
+        position: fixed;
+        pointer-events: none;
+        z-index: 0;
+        border-radius: 999px;
+        filter: blur(120px);
+      }
+      body::before {
+        left: -12%;
+        top: 8%;
+        width: 36rem;
+        height: 36rem;
+        background: var(--wave-accent-muted);
+        opacity: 0.8;
+      }
+      body::after {
+        right: -10%;
+        top: -6%;
+        width: 28rem;
+        height: 28rem;
+        background: rgba(146, 169, 225, 0.12);
+        opacity: 0.7;
+      }
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .glass-panel {
+        background: var(--glass-bg);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+      }
+      .card-soft {
+        border-radius: 32px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%);
+        border: 1px solid rgba(255,255,255,0.08);
+        transition: transform 0.4s ease, border-color 0.4s ease, background 0.4s ease;
+      }
+      .card-soft:hover {
+        background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%);
+        transform: translateY(-4px);
+        border-color: rgba(255,255,255,0.18);
+      }
+      .card-soft:focus-visible {
+        outline: 2px solid rgba(146, 169, 225, 0.24);
+        outline-offset: 2px;
+      }
+      .text-gradient {
+        background: linear-gradient(to right, #fff, #bbb);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .wave-animation {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 12px;
+      }
+      .wave-bar {
+        width: 2px;
+        background: currentColor;
+        border-radius: 2px;
+        animation: wave-grow 1s ease-in-out infinite;
+      }
+      @keyframes wave-grow {
+        0%, 100% { height: 4px; }
+        50% { height: 12px; }
+      }
+      .my-wave-page-shell,
+      .my-wave-page-main {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+        max-width: 80rem;
+        margin: 0 auto;
+        padding-left: 2rem;
+        padding-right: 2rem;
+      }
+      .my-wave-page-shell {
+        padding-top: 2.25rem;
+      }
+      body[data-wavee-embed='app'] .my-wave-page-shell {
+        padding-top: 6.25rem;
+      }
+      .my-wave-page-main {
+        padding-top: 1rem;
+        padding-bottom: 6rem;
+      }
+      .my-wave-hero-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 0.95fr);
+        gap: 1.5rem;
+        align-items: stretch;
+      }
+      .my-wave-hero-panel {
+        position: relative;
+        overflow: hidden;
+        min-height: 30rem;
+        padding: 2.2rem;
+        border-radius: 2.25rem;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+          radial-gradient(circle at 100% 0%, rgba(var(--wave-accent-rgb), 0.12), transparent 35%);
+      }
+      .my-wave-hero-panel::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(120deg, rgba(146, 169, 225, 0.05), transparent 30%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 35%);
+      }
+      .my-wave-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        font-family: 'Unbounded', sans-serif;
+        font-size: 0.64rem;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--wave-primary);
+      }
+      .my-wave-kicker-dot {
+        width: 0.48rem;
+        height: 0.48rem;
+        border-radius: 999px;
+        background: var(--wave-primary);
+        box-shadow: 0 0 16px rgba(146, 169, 225, 0.5);
+        animation: my-wave-dot-pulse 2s ease-in-out infinite;
+      }
+      .my-wave-title {
+        margin: 0;
+        font-family: 'Unbounded', sans-serif;
+        font-size: clamp(2.8rem, 5vw, 4.5rem);
+        line-height: 0.96;
+        letter-spacing: -0.05em;
+      }
+      .my-wave-description {
+        margin: 1.35rem 0 0;
+        max-width: 35rem;
+        font-size: 1rem;
+        line-height: 1.8;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.68);
+      }
+      .my-wave-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-top: 1.6rem;
+      }
+      .my-wave-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.78rem 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.76);
+        font-family: 'Unbounded', sans-serif;
+        font-size: 0.64rem;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        transition: transform 0.28s ease, background 0.28s ease, border-color 0.28s ease, color 0.28s ease;
+      }
+      .my-wave-chip::before {
+        content: '';
+        width: 0.34rem;
+        height: 0.34rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.22);
+      }
+      .my-wave-chip:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.16);
+        color: #ffffff;
+      }
+      .my-wave-chip.is-accent {
+        background: rgba(146, 169, 225, 0.1);
+        color: var(--wave-primary);
+        border-color: rgba(146, 169, 225, 0.16);
+      }
+      .my-wave-chip.is-accent::before {
+        background: var(--wave-primary);
+        box-shadow: 0 0 12px rgba(146, 169, 225, 0.35);
+      }
+      .my-wave-action-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.9rem;
+        margin-top: 1.7rem;
+      }
+      .my-wave-primary-btn,
+      .my-wave-secondary-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        min-height: 3.4rem;
+        padding: 0 1.5rem;
+        border-radius: 999px;
+        font-family: 'Unbounded', sans-serif;
+        font-size: 0.7rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease, background 0.28s ease, color 0.28s ease;
+      }
+      .my-wave-primary-btn {
+        border: 0;
+        background: var(--wave-primary);
+        color: #0b0c0c;
+        box-shadow: 0 0 26px rgba(146, 169, 225, 0.24);
+      }
+      .my-wave-primary-btn:hover:not(:disabled),
+      .my-wave-primary-btn:focus-visible:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 0 32px rgba(146, 169, 225, 0.34);
+      }
+      .my-wave-primary-btn:disabled {
+        cursor: default;
+        opacity: 0.48;
+        box-shadow: none;
+      }
+      .my-wave-secondary-btn {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+      }
+      .my-wave-secondary-btn:hover,
+      .my-wave-secondary-btn:focus-visible {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.16);
+      }
+      .my-wave-now-playing {
+        position: relative;
+        margin-top: 2rem;
+        padding: 1.2rem 1.25rem;
+        border-radius: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+          radial-gradient(circle at 0% 50%, rgba(var(--wave-accent-rgb), 0.16), transparent 34%);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+      }
+      .my-wave-now-label {
+        font-family: 'Unbounded', sans-serif;
+        font-size: 0.58rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.42);
+      }
+      .my-wave-now-title {
+        margin-top: 0.7rem;
+        font-family: 'Unbounded', sans-serif;
+        font-size: 1.1rem;
+        line-height: 1.15;
+        color: #ffffff;
+      }
+      .my-wave-now-artist {
+        margin-top: 0.35rem;
+        font-size: 0.92rem;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.62);
+      }
+      .my-wave-now-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-top: 0.9rem;
+      }
+      .my-wave-now-meta span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.85rem;
+        padding: 0 0.78rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.62);
+      }
+      .my-wave-now-meta span:last-child {
+        border-color: rgba(var(--wave-accent-rgb), 0.24);
+        color: rgba(255, 255, 255, 0.84);
+      }
+      .my-wave-stage {
+        position: relative;
+        overflow: hidden;
+        min-height: 30rem;
+        border-radius: 2.25rem;
+        background:
+          radial-gradient(circle at 62% 34%, rgba(var(--wave-accent-rgb), 0.18), transparent 32%),
+          radial-gradient(circle at 30% 24%, rgba(146, 169, 225, 0.11), transparent 28%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+      }
+      .my-wave-stage::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(transparent 0, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, transparent 0, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 100% 4rem, 4rem 100%;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.3), transparent 85%);
+        opacity: 0.18;
+      }
+      .my-wave-stage::after {
+        content: '';
+        position: absolute;
+        inset: auto auto -22% 8%;
+        width: 72%;
+        height: 42%;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(var(--wave-accent-rgb), 0.24), transparent 65%);
+        filter: blur(60px);
+        opacity: 0.9;
+      }
+      .my-wave-stage-orbit {
+        position: absolute;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        opacity: 0.55;
+      }
+      .my-wave-stage-orbit.is-a {
+        top: 14%;
+        right: 12%;
+        width: 11rem;
+        height: 11rem;
+        border-color: rgba(var(--wave-accent-rgb), 0.22);
+        animation: my-wave-orbit-drift 14s linear infinite;
+      }
+      .my-wave-stage-orbit.is-b {
+        right: 26%;
+        bottom: 16%;
+        width: 6rem;
+        height: 6rem;
+        animation: my-wave-orbit-drift 11s linear infinite reverse;
+      }
+      .my-wave-stage-meter {
+        position: absolute;
+        right: 2rem;
+        top: 1.8rem;
+        display: flex;
+        align-items: flex-end;
+        gap: 0.25rem;
+        height: 2rem;
+        color: rgba(255, 255, 255, 0.34);
+      }
+      .my-wave-stage-meter span {
+        width: 0.18rem;
+        height: 0.75rem;
+        border-radius: 999px;
+        background: currentColor;
+        animation: wave-grow 1.25s ease-in-out infinite;
+        animation-delay: var(--delay);
+      }
+      .my-wave-stage-copy {
+        position: absolute;
+        left: 2rem;
+        top: 2rem;
+        z-index: 2;
+        max-width: 14rem;
+      }
+      .my-wave-stage-copy span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.9rem;
+        padding: 0 0.8rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 10, 10, 0.2);
+        font-family: 'Unbounded', sans-serif;
+        font-size: 0.58rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.45);
+      }
+      .my-wave-stage-copy strong {
+        display: block;
+        margin-top: 0;
+        font-family: 'Unbounded', sans-serif;
+        font-size: 1.45rem;
+        line-height: 1.1;
+        color: #ffffff;
+      }
+      .my-wave-stage-copy p {
+        margin: 0.7rem 0 0;
+        font-size: 0.88rem;
+        line-height: 1.6;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.58);
+      }
+      .my-wave-visual {
+        position: absolute;
+        inset: auto -12% -8% -8%;
+        width: 120%;
+        height: auto;
+        overflow: visible;
+      }
+      .my-wave-visual .wave-glow {
+        opacity: 0.44;
+        filter: blur(18px);
+        animation: my-wave-liquid-breathe 6s ease-in-out infinite;
+      }
+      .my-wave-visual .wave-back {
+        opacity: 0.72;
+        transform: translateY(8px);
+        animation: my-wave-liquid-drift 7s ease-in-out infinite;
+      }
+      .my-wave-visual .wave-front {
+        animation: my-wave-liquid-crest 5.2s ease-in-out infinite;
+      }
+      .my-wave-visual .wave-detail {
+        fill: rgba(146, 169, 225, 0.78);
+        animation: my-wave-detail-float 4.4s ease-in-out infinite;
+      }
+      .my-wave-section {
+        margin-top: 2.35rem;
+      }
+      .my-wave-section-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+      .my-wave-section-kicker {
+        margin: 0 0 0.4rem;
+        font-family: 'Unbounded', sans-serif;
+        font-size: 0.62rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.38);
+      }
+      .my-wave-section-title {
+        margin: 0;
+        font-family: 'Unbounded', sans-serif;
+        font-size: 1.45rem;
+        font-weight: 500;
+        letter-spacing: -0.03em;
+        color: #ffffff;
+      }
+      .my-wave-section-description {
+        max-width: 22rem;
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.46);
+        text-align: right;
+      }
+      .my-wave-stream-row {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding: 0.2rem 0.1rem 0.8rem;
+      }
+      .my-wave-stream-card {
+        position: relative;
+        flex: 0 0 18.5rem;
+      }
+      .my-wave-stream-card.is-featured {
+        flex-basis: 26rem;
+      }
+      .my-wave-stream-frame {
+        position: relative;
+        overflow: hidden;
+        min-height: 23rem;
+        border-radius: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+      }
+      .my-wave-stream-frame img,
+      .my-wave-secondary-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.7s ease, opacity 0.7s ease;
+      }
+      .my-wave-stream-card:hover img,
+      .my-wave-secondary-card:hover img {
+        transform: scale(1.06);
+      }
+      .my-wave-stream-cover {
+        position: absolute;
+        inset: 0;
+      }
+      .my-wave-stream-cover::after,
+      .my-wave-secondary-media::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(180deg, rgba(0, 0, 0, 0.1), transparent 35%),
+          linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, 0.78) 100%);
+      }
+      .my-wave-stream-card.is-featured .my-wave-stream-cover::before {
+        content: '';
+        position: absolute;
+        inset: auto auto 0 0;
+        width: 70%;
+        height: 58%;
+        background: radial-gradient(circle at bottom left, rgba(var(--wave-accent-rgb), 0.3), transparent 70%);
+        filter: blur(34px);
+        z-index: 1;
+      }
+      .my-wave-stream-badge {
+        position: absolute;
+        left: 1.2rem;
+        top: 1.2rem;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.9rem;
+        padding: 0 0.85rem;
+        border-radius: 999px;
+        background: rgba(8, 8, 8, 0.24);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        font-family: 'Unbounded', sans-serif;
+        font-size: 0.56rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--wave-primary);
+      }
+      .my-wave-stream-overlay,
+      .my-wave-secondary-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.28s ease;
+      }
+      .my-wave-stream-card:hover .my-wave-stream-overlay,
+      .my-wave-secondary-card:hover .my-wave-secondary-overlay,
+      .my-wave-stream-card:focus-within .my-wave-stream-overlay,
+      .my-wave-secondary-card:focus-within .my-wave-secondary-overlay {
+        opacity: 1;
+      }
+      .my-wave-play-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 4rem;
+        height: 4rem;
+        border-radius: 999px;
+        border: 0;
+        background: var(--wave-primary);
+        color: #0a0a0a;
+        box-shadow: 0 0 28px rgba(146, 169, 225, 0.26);
+        transition: transform 0.28s ease;
+      }
+      .my-wave-play-badge:hover,
+      .my-wave-play-badge:focus-visible {
+        transform: scale(1.06);
+      }
+      .my-wave-stream-content {
+        position: absolute;
+        left: 1.15rem;
+        right: 1.15rem;
+        bottom: 1.15rem;
+        z-index: 3;
+      }
+      .my-wave-stream-title {
+        margin: 0;
+        font-family: 'Unbounded', sans-serif;
+        font-size: 1rem;
+        line-height: 1.18;
+        color: #ffffff;
+      }
+      .my-wave-stream-card.is-featured .my-wave-stream-title {
+        font-size: 1.25rem;
+      }
+      .my-wave-stream-artist {
+        margin: 0.45rem 0 0;
+        font-size: 0.88rem;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.72);
+      }
+      .my-wave-stream-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-top: 0.8rem;
+        font-size: 0.74rem;
+        color: rgba(255, 255, 255, 0.52);
+      }
+      .my-wave-stream-reason {
+        opacity: 0;
+        transform: translateY(6px);
+        transition: opacity 0.28s ease, transform 0.28s ease;
+      }
+      .my-wave-stream-card:hover .my-wave-stream-reason,
+      .my-wave-stream-card:focus-within .my-wave-stream-reason,
+      .my-wave-stream-card.is-featured .my-wave-stream-reason {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .my-wave-secondary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+      }
+      .my-wave-secondary-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 15.5rem;
+        border-radius: 1.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.025)),
+          rgba(255, 255, 255, 0.02);
+      }
+      .my-wave-secondary-media {
+        position: relative;
+        height: 11rem;
+        overflow: hidden;
+      }
+      .my-wave-secondary-body {
+        padding: 1rem 1rem 1.1rem;
+      }
+      .my-wave-secondary-title {
+        margin: 0;
+        font-family: 'Unbounded', sans-serif;
+        font-size: 0.83rem;
+        line-height: 1.18;
+        color: #ffffff;
+      }
+      .my-wave-secondary-artist {
+        margin: 0.42rem 0 0;
+        font-size: 0.76rem;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.58);
+      }
+      .my-wave-secondary-reason {
+        margin-top: 0.62rem;
+        font-size: 0.68rem;
+        color: rgba(255, 255, 255, 0.26);
+        transition: color 0.28s ease;
+      }
+      .my-wave-secondary-card:hover .my-wave-secondary-reason,
+      .my-wave-secondary-card:focus-within .my-wave-secondary-reason {
+        color: rgba(255, 255, 255, 0.54);
+      }
+      .my-wave-empty-panel {
+        display: none;
+        align-items: center;
+        gap: 1.5rem;
+        margin-top: 2rem;
+        padding: 1.8rem;
+        border-radius: 2rem;
+      }
+      .my-wave-empty-visual {
+        position: relative;
+        flex: 0 0 9rem;
+        width: 9rem;
+        height: 9rem;
+        border-radius: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          radial-gradient(circle at 50% 60%, rgba(var(--wave-accent-rgb), 0.12), transparent 55%),
+          rgba(255, 255, 255, 0.03);
+        overflow: hidden;
+      }
+      .my-wave-empty-visual svg {
+        position: absolute;
+        left: -10%;
+        right: -10%;
+        bottom: -14%;
+        width: 120%;
+        opacity: 0.52;
+        filter: saturate(0.7);
+      }
+      .my-wave-empty-copy h2 {
+        margin: 0;
+        font-family: 'Unbounded', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 500;
+        color: #ffffff;
+      }
+      .my-wave-empty-copy p {
+        margin: 0.75rem 0 0;
+        max-width: 34rem;
+        font-size: 0.96rem;
+        line-height: 1.7;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.56);
+      }
+      body[data-wave-state='empty'] .my-wave-stage {
+        background:
+          radial-gradient(circle at 62% 34%, rgba(var(--wave-accent-rgb), 0.1), transparent 32%),
+          radial-gradient(circle at 30% 24%, rgba(146, 169, 225, 0.08), transparent 28%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012));
+      }
+      body[data-wave-state='empty'] .my-wave-visual {
+        opacity: 0.68;
+        filter: saturate(0.72);
+      }
+      @keyframes my-wave-dot-pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(0.75); opacity: 0.7; }
+      }
+      @keyframes my-wave-liquid-breathe {
+        0%, 100% { transform: translateY(0) scale(1.01); }
+        50% { transform: translateY(-6px) scale(1.03); }
+      }
+      @keyframes my-wave-liquid-drift {
+        0%, 100% { transform: translateY(8px) translateX(0); }
+        50% { transform: translateY(-2px) translateX(-10px); }
+      }
+      @keyframes my-wave-liquid-crest {
+        0%, 100% { transform: translateY(0) scaleX(1); }
+        50% { transform: translateY(-8px) scaleX(1.02); }
+      }
+      @keyframes my-wave-detail-float {
+        0%, 100% { transform: translateY(0); opacity: 0.78; }
+        50% { transform: translateY(-6px); opacity: 1; }
+      }
+      @keyframes my-wave-orbit-drift {
+        0% { transform: rotate(0deg) translateY(0); }
+        50% { transform: rotate(180deg) translateY(5px); }
+        100% { transform: rotate(360deg) translateY(0); }
+      }
+      @media (max-width: 1180px) {
+        .my-wave-hero-shell {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .my-wave-stage {
+          min-height: 24rem;
+        }
+      }
+      @media (max-width: 900px) {
+        .my-wave-secondary-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .my-wave-section-head {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .my-wave-section-description {
+          text-align: left;
+        }
+      }
+      @media (max-width: 767px) {
+        body { padding-bottom: 220px; }
+        .my-wave-page-shell,
+        .my-wave-page-main {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+        .my-wave-page-shell {
+          padding-top: 1rem;
+        }
+        body[data-wavee-embed='app'] .my-wave-page-shell {
+          padding-top: 6rem;
+        }
+        .my-wave-hero-panel,
+        .my-wave-stage {
+          min-height: auto;
+          border-radius: 1.75rem;
+        }
+        .my-wave-hero-panel {
+          padding: 1.4rem;
+        }
+        .my-wave-stage {
+          min-height: 20rem;
+        }
+        .my-wave-stage-copy {
+          left: 1.25rem;
+          top: 1.25rem;
+          max-width: 12rem;
+        }
+        .my-wave-stage-copy strong {
+          font-size: 1.15rem;
+        }
+        .my-wave-stage-copy p {
+          font-size: 0.78rem;
+        }
+        .my-wave-stage-meter {
+          right: 1.25rem;
+          top: 1.2rem;
+        }
+        .my-wave-chip-row,
+        .my-wave-action-row {
+          gap: 0.6rem;
+        }
+        .my-wave-chip {
+          padding: 0.72rem 0.9rem;
+          font-size: 0.58rem;
+        }
+        .my-wave-primary-btn,
+        .my-wave-secondary-btn {
+          width: 100%;
+        }
+        .my-wave-stream-card,
+        .my-wave-stream-card.is-featured {
+          flex-basis: 82vw;
+        }
+        .my-wave-stream-frame {
+          min-height: 20rem;
+        }
+        .my-wave-secondary-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .my-wave-empty-panel {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+      body[data-wavee-embed='app'] .my-wave-kicker,
+      body[data-wavee-embed='app'] .my-wave-description,
+      body[data-wavee-embed='app'] .my-wave-now-label,
+      body[data-wavee-embed='app'] .my-wave-stage-copy span,
+      body[data-wavee-embed='app'] .my-wave-stage-copy p,
+      body[data-wavee-embed='app'] .my-wave-section-kicker,
+      body[data-wavee-embed='app'] .my-wave-section-description {
+        display: none;
+      }
+    </style>
+  </head>
+  <body data-wavee-page="my-wave" class="relative flex min-h-screen flex-col selection:bg-[#92A9E1] selection:text-black">
+    <nav class="sticky top-4 z-50 mx-auto flex w-[95%] items-center justify-between rounded-full px-6 py-4 glass-panel">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#92A9E1]" style="box-shadow:0 0 16px rgba(146,169,225,0.35)">
+            <svg viewBox="0 0 10 10" class="h-5 w-5" fill="#000"><rect x="1" y="5" width="1" height="2"></rect><rect x="2" y="4" width="1" height="3"></rect><rect x="3" y="3" width="1" height="4"></rect><rect x="4" y="2" width="1" height="5"></rect><rect x="5" y="3" width="1" height="4"></rect><rect x="6" y="4" width="1" height="3"></rect><rect x="7" y="5" width="1" height="2"></rect><rect x="8" y="6" width="1" height="1"></rect></svg>
+          </div>
+          <span class="text-base font-bold uppercase tracking-[0.15em] text-white" style="font-family:'Unbounded',sans-serif">wavee</span>
+        </div>
+      </div>
+      <div class="hidden md:flex items-center gap-2 text-sm font-medium">
+        <a href="/" data-nav-route="/" class="rounded-full px-5 py-2.5 text-white/70 hover:bg-white/10 hover:text-white" style="font-family:'Unbounded',sans-serif;font-size:11px;letter-spacing:0.05em">Главная</a>
+        
+        <a href="/search" data-nav-route="/search" class="rounded-full px-5 py-2.5 text-white/70 hover:bg-white/10 hover:text-white" style="font-family:'Unbounded',sans-serif;font-size:11px;letter-spacing:0.05em">Поиск</a>
+        <a href="/library" data-nav-route="/library" class="rounded-full px-5 py-2.5 text-white/70 hover:bg-white/10 hover:text-white" style="font-family:'Unbounded',sans-serif;font-size:11px;letter-spacing:0.05em">Библиотека</a>
+      </div>
+      <div class="h-10 w-10 overflow-hidden rounded-full border border-white/10"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Stephanie" alt="Profile" class="h-full w-full object-cover" /></div>
+    </nav>
+
+    <header class="my-wave-page-shell">
+      <section class="my-wave-hero-shell">
+        <div class="my-wave-hero-panel glass-panel">
+          <div class="my-wave-kicker">
+            <span class="my-wave-kicker-dot"></span>
+            Персональный поток
+          </div>
+          <h1 class="my-wave-title text-gradient">Моя волна</h1>
+          <p class="my-wave-description">Живой эфир, который собирается из твоих жанров, артистов и недавних сигналов. Wavee оставляет свой лайм, а тон потока подхватывает цвет твоей музыки.</p>
+
+          <div class="my-wave-chip-row" aria-label="Быстрые настройки волны">
+            <button type="button" class="my-wave-chip is-accent">По любимым</button>
+            <button type="button" class="my-wave-chip">Энергичнее</button>
+            <button type="button" class="my-wave-chip">Спокойнее</button>
+            <button type="button" class="my-wave-chip">Новое рядом</button>
+          </div>
+
+          <div class="my-wave-action-row">
+            <button id="my-wave-hero-play" type="button" class="my-wave-primary-btn">Слушать поток</button>
+            <button id="my-wave-refresh" type="button" class="my-wave-secondary-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
+              Обновить
+            </button>
+          </div>
+
+          <div class="my-wave-now-playing">
+            <div class="my-wave-now-label">Сейчас на входе</div>
+            <div id="my-wave-hero-track" class="my-wave-now-title">Волна собирает твой эфир</div>
+            <div id="my-wave-hero-artist" class="my-wave-now-artist">Поставь пару лайков и дай потоку разогнаться.</div>
+            <div class="my-wave-now-meta">
+              <span id="my-wave-hero-reason">Тихий эфир</span>
+              <span id="my-wave-hero-genre">Тёплый эфир</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="my-wave-stage glass-panel" aria-hidden="true">
+          <div class="my-wave-stage-orbit is-a"></div>
+          <div class="my-wave-stage-orbit is-b"></div>
+          <div class="my-wave-stage-meter">
+            <span style="--delay:0s"></span>
+            <span style="--delay:0.08s"></span>
+            <span style="--delay:0.16s"></span>
+            <span style="--delay:0.24s"></span>
+            <span style="--delay:0.32s"></span>
+            <span style="--delay:0.4s"></span>
+            <span style="--delay:0.48s"></span>
+          </div>
+          <div class="my-wave-stage-copy">
+            <span>Тон потока</span>
+            <strong id="my-wave-stage-tone">Тёплый эфир</strong>
+            <p id="my-wave-stage-subtitle">Лайм ведёт поток, а жанр пользователя добавляет свой оттенок и атмосферу.</p>
+          </div>
+
+          <svg viewBox="0 0 1210 478" class="my-wave-visual" role="presentation">
+            <defs>
+              <linearGradient id="my-wave-fill" x1="0%" y1="50%" x2="100%" y2="50%">
+                <stop offset="0%" stop-color="var(--wave-accent)"></stop>
+                <stop offset="42%" stop-color="var(--wave-primary)"></stop>
+                <stop offset="100%" stop-color="#92A9E1"></stop>
+              </linearGradient>
+              <linearGradient id="my-wave-fill-soft" x1="0%" y1="50%" x2="100%" y2="50%">
+                <stop offset="0%" stop-color="rgba(var(--wave-accent-rgb), 0.65)"></stop>
+                <stop offset="100%" stop-color="rgba(146, 169, 225, 0.54)"></stop>
+              </linearGradient>
+            </defs>
+            <path class="wave-glow" fill="var(--wave-accent-soft)" d="M1204.81 243.915C1176.75 310.632 1093.43 351.82 973.238 360.864C841.277 370.979 744.97 349.096 660.58 329.305C555.08 303.484 451.331 292.3 321.121 317.1C258.911 330.034 238.774 348.027 174.083 346.276C112.602 344.525 53.5041 310.973 14.5435 261.907C29.1841 330.375 73.1547 389.798 160.123 389.798C210.125 389.798 236.439 376.863 268.59 370.59C375.16 354.154 467.09 383.962 560.284 423.351C626.435 452.77 692.585 477.23 802.998 477.23C993.375 477.23 1165.71 363.928 1204.81 243.915Z"></path>
+            <path class="wave-back" fill="url(#my-wave-fill-soft)" d="M1204.81 243.915C1176.75 310.632 1093.43 351.82 973.238 360.864C841.277 370.979 744.97 349.096 660.58 329.305C555.08 303.484 451.331 292.3 321.121 317.1C258.911 330.034 238.774 348.027 174.083 346.276C112.602 344.525 53.5041 310.973 14.5435 261.907C29.1841 330.375 73.1547 389.798 160.123 389.798C210.125 389.798 236.439 376.863 268.59 370.59C375.16 354.154 467.09 383.962 560.284 423.351C626.435 452.77 692.585 477.23 802.998 477.23C993.375 477.23 1165.71 363.928 1204.81 243.915Z"></path>
+            <path class="wave-front" fill="url(#my-wave-fill)" d="M1204.81 243.915C1176.75 310.632 1093.43 351.82 973.238 360.864C841.277 370.979 744.97 349.096 660.58 329.305C555.08 303.484 451.331 292.3 321.121 317.1C258.911 330.034 238.774 348.027 174.083 346.276C112.602 344.525 53.5041 310.973 14.5435 261.907C29.1841 330.375 73.1547 389.798 160.123 389.798C210.125 389.798 236.439 376.863 268.59 370.59C375.16 354.154 467.09 383.962 560.284 423.351C626.435 452.77 692.585 477.23 802.998 477.23C993.375 477.23 1165.71 363.928 1204.81 243.915Z"></path>
+            <path class="wave-detail" d="M62.3078 253.884C52.9203 259.719 54.6713 270.563 61.9673 276.35C68.4364 281.164 72.5222 286.464 75.7324 285.054C79.8182 283.304 73.5436 272.46 75.392 263.755C77.143 256.072 69.7011 249.167 62.3078 253.884Z"></path>
+            <path class="wave-detail" d="M311.199 401.711C287.365 394.515 247.918 394.174 230.602 409.881C214.892 424.42 221.993 440.856 241.4 439.446C268.055 437.696 278.464 421.26 308.767 411.486C321.851 407.06 323.261 405.65 311.199 401.711Z"></path>
+            <path class="wave-detail" d="M358.039 413.479C356.288 422.67 362.903 426.998 369.372 426.268C377.154 425.587 378.565 419.606 374.09 409.151C370.491 402.392 359.839 403.802 358.039 413.479Z"></path>
+          </svg>
+        </div>
+      </section>
+    </header>
+
+    <main class="my-wave-page-main">
+      <section id="my-wave-stream-section" class="my-wave-section">
+        <div class="my-wave-section-head">
+          <div>
+            <p class="my-wave-section-kicker">Поток сейчас</p>
+            <h2 class="my-wave-section-title">Поток сейчас</h2>
+          </div>
+          <p class="my-wave-section-description">Первые карточки читаются как вход в поток: живее, крупнее и ближе к твоему текущему вкусу.</p>
+        </div>
+        <div id="my-wave-stream-row" class="my-wave-stream-row hide-scrollbar"></div>
+      </section>
+
+      <section id="my-wave-secondary-section" class="my-wave-section">
+        <div class="my-wave-section-head">
+          <div>
+            <p class="my-wave-section-kicker">Дальше по волне</p>
+            <h2 class="my-wave-section-title">Рядом по вайбу</h2>
+          </div>
+          <p class="my-wave-section-description">Более спокойный второй слой: рекомендации и соседние сигналы без ощущения каталога.</p>
+        </div>
+        <div id="my-wave-secondary-grid" class="my-wave-secondary-grid"></div>
+      </section>
+
+      <section id="my-wave-empty" class="my-wave-empty-panel glass-panel">
+        <div class="my-wave-empty-visual">
+          <svg viewBox="0 0 1210 478" role="presentation">
+            <defs>
+              <linearGradient id="my-wave-empty-fill" x1="0%" y1="50%" x2="100%" y2="50%">
+                <stop offset="0%" stop-color="var(--wave-accent)"></stop>
+                <stop offset="42%" stop-color="var(--wave-primary)"></stop>
+                <stop offset="100%" stop-color="#92A9E1"></stop>
+              </linearGradient>
+            </defs>
+            <path fill="url(#my-wave-empty-fill)" d="M1204.81 243.915C1176.75 310.632 1093.43 351.82 973.238 360.864C841.277 370.979 744.97 349.096 660.58 329.305C555.08 303.484 451.331 292.3 321.121 317.1C258.911 330.034 238.774 348.027 174.083 346.276C112.602 344.525 53.5041 310.973 14.5435 261.907C29.1841 330.375 73.1547 389.798 160.123 389.798C210.125 389.798 236.439 376.863 268.59 370.59C375.16 354.154 467.09 383.962 560.284 423.351C626.435 452.77 692.585 477.23 802.998 477.23C993.375 477.23 1165.71 363.928 1204.81 243.915Z"></path>
+          </svg>
+        </div>
+        <div class="my-wave-empty-copy">
+          <h2>Пока тихо</h2>
+          <p id="my-wave-empty-text">Войди в аккаунт.</p>
+        </div>
+      </section>
+    </main>
+
+    <div class="fixed bottom-6 left-1/2 z-[100] w-[95%] max-w-7xl -translate-x-1/2">
+      <div class="glass-panel relative overflow-hidden rounded-[32px] p-2">
+        <button id="wavee-player-progress" class="absolute left-0 top-0 h-[2px] w-full bg-white/5 text-left" aria-label="Позиция трека"><span id="wavee-player-progress-fill" class="block h-full w-0 bg-[#92A9E1] shadow-[0_0_10px_#92A9E1]"></span></button>
+        <div class="flex h-16 items-center px-4 py-2 max-md:h-auto max-md:flex-col max-md:items-stretch max-md:gap-4 max-md:p-4">
+          <div class="flex w-72 flex-shrink-0 items-center gap-4 max-md:w-full"><div class="h-12 w-12 overflow-hidden rounded-xl shadow-lg"><img id="wavee-player-cover" src="" alt="Now Playing" class="h-full w-full object-cover" /></div><div class="min-w-0 flex-1"><h6 id="wavee-player-title" class="truncate text-sm font-medium text-white">Выбери трек</h6><p id="wavee-player-artist" class="mt-0.5 text-xs font-light text-white/40">Wavee</p></div><button id="wavee-player-like" class="flex h-8 w-8 items-center justify-center rounded-full text-[#92A9E1]"></button></div>
+          <div class="flex flex-1 flex-col items-center justify-center gap-1"><div class="flex items-center gap-6"><button id="wavee-player-shuffle" class="text-white/40 hover:text-white"></button><button id="wavee-player-prev" class="text-white/60 hover:text-white"></button><button id="wavee-player-play" class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-black hover:scale-105 transition-transform"></button><button id="wavee-player-next" class="text-white/60 hover:text-white"></button><button id="wavee-player-repeat" class="text-white/40 hover:text-white"></button></div></div>
+          <div class="flex w-72 flex-shrink-0 items-center justify-end gap-5 max-md:w-full"><div class="flex items-center gap-1 text-xs font-mono text-white/30"><span id="wavee-player-current-time">0:00</span><span>/</span><span id="wavee-player-duration">0:00</span></div><div id="wavee-player-volume" class="group flex cursor-pointer items-center gap-2"><button type="button" class="text-white/50 group-hover:text-white" aria-label="Громкость"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M9 2v12l-4-3H2V7h3zm2 2.5a4 4 0 0 1 0 7V4.5zm2-2a7 7 0 0 1 0 11V2.5z"></path></svg></button><div class="h-1 w-20 rounded-full bg-white/10"><div id="wavee-player-volume-fill" class="h-full w-2/3 rounded-full bg-white/70"></div></div></div><button id="wavee-player-queue" class="text-white/40 hover:text-white"><div class="wave-animation"><div class="wave-bar"></div><div class="wave-bar" style="animation-delay:0.1s"></div><div class="wave-bar" style="animation-delay:0.2s"></div></div></button></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/designs/runtime.js"></script>
+  </body>
+</html>
+

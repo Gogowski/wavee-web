@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wavee Home Layout 3</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Sora:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #ecf3ee;
+        --ink: #11211a;
+        --muted: #597166;
+        --panel: #ffffff;
+        --line: #c9d9d0;
+        --accent: #1c8c61;
+        --accent-soft: #e5f5ed;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Instrument Sans', sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 90% 0%, #d8ecde 0%, transparent 34%),
+          radial-gradient(circle at 0% 100%, #dce9f8 0%, transparent 36%),
+          var(--bg);
+      }
+
+      .shell {
+        width: min(1140px, 92vw);
+        margin: 0 auto;
+        padding: 34px 0 56px;
+      }
+
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+
+      .logo {
+        font-family: 'Sora', sans-serif;
+        font-size: 23px;
+        font-weight: 700;
+      }
+
+      .badge {
+        border: 1px solid var(--line);
+        background: #f6fbf8;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .canvas {
+        border: 1px solid var(--line);
+        border-radius: 32px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+      }
+
+      .hero {
+        padding: 36px;
+        border-right: 1px solid var(--line);
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-family: 'Sora', sans-serif;
+        font-size: clamp(32px, 4vw, 54px);
+        line-height: 0.98;
+      }
+
+      .hero p {
+        margin: 0;
+        max-width: 46ch;
+        color: var(--muted);
+      }
+
+      .tiles {
+        margin-top: 24px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .tile {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: #f9fcfa;
+        padding: 12px;
+      }
+
+      .tile strong {
+        display: block;
+        font-size: 24px;
+        font-family: 'Sora', sans-serif;
+      }
+
+      .tile span {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .panel {
+        padding: 26px;
+        position: relative;
+      }
+
+      .panel::before,
+      .panel::after {
+        content: '';
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      .panel::before {
+        width: 120px;
+        height: 120px;
+        right: -30px;
+        top: -26px;
+        background: #d8f0e3;
+      }
+
+      .panel::after {
+        width: 88px;
+        height: 88px;
+        left: -30px;
+        bottom: -26px;
+        background: #ddebfa;
+      }
+
+      .form {
+        position: relative;
+        z-index: 1;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: #ffffffef;
+        padding: 16px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .legend {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .legend h2 {
+        margin: 0;
+        font-size: 19px;
+        font-family: 'Sora', sans-serif;
+      }
+
+      .legend span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .field {
+        border: 1px solid #d7e4dc;
+        border-radius: 14px;
+        background: #f7fbf9;
+        padding: 10px;
+      }
+
+      .field label {
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .field input,
+      .field select {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        color: var(--ink);
+      }
+
+      .segments {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .segment {
+        border: 1px solid #cfe2d7;
+        border-radius: 11px;
+        background: #fff;
+        padding: 8px;
+        font-size: 12px;
+        text-align: center;
+      }
+
+      .segment.active {
+        background: var(--accent-soft);
+        color: #0f6b49;
+      }
+
+      .cta {
+        border: 0;
+        border-radius: 12px;
+        padding: 12px;
+        font: inherit;
+        font-weight: 700;
+        color: #fff;
+        background: linear-gradient(90deg, #1c8c61 0%, #167552 100%);
+      }
+
+      @media (max-width: 920px) {
+        .split {
+          grid-template-columns: 1fr;
+        }
+
+        .hero {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .row,
+        .segments,
+        .tiles {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div class="logo">Wavee</div>
+        <div class="badge">Homepage Concept C</div>
+      </header>
+
+      <section class="canvas">
+        <div class="split">
+          <article class="hero">
+            <h1>Simple dashboard style homepage with adaptive form panel</h1>
+            <p>
+              This version keeps everything minimal and modular. The form is designed as a compact configurator with
+              segment controls.
+            </p>
+
+            <div class="tiles">
+              <div class="tile">
+                <strong>24</strong>
+                <span>Fresh curation packs</span>
+              </div>
+              <div class="tile">
+                <strong>8</strong>
+                <span>Input dimensions</span>
+              </div>
+              <div class="tile">
+                <strong>3x</strong>
+                <span>Faster setup</span>
+              </div>
+              <div class="tile">
+                <strong>1 tap</strong>
+                <span>Preset launch</span>
+              </div>
+            </div>
+          </article>
+
+          <aside class="panel">
+            <form class="form">
+              <div class="legend">
+                <h2>Mood Constructor</h2>
+                <span>v3</span>
+              </div>
+
+              <div class="row">
+                <div class="field">
+                  <label>Name</label>
+                  <input type="text" value="Green Line" />
+                </div>
+                <div class="field">
+                  <label>Tempo</label>
+                  <select>
+                    <option>95 BPM</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Focus profile</label>
+                <div class="segments">
+                  <div class="segment">Light</div>
+                  <div class="segment active">Medium</div>
+                  <div class="segment">Deep</div>
+                  <div class="segment">Ultra</div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="field">
+                  <label>Start</label>
+                  <input type="time" value="08:30" />
+                </div>
+                <div class="field">
+                  <label>Length</label>
+                  <select>
+                    <option>50 min</option>
+                  </select>
+                </div>
+              </div>
+
+              <button class="cta" type="button">Launch Session</button>
+            </form>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

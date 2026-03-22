@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wavee Home Layout 2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Syne:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f8f7f2;
+        --ink: #171616;
+        --muted: #6f6960;
+        --panel: #fffdf8;
+        --line: #dbd4c9;
+        --accent: #ed6a2b;
+        --accent-soft: #fff0e8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Manrope', sans-serif;
+        color: var(--ink);
+        background:
+          linear-gradient(130deg, #fff 0%, transparent 38%),
+          linear-gradient(320deg, #f2ede3 0%, transparent 52%),
+          var(--bg);
+      }
+
+      .shell {
+        width: min(980px, 92vw);
+        margin: 0 auto;
+        padding: 36px 0 56px;
+      }
+
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+
+      .brand {
+        font-family: 'Syne', sans-serif;
+        font-weight: 700;
+        font-size: 24px;
+      }
+
+      .menu {
+        display: flex;
+        gap: 16px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      .hero {
+        border: 1px solid var(--line);
+        border-radius: 30px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+
+      .hero-head {
+        padding: 30px 30px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .hero-head small {
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      h1 {
+        margin: 8px 0 10px;
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(30px, 4.4vw, 50px);
+        line-height: 1;
+      }
+
+      .hero-head p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .left {
+        padding: 26px 30px 30px;
+        border-right: 1px solid var(--line);
+      }
+
+      .timeline {
+        display: grid;
+        gap: 14px;
+      }
+
+      .node {
+        border: 1px dashed #ccbda8;
+        border-radius: 16px;
+        padding: 12px 14px;
+      }
+
+      .node strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 15px;
+      }
+
+      .node span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .right {
+        padding: 26px;
+      }
+
+      .form {
+        display: grid;
+        gap: 10px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .block {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px;
+      }
+
+      .block label {
+        display: block;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .block input,
+      .block select,
+      .block textarea {
+        width: 100%;
+        border: 1px solid #e8e1d5;
+        border-radius: 10px;
+        padding: 10px;
+        font: inherit;
+        background: #fffdfa;
+      }
+
+      .wave-row {
+        display: flex;
+        gap: 8px;
+      }
+
+      .wave-pill {
+        position: relative;
+        border: 1px solid #e8d3c5;
+        background: #fff;
+        border-radius: 999px 999px 12px 999px;
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+
+      .wave-pill.active {
+        border-color: #f0a782;
+        background: var(--accent-soft);
+        color: #b24a1c;
+      }
+
+      .cta {
+        border: 0;
+        border-radius: 12px;
+        padding: 12px;
+        width: 100%;
+        font: inherit;
+        font-weight: 700;
+        color: #fff;
+        background: linear-gradient(90deg, #ed6a2b 0%, #d35a1d 100%);
+      }
+
+      @media (max-width: 860px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .left {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="nav">
+        <div class="brand">Wavee</div>
+        <div class="menu">
+          <span>Home</span>
+          <span>Mixes</span>
+          <span>Plans</span>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="hero-head">
+          <small>Homepage Concept B</small>
+          <h1>Structured flow for daily listening rituals</h1>
+          <p>Minimal split layout: process hints on the left, form constructor on the right.</p>
+        </div>
+
+        <div class="grid">
+          <div class="left">
+            <div class="timeline">
+              <div class="node">
+                <strong>1. Pick a context</strong>
+                <span>Work sprint, train ride, evening reset.</span>
+              </div>
+              <div class="node">
+                <strong>2. Define tone and pace</strong>
+                <span>Use style tags and intensity level.</span>
+              </div>
+              <div class="node">
+                <strong>3. Save as reusable preset</strong>
+                <span>Launch the same mood in one click.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="right">
+            <form class="form">
+              <div class="row">
+                <div class="block">
+                  <label>Context</label>
+                  <select>
+                    <option>Deep work</option>
+                  </select>
+                </div>
+                <div class="block">
+                  <label>Duration</label>
+                  <select>
+                    <option>45 min</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="block">
+                <label>Preset name</label>
+                <input type="text" value="Quiet Launch" />
+              </div>
+
+              <div class="block">
+                <label>Style capsules</label>
+                <div class="wave-row">
+                  <div class="wave-pill active">Ambient</div>
+                  <div class="wave-pill">Neo Soul</div>
+                  <div class="wave-pill active">Minimal</div>
+                </div>
+              </div>
+
+              <div class="block">
+                <label>Notes</label>
+                <textarea rows="3">No vocals in first 15 minutes.</textarea>
+              </div>
+
+              <button class="cta" type="button">Save Template</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

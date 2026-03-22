@@ -1,0 +1,1824 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wavee - Your Sonic Wave</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      @font-face {
+        font-family: 'Public Pixel';
+        src:
+          url('/fonts/PublicPixel.woff2') format('woff2'),
+          url('/fonts/PublicPixel.woff') format('woff');
+        font-display: swap;
+      }
+
+      :root {
+        --bg-dark: #181818;
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --glass-bg: #202228;
+        --accent-lime: #f2f2f2;
+        --home-wave-primary: #f2f2f2;
+        --home-wave-secondary: #bdbdbd;
+        --home-wave-tertiary: #5f5f5f;
+        --wavee-display-font: 'Public Pixel', 'Unbounded', sans-serif;
+        --text-main: #ffffff;
+        --text-muted: rgba(255, 255, 255, 0.5);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        position: relative;
+        background:
+          radial-gradient(circle at 50% -12%, rgba(255, 255, 255, 0.08) 0%, transparent 30%),
+          radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.04) 0%, transparent 22%),
+          linear-gradient(180deg, #111214 0%, #08090a 48%, #040404 100%);
+        background-attachment: fixed;
+        color: var(--text-main);
+        font-family: 'Onest', sans-serif;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body::before,
+      body::after {
+        content: '';
+        position: fixed;
+        z-index: 0;
+        pointer-events: none;
+        filter: blur(90px);
+      }
+
+      body::before {
+        top: 8vh;
+        left: -8vw;
+        width: 22rem;
+        height: 22rem;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 72%);
+      }
+
+      body::after {
+        right: -6vw;
+        bottom: 10vh;
+        width: 18rem;
+        height: 18rem;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 70%);
+      }
+
+      .home-visualizer-shell {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 270px;
+        width: 100%;
+        height: min(78vh, 680px);
+        margin-bottom: 0;
+        pointer-events: none;
+        overflow: visible;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        z-index: 0;
+      }
+
+      .home-visualizer-canvas {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -252px;
+        display: block;
+        width: 100%;
+        height: calc(100% + 384px);
+        opacity: 0;
+        transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          rgba(0, 0, 0, 0.9) 12%,
+          rgba(0, 0, 0, 1) 42%,
+          rgba(0, 0, 0, 0.92) 64%,
+          rgba(0, 0, 0, 0.42) 82%,
+          transparent 100%
+        );
+        mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          rgba(0, 0, 0, 0.9) 12%,
+          rgba(0, 0, 0, 1) 42%,
+          rgba(0, 0, 0, 0.92) 64%,
+          rgba(0, 0, 0, 0.42) 82%,
+          transparent 100%
+        );
+      }
+      
+      .home-visualizer-canvas.active {
+        opacity: 1;
+      }
+
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      .glass-panel {
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.022) 100%),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.56' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+          rgba(18, 19, 21, 0.68);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow:
+          0 20px 44px rgba(0, 0, 0, 0.22),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(20px) saturate(88%);
+        -webkit-backdrop-filter: blur(20px) saturate(88%);
+      }
+
+      nav {
+        top: 0.8rem !important;
+        width: min(1400px, calc(100% - 1.4rem)) !important;
+        padding: 0.9rem 1.25rem !important;
+      }
+
+      .section-shell {
+        position: relative;
+        z-index: 1;
+      }
+
+      .section-shell::before {
+        content: none;
+      }
+
+      .section-shell > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .hero-shell::before {
+        opacity: 0;
+      }
+
+      .hero-shell {
+        padding-top: 96px !important;
+        padding-bottom: 16px !important;
+      }
+
+      nav .bg-\[\#92A9E1\],
+      nav [data-nav-route="/"] {
+        background: rgba(255, 255, 255, 0.12) !important;
+        color: #ffffff !important;
+        box-shadow:
+          0 12px 24px rgba(0, 0, 0, 0.18),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      }
+
+      nav [data-nav-route="/"] {
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
+
+      nav .bg-\[\#92A9E1\] svg {
+        fill: #ffffff;
+      }
+
+      #wavee-player-progress-fill {
+        background: rgba(255, 255, 255, 0.74) !important;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.18) !important;
+      }
+
+      #wavee-player-like,
+      #wavee-player-repeat {
+        color: rgba(255, 255, 255, 0.78) !important;
+      }
+
+      .card-soft {
+        border-radius: 28px;
+        background: #23252d;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+      }
+
+      .card-soft:hover {
+        background: #2a2d38;
+        transform: translateY(-3px);
+        border-color: rgba(255, 255, 255, 0.18);
+      }
+
+      .track-card-surface.card-soft,
+      .track-card-surface.card-soft:hover,
+      .track-card-surface.card-active {
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+
+      .card-active {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
+        border-color: transparent;
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
+      }
+
+      .track-card-accent .track-card-meta h3,
+      .track-card-accent .track-card-meta p {
+        color: #ffffff;
+      }
+
+      .section-shell h2[style*='Unbounded'],
+      .track-card-meta h3,
+      .mix-card-copy h4,
+      .home-genre-card-title,
+      .artist-spotlight-kicker,
+      #wavee-player-title {
+        font-family: var(--wavee-display-font) !important;
+      }
+
+      nav [data-nav-route],
+      nav .nav-links a {
+        font-family: var(--wavee-display-font) !important;
+      }
+
+      .track-row {
+        margin-top: -0.5rem;
+        padding-top: 0.5rem;
+      }
+
+      .mix-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .mix-card-tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.65rem;
+        padding: 0.2rem 0.62rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.16);
+        color: rgba(255, 255, 255, 0.82);
+        font-family: 'Unbounded', sans-serif;
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .mix-card-play {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+
+      .mix-card-play:hover {
+        transform: scale(1.06);
+      }
+
+      .mix-card-body {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 74px;
+        gap: 14px;
+        align-items: end;
+      }
+
+      .mix-card-feature .mix-card-body {
+        grid-template-columns: minmax(0, 1fr) 108px;
+      }
+
+      .mix-card-cover {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border-radius: 16px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.18);
+      }
+
+      .mix-card-copy h4,
+      .mix-card-copy p,
+      .mix-card-copy span {
+        margin: 0;
+      }
+
+      .mix-card-copy h4 {
+        color: #ffffff;
+        font-family: 'Unbounded', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1.2;
+      }
+
+      .mix-card-copy p {
+        margin-top: 4px;
+        color: rgba(255, 255, 255, 0.72);
+        font-family: 'Onest', sans-serif;
+        font-size: 11px;
+      }
+
+      .mix-card-copy span {
+        display: block;
+        margin-top: 8px;
+        color: rgba(255, 255, 255, 0.56);
+        font-family: 'Onest', sans-serif;
+        font-size: 10px;
+      }
+
+      .home-genres-section {
+        position: relative;
+      }
+
+      .home-genres-section::before {
+        content: '';
+        position: absolute;
+        z-index: 0;
+        left: -4rem;
+        right: -4rem;
+        top: 2.4rem;
+        height: 24rem;
+        pointer-events: none;
+        background:
+          radial-gradient(circle at 12% 30%, rgba(255, 255, 255, 0.12) 0%, transparent 42%),
+          radial-gradient(circle at 84% 18%, rgba(255, 255, 255, 0.08) 0%, transparent 46%);
+        filter: blur(48px);
+        opacity: 0.52;
+      }
+
+      .home-genres-head {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 16px;
+        padding: clamp(16px, 2.2vw, 24px);
+        border-radius: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background:
+          linear-gradient(120deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.03) 38%, rgba(255, 255, 255, 0.01) 100%),
+          rgba(12, 13, 18, 0.74);
+        box-shadow:
+          0 24px 44px rgba(0, 0, 0, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.07);
+      }
+
+      .home-genres-top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .home-genres-title-wrap {
+        display: grid;
+        gap: 8px;
+      }
+
+      .home-genres-subtitle {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.62);
+        font-family: 'Onest', sans-serif;
+        font-size: 13px;
+        letter-spacing: 0.03em;
+      }
+
+      .home-genres-toolbar {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.11);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%),
+          rgba(8, 10, 15, 0.62);
+      }
+
+      .home-genres-tab {
+        min-height: 2.4rem;
+        padding: 0.46rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.66);
+        font-family: 'Public Pixel', 'Unbounded', sans-serif;
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .home-genres-tab:hover {
+        color: #ffffff;
+      }
+
+      .home-genres-tab.is-active {
+        border-color: rgba(255, 255, 255, 0.18);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.08) 100%),
+          rgba(255, 255, 255, 0.06);
+        color: #ffffff;
+        box-shadow:
+          0 10px 20px rgba(0, 0, 0, 0.18),
+          inset 0 1px 0 rgba(255, 255, 255, 0.24);
+      }
+
+      #home-genres-grid {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        grid-auto-rows: minmax(80px, auto);
+        gap: 16px;
+      }
+
+      .home-genre-card {
+        --genre-card-fill-a: rgba(255, 255, 255, 0.1);
+        --genre-card-fill-b: rgba(255, 255, 255, 0.02);
+        --genre-card-glow-a: rgba(255, 255, 255, 0.24);
+        --genre-card-glow-b: rgba(255, 255, 255, 0.12);
+        --genre-card-border: rgba(255, 255, 255, 0.22);
+        --genre-card-line: rgba(255, 255, 255, 0.78);
+        position: relative;
+        grid-column: span 4;
+        min-height: 176px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: 14px;
+        padding: 18px 18px 54px;
+        overflow: hidden;
+        border-radius: 26px;
+        border: 1px solid transparent;
+        background:
+          radial-gradient(circle at 8% 16%, var(--genre-card-glow-a) 0%, transparent 55%),
+          linear-gradient(145deg, var(--genre-card-fill-a) 0%, var(--genre-card-fill-b) 62%, rgba(7, 8, 12, 0.76) 100%) padding-box,
+          linear-gradient(130deg, rgba(255, 255, 255, 0.42) 0%, var(--genre-card-border) 38%, rgba(255, 255, 255, 0.08) 100%) border-box,
+          rgba(7, 9, 13, 0.78);
+        box-shadow:
+          0 22px 38px rgba(0, 0, 0, 0.24),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(18px) saturate(116%);
+        -webkit-backdrop-filter: blur(18px) saturate(116%);
+        transition:
+          transform 0.28s ease,
+          box-shadow 0.28s ease,
+          border-color 0.28s ease;
+      }
+
+      .home-genre-card::before,
+      .home-genre-card::after {
+        content: '';
+        position: absolute;
+        pointer-events: none;
+      }
+
+      .home-genre-card::before {
+        inset: 0;
+        background:
+          linear-gradient(130deg, transparent 0%, rgba(255, 255, 255, 0.16) 46%, transparent 47%),
+          linear-gradient(130deg, transparent 0%, rgba(255, 255, 255, 0.07) 74%, transparent 75%);
+        opacity: 0.46;
+      }
+
+      .home-genre-card::after {
+        left: 18px;
+        right: 18px;
+        bottom: 42px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent 0%, var(--genre-card-line) 16%, transparent 100%);
+        opacity: 0.56;
+      }
+
+      .home-genre-card:hover {
+        transform: translateY(-3px) scale(1.01);
+        box-shadow:
+          0 28px 46px rgba(0, 0, 0, 0.3),
+          0 0 24px var(--genre-card-glow-b),
+          inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      }
+
+      .home-genre-card.is-featured {
+        grid-column: span 6;
+        grid-row: span 2;
+        min-height: 236px;
+        padding-bottom: 58px;
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .home-genre-card.is-wide {
+        grid-column: span 6;
+      }
+
+      .home-genre-card-body,
+      .home-genre-card-art,
+      .home-genre-card-play {
+        position: relative;
+        z-index: 1;
+      }
+
+      .home-genre-card-body {
+        min-width: 0;
+        display: grid;
+        align-content: start;
+        gap: 8px;
+      }
+
+      .home-genre-card-topline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .home-genre-card-index,
+      .home-genre-card-mood {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.45rem;
+        padding: 0.14rem 0.52rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.24);
+        font-family: 'Public Pixel', 'Unbounded', sans-serif;
+        font-size: 8px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .home-genre-card-index {
+        color: rgba(255, 255, 255, 0.94);
+      }
+
+      .home-genre-card-mood {
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      .home-genre-card-title {
+        margin: 0;
+        color: #ffffff;
+        font-size: clamp(18px, 1.65vw, 24px);
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        line-height: 0.96;
+      }
+
+      .home-genre-card-caption {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.7);
+        font-family: 'Onest', sans-serif;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .home-genre-card-track {
+        display: grid;
+        gap: 2px;
+        margin-top: 8px;
+      }
+
+      .home-genre-card-track strong,
+      .home-genre-card-track span {
+        margin: 0;
+        display: block;
+        min-width: 0;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      .home-genre-card-track strong {
+        color: #ffffff;
+        font-family: 'Onest', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .home-genre-card-track span {
+        color: rgba(255, 255, 255, 0.52);
+        font-family: 'Onest', sans-serif;
+        font-size: 11px;
+      }
+
+      .home-genre-card-art {
+        width: 92px;
+        height: 92px;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background:
+          radial-gradient(circle at 24% 22%, rgba(255, 255, 255, 0.18) 0%, transparent 62%),
+          rgba(8, 11, 17, 0.76);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.14),
+          0 12px 24px rgba(0, 0, 0, 0.22);
+      }
+
+      .home-genre-card.is-featured .home-genre-card-art {
+        width: 114px;
+        height: 114px;
+      }
+
+      .home-genre-card-art .home-genre-pixel-art {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .home-genre-card-play {
+        position: absolute;
+        right: 16px;
+        bottom: 14px;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%),
+          rgba(255, 255, 255, 0.08);
+        color: #ffffff;
+        box-shadow:
+          0 10px 20px rgba(0, 0, 0, 0.24),
+          inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      }
+
+      .home-genre-card-play:hover {
+        transform: scale(1.06);
+      }
+
+      .home-genre-empty {
+        grid-column: 1 / -1;
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%),
+          rgba(14, 15, 19, 0.8);
+        padding: 20px;
+        color: rgba(255, 255, 255, 0.58);
+        font-size: 14px;
+      }
+
+      @media (max-width: 1023px) {
+        .home-genres-head {
+          border-radius: 24px;
+          padding: 16px;
+        }
+
+        .home-genres-top {
+          align-items: flex-start;
+        }
+
+        #home-genres-grid {
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
+
+        .home-genre-card {
+          grid-column: span 3;
+          min-height: 164px;
+          border-radius: 22px;
+        }
+
+        .home-genre-card.is-featured,
+        .home-genre-card.is-wide {
+          grid-column: span 6;
+        }
+
+        .home-genre-card.is-featured {
+          min-height: 206px;
+        }
+
+        .home-genre-card-art {
+          width: 84px;
+          height: 84px;
+        }
+
+        .home-genre-card.is-featured .home-genre-card-art {
+          width: 98px;
+          height: 98px;
+        }
+      }
+
+      .artists-carousel-shell {
+        position: relative;
+      }
+
+      .artists-carousel-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 1.25rem;
+      }
+
+      .artists-carousel-copy {
+        max-width: none;
+        min-width: 0;
+        flex: 1;
+      }
+
+      .artists-carousel-copy h2 {
+        white-space: nowrap;
+        font-size: clamp(24px, 3.1vw, 36px) !important;
+      }
+
+      .artists-carousel-copy p {
+        display: none;
+      }
+
+      .artists-carousel-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+
+      .artists-carousel-control {
+        width: 46px;
+        height: 46px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%),
+          rgba(12, 13, 16, 0.84);
+        color: rgba(255, 255, 255, 0.82);
+        box-shadow:
+          0 12px 28px rgba(0, 0, 0, 0.22),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      .artists-carousel-control:hover:not(:disabled) {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.22);
+        color: #ffffff;
+      }
+
+      .artists-carousel-control:disabled {
+        opacity: 0.38;
+        cursor: default;
+      }
+
+      .artists-carousel-mask {
+        position: relative;
+      }
+
+      .artists-carousel-mask::before,
+      .artists-carousel-mask::after {
+        content: none;
+      }
+
+      .artists-carousel-track {
+        display: flex;
+        gap: 18px;
+        overflow-x: auto;
+        padding: 8px 4px 14px;
+        scroll-snap-type: x mandatory;
+        scroll-padding-left: 4px;
+        scroll-behavior: auto;
+        overscroll-behavior-x: contain;
+        cursor: grab;
+      }
+
+      .artists-carousel-track:active {
+        cursor: grabbing;
+      }
+
+      .artist-spotlight-card {
+        position: relative;
+        width: 356px;
+        min-width: 356px;
+        max-width: 356px;
+        flex: 0 0 auto;
+        display: grid;
+        grid-template-rows: auto auto auto;
+        gap: 12px;
+        padding: 18px;
+        border-radius: 26px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.022) 100%),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.56' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+          rgba(18, 19, 21, 0.68);
+        border: none;
+        box-shadow:
+          0 20px 44px rgba(0, 0, 0, 0.22),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(20px) saturate(88%);
+        -webkit-backdrop-filter: blur(20px) saturate(88%);
+        scroll-snap-align: start;
+        transition:
+          transform 0.28s ease,
+          border-color 0.28s ease,
+          box-shadow 0.28s ease;
+      }
+
+      .artist-spotlight-card::after {
+        content: none;
+      }
+
+      .artist-spotlight-card:hover {
+        transform: translateY(-5px);
+        box-shadow:
+          0 28px 52px rgba(0, 0, 0, 0.42),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      }
+
+      .artist-spotlight-top {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+      }
+
+      .artist-spotlight-rank {
+        display: inline-flex;
+        align-items: center;
+        font-family: 'Unbounded', sans-serif;
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .artist-spotlight-rank {
+        height: 24px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: none;
+        color: rgba(255, 255, 255, 0.78);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .artist-spotlight-main {
+        display: grid;
+        grid-template-columns: 116px minmax(0, 1fr);
+        align-items: center;
+        gap: 16px;
+        min-height: 116px;
+      }
+
+      .artist-spotlight-stage {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+      }
+
+      .artist-spotlight-cover-shell {
+        position: relative;
+        width: 116px;
+        height: 116px;
+        border-radius: 34px;
+        overflow: hidden;
+        padding: 0;
+        background: transparent;
+        border: none;
+        box-shadow:
+          0 16px 28px rgba(4, 6, 11, 0.28);
+      }
+
+      .artist-spotlight-cover-shell img,
+      .artist-spotlight-cover-fallback {
+        width: 100%;
+        height: 100%;
+        border-radius: 27px;
+        object-fit: cover;
+        box-shadow: 0 10px 20px rgba(15, 18, 26, 0.18);
+      }
+
+      .artist-spotlight-cover-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 243, 251, 0.94));
+        color: rgba(21, 25, 33, 0.9);
+        font-family: 'Unbounded', sans-serif;
+        font-size: 22px;
+      }
+
+      .artist-spotlight-copy {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-end;
+        gap: 8px;
+        min-width: 0;
+        padding-right: 4px;
+        text-align: left;
+      }
+
+      .artist-spotlight-name {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 18px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        line-height: 1.05;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .artist-spotlight-meta {
+        margin: 0;
+        max-width: 100%;
+        color: rgba(255, 255, 255, 0.62);
+        font-family: 'Onest', sans-serif;
+        font-size: 11px;
+        letter-spacing: 0.02em;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .artist-spotlight-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .artist-spotlight-play,
+      .artist-spotlight-follow {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        transition:
+          transform 0.25s ease,
+          border-color 0.25s ease,
+          background 0.25s ease,
+          color 0.25s ease,
+          box-shadow 0.25s ease;
+      }
+
+      .artist-spotlight-play {
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+        height: 42px;
+        border: none;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(233, 238, 250, 0.96) 100%);
+        color: #12141a;
+        box-shadow:
+          0 14px 24px rgba(0, 0, 0, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.94);
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .artist-spotlight-play:hover {
+        transform: translateY(-1px);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(238, 242, 252, 0.98) 100%);
+      }
+
+      .artist-spotlight-follow {
+        width: 42px;
+        min-width: 42px;
+        height: 42px;
+        border: none;
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.78);
+      }
+
+      .artist-spotlight-follow:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+      }
+
+      .wave-animation {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 12px;
+      }
+
+      .wave-bar {
+        width: 2px;
+        background: currentColor;
+        border-radius: 2px;
+        animation: wave-grow 1s ease-in-out infinite;
+      }
+
+      @keyframes wave-grow {
+        0%,
+        100% {
+          height: 4px;
+        }
+
+        50% {
+          height: 12px;
+        }
+      }
+
+      .text-gradient {
+        background: linear-gradient(to right, #fff, #bbb);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .hero-logo-shell {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 240px;
+        margin-bottom: 0;
+      }
+
+      .home-wave-trigger {
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: clamp(150px, 24vw, 280px);
+        border: 0;
+        padding: 0;
+        background: none;
+        color: #b2c5f7;
+        cursor: pointer;
+        transition:
+          opacity 0.32s ease,
+          transform 0.38s ease,
+          filter 0.38s ease;
+      }
+
+      .home-wave-trigger:hover,
+      .home-wave-trigger:focus-visible {
+        transform: translateY(-2px) scale(1.01);
+        filter: brightness(1.08);
+      }
+
+      .home-wave-trigger:focus-visible {
+        outline: 0;
+      }
+
+      .home-wave-trigger:disabled {
+        cursor: not-allowed;
+        opacity: 0.38;
+      }
+
+      .home-wave-trigger-art {
+        margin: 0;
+        color: currentColor;
+        font-family: 'Space Mono', monospace;
+        font-size: clamp(11px, 1.35vw, 17px);
+        font-weight: 400;
+        line-height: 1.07;
+        letter-spacing: 0.04em;
+        white-space: pre;
+        text-shadow:
+          0 0 10px rgba(146, 169, 225, 0.2),
+          0 0 24px rgba(146, 169, 225, 0.08);
+        user-select: none;
+        animation: home-wave-art-idle 3.6s ease-in-out infinite;
+        transition: color 0.28s ease, text-shadow 0.28s ease;
+      }
+
+      .home-wave-trigger-image {
+        display: block;
+        width: min(56vw, 520px);
+        height: clamp(150px, 24vw, 280px);
+        max-height: 280px;
+        min-height: 150px;
+        object-fit: contain;
+        user-select: none;
+        pointer-events: none;
+        filter: none;
+      }
+
+      .home-wave-trigger:hover .home-wave-trigger-art,
+      .home-wave-trigger:focus-visible .home-wave-trigger-art {
+        animation: home-wave-art-hover 0.92s steps(2, end) infinite;
+        color: #cfddff;
+        text-shadow:
+          0 0 12px rgba(146, 169, 225, 0.35),
+          0 0 28px rgba(146, 169, 225, 0.14);
+      }
+
+      .home-wave-trigger.is-active .home-wave-trigger-art {
+        animation: home-wave-art-active 0.14s steps(2, end) infinite;
+        color: #d6e5ff;
+      }
+
+      .home-wave-trigger.is-muted .home-wave-trigger-art {
+        opacity: 0.36;
+      }
+
+      .home-wave-trigger.is-hidden {
+        display: none !important;
+      }
+
+      .hero-logo-svg {
+        display: block;
+        width: min(76vw, 560px);
+        height: auto;
+        overflow: visible;
+      }
+
+      .hero-logo-main {
+        fill: #ffffff;
+      }
+
+      .hero-logo-wave-link {
+        cursor: pointer;
+        outline: none;
+      }
+
+      .hero-logo-wave-glow {
+        fill: rgba(255, 255, 255, 0.22);
+        opacity: 0.12;
+        filter: blur(14px);
+        animation: hero-wave-glow 2.4s ease-in-out infinite;
+        transition: opacity 0.28s ease, filter 0.28s ease;
+      }
+
+      .hero-logo-wave {
+        fill: #f1f1f1;
+        animation: hero-wave-invite 2.8s ease-in-out infinite;
+        transition:
+          fill 0.28s ease,
+          filter 0.28s ease,
+          opacity 0.28s ease;
+      }
+
+      .hero-logo-wave-detail {
+        fill: #d2d2d2;
+        animation: hero-wave-detail-invite 2.8s ease-in-out infinite;
+        transition:
+          fill 0.28s ease,
+          filter 0.28s ease,
+          opacity 0.28s ease;
+      }
+
+      .hero-logo-wave-link:hover .hero-logo-wave,
+      .hero-logo-wave-link:focus-visible .hero-logo-wave {
+        fill: #ffffff;
+        filter:
+          drop-shadow(0 0 14px rgba(146, 169, 225, 0.34))
+          drop-shadow(0 0 30px rgba(146, 169, 225, 0.46));
+        opacity: 1;
+      }
+
+      .hero-logo-wave-link:hover .hero-logo-wave-detail,
+      .hero-logo-wave-link:focus-visible .hero-logo-wave-detail {
+        fill: #f0f0f0;
+        filter: drop-shadow(0 0 18px rgba(146, 169, 225, 0.3));
+        opacity: 1;
+      }
+
+      .hero-logo-wave-link:hover .hero-logo-wave-glow,
+      .hero-logo-wave-link:focus-visible .hero-logo-wave-glow {
+        opacity: 0.28;
+        filter: blur(18px);
+      }
+
+      .hero-logo-wave-link:hover .hero-logo-wave-detail,
+      .hero-logo-wave-link:focus-visible .hero-logo-wave-detail {
+        animation-play-state: paused;
+      }
+
+      .hero-logo-wave-link:hover .hero-logo-wave,
+      .hero-logo-wave-link:focus-visible .hero-logo-wave {
+        animation-play-state: paused;
+      }
+
+      @keyframes hero-wave-invite {
+        0%,
+        100% {
+          fill: #f1f1f1;
+          opacity: 0.97;
+          filter:
+            drop-shadow(0 0 0 rgba(146, 169, 225, 0))
+            drop-shadow(0 0 0 rgba(146, 169, 225, 0));
+        }
+        28% {
+          fill: #fafafa;
+          opacity: 1;
+          filter:
+            drop-shadow(0 0 12px rgba(146, 169, 225, 0.24))
+            drop-shadow(0 0 24px rgba(146, 169, 225, 0.18));
+        }
+        52% {
+          fill: #ffffff;
+          opacity: 1;
+          filter:
+            drop-shadow(0 0 18px rgba(146, 169, 225, 0.32))
+            drop-shadow(0 0 34px rgba(146, 169, 225, 0.2));
+        }
+        78% {
+          fill: #f2f2f2;
+          opacity: 0.98;
+          filter:
+            drop-shadow(0 0 10px rgba(146, 169, 225, 0.18))
+            drop-shadow(0 0 20px rgba(146, 169, 225, 0.12));
+        }
+      }
+
+      @keyframes hero-wave-detail-invite {
+        0%,
+        100% {
+          fill: #d2d2d2;
+          opacity: 1;
+        }
+        35% {
+          fill: #ededed;
+          opacity: 0.96;
+        }
+        65% {
+          fill: #d8d8d8;
+          opacity: 1;
+        }
+      }
+
+      @keyframes hero-wave-glow {
+        0%,
+        100% {
+          opacity: 0.08;
+          filter: blur(12px);
+        }
+        35% {
+          opacity: 0.2;
+          filter: blur(18px);
+        }
+        60% {
+          opacity: 0.14;
+          filter: blur(15px);
+        }
+      }
+
+      @keyframes home-wave-art-idle {
+        0%,
+        100% {
+          transform: translateY(0) scale(1);
+          opacity: 0.9;
+        }
+        50% {
+          transform: translateY(-1px);
+          opacity: 1;
+        }
+      }
+
+      @keyframes home-wave-art-hover {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        33% {
+          transform: translate(1px, -1px);
+        }
+        66% {
+          transform: translate(-1px, 1px);
+        }
+      }
+
+      @keyframes home-wave-art-active {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        25% {
+          transform: translate(1px, -1px);
+        }
+        50% {
+          transform: translate(-1px, 1px);
+        }
+        75% {
+          transform: translate(1px, 1px);
+        }
+      }
+
+      .mix-card button,
+      .home-genre-card,
+      .home-genre-card button,
+      .home-genres-tab,
+      .track-card button,
+      nav a,
+      #home-hero-listen,
+      #wavee-player button {
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s ease,
+          color 0.25s ease,
+          background 0.25s ease,
+          border-color 0.25s ease;
+      }
+
+      @media (max-width: 1023px) {
+        nav {
+          width: calc(100% - 24px) !important;
+          padding: 14px 18px !important;
+        }
+
+        nav .nav-links {
+          display: none;
+        }
+
+        .section-shell {
+          padding-left: 20px !important;
+          padding-right: 20px !important;
+        }
+
+        .player-shell {
+          width: calc(100% - 24px) !important;
+        }
+      }
+
+      @media (max-width: 767px) {
+        body {
+          padding-bottom: 220px;
+        }
+
+        body::before,
+        body::after {
+          filter: blur(70px);
+        }
+
+        .hero-shell {
+          padding: 108px 20px 22px !important;
+        }
+
+        .hero-logo-shell {
+          min-height: 220px;
+        }
+
+        .home-wave-trigger {
+          max-width: 96vw;
+        }
+
+        .home-wave-trigger-art {
+          font-size: 7px;
+          letter-spacing: 0.04em;
+        }
+
+        .home-visualizer-shell {
+          top: 220px;
+          height: min(62vh, 480px);
+        }
+
+        .home-visualizer-canvas {
+          top: -210px;
+          height: calc(100% + 312px);
+        }
+
+        .home-visualizer-canvas {
+          top: -190px;
+          height: calc(100% + 240px);
+        }
+
+        .track-row {
+          gap: 16px !important;
+        }
+
+        .track-card {
+          width: 250px !important;
+        }
+
+        .mix-card-body,
+        .mix-card-feature .mix-card-body {
+          grid-template-columns: minmax(0, 1fr) 72px;
+        }
+
+        #home-genres-grid {
+          grid-template-columns: 1fr !important;
+          gap: 14px;
+        }
+
+        .home-genres-toolbar {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          width: 100%;
+          padding-bottom: 2px;
+        }
+
+        .home-genres-tab {
+          white-space: nowrap;
+        }
+
+        .home-genre-card,
+        .home-genre-card.is-featured,
+        .home-genre-card.is-wide {
+          grid-column: 1 / -1;
+          min-height: 170px;
+          padding: 14px 14px 50px;
+          grid-template-columns: minmax(0, 1fr) 78px;
+          gap: 10px;
+        }
+
+        .home-genre-card-title {
+          font-size: 20px;
+        }
+
+        .home-genre-card-caption {
+          font-size: 11px;
+        }
+
+        .home-genre-card-art,
+        .home-genre-card.is-featured .home-genre-card-art {
+          width: 78px;
+          height: 78px;
+          border-radius: 16px;
+        }
+
+        .home-genre-card-topline {
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .artists-carousel-head {
+          align-items: flex-start;
+        }
+
+        .artists-carousel-copy h2 {
+          white-space: normal;
+        }
+
+        .artists-carousel-controls {
+          margin-left: auto;
+        }
+
+        .artist-spotlight-card {
+          width: 292px;
+          min-width: 292px;
+          max-width: 292px;
+          padding: 16px;
+        }
+
+        .artist-spotlight-main {
+          grid-template-columns: 90px minmax(0, 1fr);
+          min-height: 90px;
+          gap: 12px;
+        }
+
+        .artist-spotlight-cover-shell {
+          width: 90px;
+          height: 90px;
+          border-radius: 26px;
+          padding: 5px;
+        }
+
+        .artist-spotlight-name {
+          font-size: 15px;
+        }
+
+        .artist-spotlight-copy {
+          min-width: 0;
+          gap: 6px;
+          padding-right: 0;
+        }
+
+        .artist-spotlight-meta {
+          font-size: 10px;
+        }
+
+        .artist-spotlight-play {
+          height: 38px;
+          font-size: 9px;
+          gap: 6px;
+        }
+
+        .artist-spotlight-follow {
+          width: 38px;
+          min-width: 38px;
+          height: 38px;
+        }
+
+        .player-shell {
+          left: 12px !important;
+          right: 12px !important;
+          width: auto !important;
+          transform: none !important;
+          bottom: 12px !important;
+        }
+
+        .player-row {
+          height: auto !important;
+          padding: 18px 12px 14px !important;
+          flex-direction: column;
+          gap: 16px;
+          align-items: stretch !important;
+        }
+
+        .player-left,
+        .player-center,
+        .player-right {
+          width: 100% !important;
+          justify-content: center !important;
+        }
+
+        .player-left {
+          justify-content: flex-start !important;
+        }
+
+        .player-right {
+          gap: 16px !important;
+        }
+
+        .hero-logo-svg {
+          width: min(88vw, 460px) !important;
+        }
+      }
+
+      #wavee-player-title {
+        font-size: 12px !important;
+        line-height: 1.1 !important;
+      }
+    </style>
+  </head>
+  <body data-wavee-page="home" class="relative flex min-h-screen flex-col selection:bg-[#92A9E1] selection:text-black">
+    <div class="home-visualizer-shell" aria-hidden="true">
+      <canvas id="home-audio-visualizer" class="home-visualizer-canvas"></canvas>
+    </div>
+
+    <nav class="sticky top-4 z-50 mx-auto flex w-[95%] items-center justify-between rounded-full px-6 py-4 glass-panel">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#92A9E1]">
+            <svg viewBox="0 0 10 10" class="h-5 w-5" style="shape-rendering: crispEdges" fill="#000">
+              <rect x="1" y="5" width="1" height="2"></rect>
+              <rect x="2" y="4" width="1" height="3"></rect>
+              <rect x="3" y="3" width="1" height="4"></rect>
+              <rect x="4" y="2" width="1" height="5"></rect>
+              <rect x="5" y="3" width="1" height="4"></rect>
+              <rect x="6" y="4" width="1" height="3"></rect>
+              <rect x="7" y="5" width="1" height="2"></rect>
+              <rect x="8" y="6" width="1" height="1"></rect>
+            </svg>
+          </div>
+          <span class="text-base font-bold uppercase tracking-[0.15em] text-white" style="font-family: 'Unbounded', sans-serif">wavee</span>
+        </div>
+      </div>
+
+      <div class="nav-links hidden items-center gap-2 text-sm font-medium md:flex">
+        <a href="/" data-nav-route="/" class="rounded-full bg-[#92A9E1] px-5 py-2.5 text-black" style="font-family: 'Unbounded', sans-serif; font-size: 11px; letter-spacing: 0.05em">Главная</a>
+        <a href="/search" data-nav-route="/search" class="rounded-full px-5 py-2.5 text-white/70 hover:bg-white/10 hover:text-white" style="font-family: 'Unbounded', sans-serif; font-size: 11px; letter-spacing: 0.05em">Поиск</a>
+        <a href="/library" data-nav-route="/library" class="rounded-full px-5 py-2.5 text-white/70 hover:bg-white/10 hover:text-white" style="font-family: 'Unbounded', sans-serif; font-size: 11px; letter-spacing: 0.05em">Библиотека</a>
+        <a href="/likes" data-nav-route="/likes" class="rounded-full px-5 py-2.5 text-white/70 hover:bg-white/10 hover:text-white" style="font-family: 'Unbounded', sans-serif; font-size: 11px; letter-spacing: 0.05em">Лайки</a>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="relative h-10 w-10 cursor-pointer overflow-hidden rounded-full border border-white/10 transition-colors hover:border-[#92A9E1]">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Stephanie" alt="Profile" class="h-full w-full object-cover" />
+        </div>
+      </div>
+    </nav>
+
+    <section class="hero-shell relative z-10 flex flex-col items-center justify-center overflow-visible pb-14 pt-32 text-center">
+      <div class="hero-logo-shell w-full flex justify-center items-center">
+        <button id="home-hero-listen" type="button" class="home-wave-trigger" aria-label="Слушать мою волну" aria-pressed="false">
+          <img id="home-wave-art-image" src="/designs/assets/animals/cat.png" alt="" class="home-wave-trigger-image" aria-hidden="true" loading="eager" decoding="async" fetchpriority="high" />
+        </button>
+      </div>
+    </section>
+
+    <section class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-8">
+      <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-white" style="font-family: 'Unbounded', sans-serif; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -0.01em; line-height: 0.95">Новые релизы</h2>
+        </div>
+        <div class="flex flex-wrap items-center justify-end gap-3">
+          <a href="/library" data-nav-route="/library" class="rounded-full border border-white/10 px-4 py-2 text-white/60 hover:bg-white/5 hover:text-white" style="font-family: 'Unbounded', sans-serif; font-size: 10px; letter-spacing: 0.06em">Моя библиотека</a>
+          <div class="artists-carousel-controls" aria-label="Навигация по новым релизам">
+            <button id="home-new-releases-prev" type="button" class="artists-carousel-control" aria-label="Прокрутить новые релизы назад">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="/icons/angle-left-solid.svg#angle-left-solid"></use></svg>
+            </button>
+            <button id="home-new-releases-next" type="button" class="artists-carousel-control" aria-label="Прокрутить новые релизы вперёд">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="/icons/angle-right-solid.svg#angle-right-solid"></use></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="home-new-releases-row" class="track-row hide-scrollbar -mx-2 flex gap-6 overflow-x-auto px-2 pb-4">
+        <div class="track-card flex-shrink-0 w-72">
+          <div class="card-soft aspect-square overflow-hidden rounded-[32px] p-3">
+            <div class="relative h-full w-full overflow-hidden rounded-[24px] bg-white/5"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-8">
+      <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <h2 class="text-white" style="font-family: 'Unbounded', sans-serif; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -0.01em; line-height: 0.95">Популярное сейчас</h2>
+        <div class="artists-carousel-controls" aria-label="Навигация по популярному">
+          <button id="home-popular-prev" type="button" class="artists-carousel-control" aria-label="Прокрутить популярное назад">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="/icons/angle-left-solid.svg#angle-left-solid"></use></svg>
+          </button>
+          <button id="home-popular-next" type="button" class="artists-carousel-control" aria-label="Прокрутить популярное вперёд">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="/icons/angle-right-solid.svg#angle-right-solid"></use></svg>
+          </button>
+        </div>
+      </div>
+      <div id="home-popular-row" class="track-row hide-scrollbar -mx-2 flex gap-6 overflow-x-auto px-2 pb-4">
+        <div class="track-card flex-shrink-0 w-72">
+          <div class="card-soft aspect-square overflow-hidden rounded-[32px] p-3">
+            <div class="relative h-full w-full overflow-hidden rounded-[24px] bg-white/5"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell home-genres-section relative z-10 mx-auto w-full max-w-7xl px-8 py-8">
+      <div class="home-genres-head mb-8">
+        <div class="home-genres-top">
+          <div class="home-genres-title-wrap">
+            <h2 class="text-white" style="font-family: 'Unbounded', sans-serif; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -0.01em; line-height: 0.95">Жанры и настроение</h2>
+            <p class="home-genres-subtitle">Собрали быстрые маршруты по жанрам, вайбу и состоянию.</p>
+          </div>
+          <div class="home-genres-toolbar hide-scrollbar" data-home-genres-toolbar>
+            <button type="button" class="home-genres-tab" data-home-genres-tab>топ</button>
+            <button type="button" class="home-genres-tab is-active" data-home-genres-tab>по жанру</button>
+            <button type="button" class="home-genres-tab" data-home-genres-tab>под настроение</button>
+            <button type="button" class="home-genres-tab" data-home-genres-tab>под занятие</button>
+          </div>
+        </div>
+      </div>
+      <div id="home-genres-grid">
+        <div class="home-genre-empty">Жанры появятся после загрузки треков.</div>
+      </div>
+    </section>
+
+    <section class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-8">
+      <div class="artists-carousel-shell">
+        <div class="artists-carousel-head">
+          <div class="artists-carousel-copy">
+            <h2 class="text-white" style="font-family: 'Unbounded', sans-serif; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -0.01em; line-height: 0.95">Исполнители для тебя</h2>
+          </div>
+          <div class="artists-carousel-controls" aria-label="Навигация по артистам">
+            <button id="home-artists-prev" type="button" class="artists-carousel-control" aria-label="Прокрутить артистов назад">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="/icons/angle-left-solid.svg#angle-left-solid"></use></svg>
+            </button>
+            <button id="home-artists-next" type="button" class="artists-carousel-control" aria-label="Прокрутить артистов вперёд">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="/icons/angle-right-solid.svg#angle-right-solid"></use></svg>
+            </button>
+          </div>
+        </div>
+        <div class="artists-carousel-mask">
+          <div id="home-artists-row" class="artists-carousel-track hide-scrollbar">
+            <div class="artist-spotlight-card"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-8">
+      <div class="mb-8">
+        <h2 class="text-white" style="font-family: 'Unbounded', sans-serif; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -0.01em; line-height: 0.95">Редакционные подборки</h2>
+      </div>
+      <div id="home-editorial-row" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div class="mix-card card-soft rounded-[28px] p-5"></div>
+      </div>
+    </section>
+
+    <section class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-8">
+      <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <h2 class="text-white" style="font-family: 'Unbounded', sans-serif; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -0.01em; line-height: 0.95">Открыть новое</h2>
+        <div class="artists-carousel-controls" aria-label="Навигация по открытиям">
+          <button id="home-discovery-prev" type="button" class="artists-carousel-control" aria-label="Прокрутить открытия назад">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="/icons/angle-left-solid.svg#angle-left-solid"></use></svg>
+          </button>
+          <button id="home-discovery-next" type="button" class="artists-carousel-control" aria-label="Прокрутить открытия вперёд">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="/icons/angle-right-solid.svg#angle-right-solid"></use></svg>
+          </button>
+        </div>
+      </div>
+      <div id="home-discovery-row" class="track-row hide-scrollbar -mx-2 flex gap-6 overflow-x-auto px-2 pb-6">
+        <div class="track-card flex-shrink-0 w-72">
+          <div class="card-soft aspect-square overflow-hidden rounded-[32px] p-3">
+            <div class="relative h-full w-full overflow-hidden rounded-[24px] bg-white/5"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="player-shell fixed bottom-6 left-1/2 z-[100] w-[95%] max-w-7xl -translate-x-1/2">
+      <div id="wavee-player" class="glass-panel relative overflow-hidden rounded-[32px] p-2">
+        <button id="wavee-player-progress" class="absolute left-0 top-0 h-[2px] w-full bg-white/5 text-left" aria-label="Позиция трека">
+          <span id="wavee-player-progress-fill" class="block h-full w-0 bg-[#92A9E1] shadow-[0_0_10px_#92A9E1]"></span>
+        </button>
+
+        <div class="player-row flex h-16 items-center px-4 py-2">
+          <div class="player-left flex w-72 flex-shrink-0 items-center gap-4">
+            <div class="relative flex-shrink-0">
+              <div class="h-12 w-12 overflow-hidden rounded-xl shadow-lg">
+                <img
+                  id="wavee-player-cover"
+                  src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMjEyMTIiLz48dGV4dCB4PSI1MCUiIHk9IjUzJSIgZmlsbD0iI2Q2ZDY2ZCIgc3R5bGU9ImZvbnQ6IGJvbGQgNDJweCBzYW5zLXNlcmlmOyIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4pmqPC90ZXh0Pjwvc3ZnPg=="
+                  alt="Now Playing"
+                  class="h-full w-full object-cover"
+                />
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <h6 id="wavee-player-title" class="truncate text-sm font-medium text-white">Выбери трек</h6>
+              <p id="wavee-player-artist" class="mt-0.5 text-xs font-light text-white/40">Wavee</p>
+            </div>
+            <button id="wavee-player-like" class="flex h-8 w-8 items-center justify-center rounded-full text-[#92A9E1] hover:bg-white/10" aria-label="Лайк">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+                <path d="M8 14s-6-4.35-6-8a4 4 0 0 1 6-3.46A4 4 0 0 1 14 6c0 3.65-6 8-6 8z"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="player-center flex flex-1 flex-col items-center justify-center gap-1">
+            <div class="flex items-center gap-6">
+              <button id="wavee-player-shuffle" class="flex h-8 w-8 items-center justify-center text-white/40 hover:text-white" aria-label="Перемешать">
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                  <path d="M10.5 3.5l4 2.5-4 2.5V7H8.5l-2 2.5L8.5 12H10.5v-1.5l4 2.5-4 2.5V14H8l-3-4 3-4h2.5zM1 5v6h1.5L5 8 2.5 5z"></path>
+                </svg>
+              </button>
+
+              <button id="wavee-player-prev" class="flex h-8 w-8 items-center justify-center text-white/60 hover:text-white" aria-label="Предыдущий трек">
+                <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor">
+                  <path d="M3 3h1.5v4.5L13 3v10l-8.5-4.5V13H3z"></path>
+                </svg>
+              </button>
+
+              <button id="wavee-player-play" class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-105" aria-label="Играть">
+                <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor">
+                  <path d="M5 3l8 5-8 5V3z"></path>
+                </svg>
+              </button>
+
+              <button id="wavee-player-next" class="flex h-8 w-8 items-center justify-center text-white/60 hover:text-white" aria-label="Следующий трек">
+                <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor">
+                  <path d="M13 3h-1.5v4.5L3 3v10l8.5-4.5V13H13z"></path>
+                </svg>
+              </button>
+
+              <button id="wavee-player-repeat" class="flex h-8 w-8 items-center justify-center text-[#92A9E1]" aria-label="Повтор">
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                  <path d="M2.5 4A.5.5 0 0 0 2 4.5v7a.5.5 0 0 0 .5.5H13v1.5l2.5-2-2.5-2V11H3V5h10V3.5l2.5 2-2.5 2V6H2.5z"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="player-right flex w-72 flex-shrink-0 items-center justify-end gap-5">
+            <div class="flex items-center gap-1 text-xs font-mono text-white/30">
+              <span id="wavee-player-current-time">0:00</span>
+              <span>/</span>
+              <span id="wavee-player-duration">0:00</span>
+            </div>
+
+            <div id="wavee-player-volume" class="group flex cursor-pointer items-center gap-2">
+              <button type="button" class="text-white/50 transition-colors group-hover:text-white" aria-label="Громкость">
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                  <path d="M9 2v12l-4-3H2V7h3zm2 2.5a4 4 0 0 1 0 7V4.5zm2-2a7 7 0 0 1 0 11V2.5z"></path>
+                </svg>
+              </button>
+              <div class="h-1 w-20 overflow-hidden rounded-full bg-white/10">
+                <div id="wavee-player-volume-fill" class="h-full w-2/3 rounded-full bg-white/70"></div>
+              </div>
+            </div>
+
+            <button id="wavee-player-queue" class="flex h-8 w-8 items-center justify-center text-white/40 hover:text-white" aria-label="Очередь">
+              <div class="wave-animation h-3 gap-[2px] opacity-70">
+                <div class="wave-bar bg-current" style="animation-delay: 0s"></div>
+                <div class="wave-bar bg-current" style="animation-delay: 0.1s"></div>
+                <div class="wave-bar bg-current" style="animation-delay: 0.2s"></div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/designs/runtime.js"></script>
+  </body>
+</html>
+
+
