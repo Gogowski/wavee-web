@@ -1064,7 +1064,7 @@
         visualizer.isForceHidden = !isVisible
         visualizer.isClearedWhileHidden = false
         setHomeHeroOverlayHidden(!isVisible)
-        if (isVisible && visualizer.isPlaying) {
+        if (isVisible && (visualizer.hasTrack || visualizer.isPlaying)) {
           canvas.classList.add('active')
         } else {
           canvas.classList.remove('active')
@@ -1109,9 +1109,10 @@
       visualizer.isPlaying = nextState === 'playing'
       visualizer.volume = volumeLevel
       const hasTrack = Boolean(next.trackId)
+      visualizer.hasTrack = hasTrack
       setHomeWaveActive(hasTrack && (nextState === 'playing' || nextState === 'paused'))
 
-      if (visualizer.isPlaying && volumeLevel > 0.001 && !visualizer.isForceHidden) {
+      if (hasTrack && (nextState === 'playing' || nextState === 'paused') && !visualizer.isForceHidden) {
         canvas.classList.add('active')
       } else {
         canvas.classList.remove('active')
