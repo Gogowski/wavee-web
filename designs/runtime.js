@@ -197,7 +197,7 @@
       title: 'Кот',
       role: 'Инди и лоуфай',
       futureGenres: ['indie', 'lofi', 'dream pop', 'bedroom pop', 'alternative'],
-      image: '/designs/assets/animals/cat.png',
+      image: 'assets/animals/cat.png',
       idle: [],
     },
     {
@@ -205,7 +205,7 @@
       title: 'Заяц',
       role: 'Поп и танцевальная музыка',
       futureGenres: ['pop', 'dance', 'k pop', 'electropop', 'hyperpop'],
-      image: '/designs/assets/animals/bunny.png',
+      image: 'assets/animals/bunny.png',
       idle: [],
     },
     {
@@ -213,7 +213,7 @@
       title: 'Выдра',
       role: 'Чилл и эмбиент',
       futureGenres: ['ambient', 'chill', 'downtempo', 'chillout', 'lofi'],
-      image: '/designs/assets/animals/otter.png',
+      image: 'assets/animals/otter.png',
       idle: [],
     },
     {
@@ -221,7 +221,7 @@
       title: 'Енот',
       role: 'Брейкбит и гараж',
       futureGenres: ['drum and bass', 'breakbeat', 'garage', 'uk garage', 'jungle'],
-      image: '/designs/assets/animals/raccoon.png',
+      image: 'assets/animals/raccoon.png',
       idle: [],
     },
     {
@@ -229,7 +229,7 @@
       title: 'Капибара',
       role: 'Акустика и фолк',
       futureGenres: ['acoustic', 'folk', 'indie folk', 'singer songwriter', 'soft rock'],
-      image: '/designs/assets/animals/capybara.png',
+      image: 'assets/animals/capybara.png',
       idle: [],
     },
     {
@@ -237,7 +237,7 @@
       title: 'Летучая мышь',
       role: 'Темная электроника',
       futureGenres: ['darkwave', 'post punk', 'synthwave', 'wave', 'industrial'],
-      image: '/designs/assets/animals/bat.png',
+      image: 'assets/animals/bat.png',
       idle: [],
     },
     {
@@ -245,7 +245,7 @@
       title: 'Мышь',
       role: 'Хаус и техно',
       futureGenres: ['house', 'techno', 'electronic', 'edm', 'minimal'],
-      image: '/designs/assets/animals/mouse.png',
+      image: 'assets/animals/mouse.png',
       idle: [],
     },
     {
@@ -253,7 +253,7 @@
       title: 'Черепаха',
       role: 'Классика и инструментал',
       futureGenres: ['classical', 'instrumental', 'neo classical', 'piano', 'soundtrack'],
-      image: '/designs/assets/animals/turtle.png',
+      image: 'assets/animals/turtle.png',
       idle: [],
     },
     {
@@ -261,7 +261,7 @@
       title: 'Утка',
       role: 'Фанк и диско',
       futureGenres: ['funk', 'disco', 'nu disco', 'soul', 'boogie'],
-      image: '/designs/assets/animals/duck.png',
+      image: 'assets/animals/duck.png',
       idle: [],
     },
     {
@@ -269,7 +269,7 @@
       title: 'Репов',
       role: 'Рэп и хип-хоп',
       futureGenres: ['rap', 'hip hop', 'trap', 'drill', 'grime'],
-      image: '/designs/assets/animals/repov.png',
+      image: 'assets/animals/repov.png',
       idle: [],
     },
   ]
@@ -499,7 +499,7 @@
 
   function setHeroAnimalImage(src) {
     if (!el.homeWaveArtImage || !src) return false
-    const fallbackSrc = '/designs/assets/animals/cat.png'
+    const fallbackSrc = 'assets/animals/cat.png'
     if (!el.homeWaveArtImage.dataset.waveeHeroImageBound) {
       el.homeWaveArtImage.addEventListener('load', () => {
         heroArtState.variantLocked = true
@@ -2446,7 +2446,7 @@
                   ${coverMarkup(track, track.title, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
                   <div class="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent opacity-80"></div>
                   <button data-action="play-track" data-track-id="${esc(track.id)}" class="absolute bottom-4 right-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white shadow-lg backdrop-blur-md transition-transform hover:scale-105" aria-label="Играть ${esc(track.title)}">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="/icons/play-solid.svg#play-solid"></use></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
                   </button>
                 </div>
                 <div class="track-card-meta px-1">
@@ -2509,7 +2509,7 @@
                 ${entry.pixel}
               </div>
               <button data-action="play-track" data-track-id="${esc(entry.track.id)}" class="home-genre-card-play" aria-label="Играть ${esc(entry.title)}">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="/icons/play-solid.svg#play-solid"></use></svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
               </button>
             </article>
           `
@@ -2558,7 +2558,7 @@
                 </div>
                 <div class="artist-spotlight-actions">
                   <button data-action="play-track" data-track-id="${esc(entry.track.id)}" class="artist-spotlight-play" aria-label="Играть ${esc(artistName)}">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><use href="/icons/play-solid.svg#play-solid"></use></svg>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
                     <span>Слушать</span>
                   </button>
                   <button type="button" class="artist-spotlight-follow" aria-label="Подписаться на ${esc(artistName)}">
@@ -2588,7 +2588,7 @@
                 <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent"></div>
                 <span class="absolute left-4 top-4 rounded-full border border-white/20 bg-black/45 px-3 py-1 text-[10px] uppercase tracking-[0.08em] text-white/80" style="font-family:'Public Pixel','Unbounded',sans-serif">${esc(editorialLabels[index] || 'Подборка')}</span>
                 <button data-action="play-track" data-track-id="${esc(track.id)}" class="absolute bottom-4 right-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white shadow-lg backdrop-blur-md transition-transform hover:scale-105" aria-label="Играть ${esc(track.title)}">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="/icons/play-solid.svg#play-solid"></use></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
                 </button>
               </div>
               <div class="p-4">
@@ -2712,7 +2712,7 @@
             ${index === 0 ? '<div class="my-wave-stream-badge">Ð’Ñ…Ð¾Ð´ Ð² Ð¿Ð¾Ñ‚Ð¾Ðº</div>' : ''}
             <div class="my-wave-stream-overlay">
               <button data-action="play-track" data-track-id="${esc(track.id)}" class="my-wave-play-badge" aria-label="Ð˜Ð³Ñ€Ð°Ñ‚ÑŒ ${esc(track.title)}">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="/icons/play-solid.svg#play-solid"></use></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
               </button>
             </div>
             <div class="my-wave-stream-content">
@@ -2739,7 +2739,7 @@
                 : '<div class="flex h-full w-full items-center justify-center bg-white/10 text-2xl text-white/60">â™ª</div>'}
               <div class="my-wave-secondary-overlay">
                 <button data-action="play-track" data-track-id="${esc(track.id)}" class="my-wave-play-badge" aria-label="Ð˜Ð³Ñ€Ð°Ñ‚ÑŒ ${esc(track.title)}">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="/icons/play-solid.svg#play-solid"></use></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
                 </button>
               </div>
             </div>
@@ -2759,7 +2759,7 @@
                 : '<div class="flex h-full w-full items-center justify-center bg-white/10 text-2xl text-white/60">â™ª</div>'}
               <div class="my-wave-secondary-overlay">
                 <button data-action="play-track" data-track-id="${esc(mix.track?.id || '')}" class="my-wave-play-badge" aria-label="Ð˜Ð³Ñ€Ð°Ñ‚ÑŒ ${esc(mix.title)}">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="/icons/play-solid.svg#play-solid"></use></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
                 </button>
               </div>
             </div>

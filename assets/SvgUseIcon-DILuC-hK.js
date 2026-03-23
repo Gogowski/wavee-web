@@ -1,1 +1,0 @@
-import{j as o}from"./index-BsgvnTl-.js";const u="/icons";function a({file:r,id:n,className:s="",viewBox:t="0 0 24 24",preserveAspectRatio:e=void 0,useTransform:i=void 0}){return!r||!n?null:o.jsx("svg",{viewBox:t,"aria-hidden":"true",className:s,preserveAspectRatio:e,fill:"currentColor",children:o.jsx("use",{href:`${u}/${r}#${n}`,transform:i})})}export{a as S};
