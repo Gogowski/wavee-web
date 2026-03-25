@@ -10,7 +10,8 @@
   const ACTIVE_RUNTIME_PAGES = new Set(['home', 'my-wave'])
   if (!ACTIVE_RUNTIME_PAGES.has(page)) return
   const searchParams = new URLSearchParams(location.search)
-  const embedMode = searchParams.get('embed') === 'app'
+  const isEmbeddedFrame = window.self !== window.top
+  const embedMode = searchParams.get('embed') === 'app' || isEmbeddedFrame
   const apiBase = (() => {
     const q = searchParams.get('api')
     if (q) localStorage.setItem('wavee_api_base', q)
@@ -96,9 +97,9 @@
   }
 
   if (embedMode) {
-    document.querySelector('nav')?.style.setProperty('display', 'none', 'important')
-    el.play?.closest('.fixed')?.style.setProperty('display', 'none', 'important')
-    el.play?.closest('.player-shell')?.style.setProperty('display', 'none', 'important')
+    document.querySelector('nav')?.remove()
+    el.play?.closest('.fixed')?.remove()
+    el.play?.closest('.player-shell')?.remove()
     document.body.style.paddingBottom = '1.5rem'
   }
 
