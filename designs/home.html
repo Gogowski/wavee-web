@@ -54,6 +54,20 @@
         -webkit-font-smoothing: antialiased;
       }
 
+      body[data-wavee-embed='app'] {
+        padding-bottom: 0;
+      }
+
+      .home-embed-scroll-spacer {
+        display: none;
+        height: 0;
+      }
+
+      body[data-wavee-embed='app'] .home-embed-scroll-spacer {
+        display: block;
+        height: clamp(112px, 12vh, 148px);
+      }
+
       body::before,
       body::after {
         content: '';
@@ -1007,6 +1021,1267 @@
         color: #ffffff;
       }
 
+      .home-filter-chips {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 4px 2px 2px;
+      }
+
+      .home-filter-chip {
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 0 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.025) 100%),
+          rgba(10, 11, 14, 0.74);
+        color: rgba(255, 255, 255, 0.72);
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        transition:
+          transform 0.22s ease,
+          background 0.22s ease,
+          color 0.22s ease,
+          border-color 0.22s ease;
+      }
+
+      .home-filter-chip:hover {
+        color: #ffffff;
+        border-color: rgba(255, 255, 255, 0.18);
+      }
+
+      .home-filter-chip.is-active {
+        border-color: rgba(255, 255, 255, 0.22);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(232, 236, 245, 0.95) 100%),
+          #ffffff;
+        color: #111217;
+        box-shadow:
+          0 12px 22px rgba(0, 0, 0, 0.18),
+          inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      }
+
+      .home-section-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 1.15rem;
+      }
+
+      .home-section-head-copy {
+        min-width: 0;
+      }
+
+      .home-section-head-copy .home-section-subline {
+        margin-top: 0.32rem;
+      }
+
+      .home-section-title {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: clamp(26px, 3.4vw, 40px);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 0.98;
+      }
+
+      .home-section-actions {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .home-section-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        color: rgba(255, 255, 255, 0.66);
+        text-decoration: none;
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .home-section-link:hover {
+        color: #ffffff;
+        border-color: rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .home-card-nav-link {
+        display: block;
+        max-width: 100%;
+        color: inherit;
+        text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: color 0.2s ease, opacity 0.2s ease;
+      }
+
+      .home-card-nav-link.is-secondary {
+        opacity: 0.92;
+      }
+
+      .home-card-nav-link:hover,
+      .home-card-nav-link:focus-visible {
+        color: #ffffff;
+        opacity: 1;
+        outline: none;
+      }
+
+      .home-section-subline {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.52);
+        font-family: 'Onest', sans-serif;
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .home-carousel-mask {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .home-carousel-mask::before,
+      .home-carousel-mask::after {
+        content: none;
+      }
+
+      .home-carousel-track {
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        padding: 4px 2px 16px 2px;
+        scroll-snap-type: x mandatory;
+        scroll-padding-left: 2px;
+        overscroll-behavior-x: contain;
+      }
+
+      .home-carousel-empty {
+        width: 100%;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 18px;
+        color: rgba(255, 255, 255, 0.56);
+        font-size: 13px;
+      }
+
+      .home-artist-card {
+        width: 176px;
+        min-width: 176px;
+        flex: 0 0 auto;
+        display: grid;
+        gap: 0;
+        scroll-snap-align: start;
+        cursor: pointer;
+      }
+
+      .home-artist-media {
+        position: relative;
+        z-index: 1;
+      }
+
+      .home-artist-cover-shell {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border-radius: 999px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%),
+          rgba(13, 15, 20, 0.76);
+        box-shadow:
+          0 16px 28px rgba(0, 0, 0, 0.24),
+          inset 0 1px 0 rgba(255, 255, 255, 0.07);
+      }
+
+      .home-artist-cover-shell img,
+      .home-artist-cover-fallback {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .home-artist-cover-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.82);
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 22px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04));
+      }
+
+      .home-artist-play {
+        position: absolute;
+        right: 8px;
+        bottom: 52px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%),
+          rgba(0, 0, 0, 0.36);
+        color: #ffffff;
+        box-shadow:
+          0 10px 22px rgba(0, 0, 0, 0.22),
+          inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        opacity: 0;
+        transform: translateY(6px);
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s ease,
+          visibility 0s linear 0.25s;
+        z-index: 3;
+      }
+
+      .home-artist-card:hover .home-artist-play,
+      .home-artist-card:focus-within .home-artist-play {
+        opacity: 1;
+        transform: translateY(0);
+        visibility: visible;
+        pointer-events: auto;
+        transition-delay: 0s;
+      }
+
+      .home-artist-info {
+        position: relative;
+        z-index: 2;
+        width: calc(100% - 12px);
+        margin: -44px auto 0;
+        border-radius: 14px;
+        padding: 7px 14px;
+        min-height: 56px;
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: 4px;
+        text-align: center;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.018) 100%),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.56' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+          rgba(18, 19, 21, 0.64);
+        box-shadow: 0 14px 26px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(20px) saturate(88%);
+        -webkit-backdrop-filter: blur(20px) saturate(88%);
+      }
+
+      .home-artist-name {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.15;
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .home-artist-name.is-long {
+        font-size: 12px;
+      }
+
+      .home-artist-name.is-xlong {
+        font-size: 10px;
+      }
+
+      .home-artist-monthly {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.68);
+        font-family: 'Onest', sans-serif;
+        font-size: 11px;
+        line-height: 1.2;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .home-artist-role {
+        display: none !important;
+      }
+
+      .home-card-play {
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.08) 100%),
+          rgba(0, 0, 0, 0.34);
+        color: #ffffff;
+        box-shadow:
+          0 10px 22px rgba(0, 0, 0, 0.22),
+          inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        opacity: 0;
+        transform: translateY(6px);
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s ease,
+          visibility 0s linear 0.25s;
+      }
+
+      .group:hover .home-card-play,
+      .group:focus-within .home-card-play {
+        opacity: 1;
+        transform: translateY(0);
+        visibility: visible;
+        pointer-events: auto;
+        transition-delay: 0s;
+      }
+
+      .home-playlist-card {
+        width: 236px;
+        min-width: 236px;
+        flex: 0 0 auto;
+        display: grid;
+        gap: 10px;
+        scroll-snap-align: start;
+        cursor: pointer;
+      }
+
+      .home-playlist-cover {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        border-radius: 24px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%),
+          rgba(12, 14, 18, 0.76);
+        box-shadow:
+          0 18px 32px rgba(0, 0, 0, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+
+      .home-playlist-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.14) 18%, rgba(0, 0, 0, 0.8) 100%);
+      }
+
+      .home-playlist-overlay.is-compact {
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.16) 8%, rgba(0, 0, 0, 0.56) 100%);
+      }
+
+      .home-playlist-logo {
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.34);
+        color: rgba(255, 255, 255, 0.92);
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 9px;
+        letter-spacing: 0.04em;
+      }
+
+      .home-playlist-copy {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        display: grid;
+        gap: 4px;
+      }
+
+      .home-playlist-kicker {
+        color: rgba(255, 255, 255, 0.86);
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .home-playlist-artist {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.08;
+      }
+
+      .home-playlist-description {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.58);
+        font-family: 'Onest', sans-serif;
+        font-size: 12px;
+        line-height: 1.32;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .home-album-card {
+        width: 206px;
+        min-width: 206px;
+        flex: 0 0 auto;
+        display: grid;
+        gap: 10px;
+        scroll-snap-align: start;
+        cursor: pointer;
+      }
+
+      .home-album-cover {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%),
+          rgba(13, 15, 19, 0.78);
+        box-shadow:
+          0 16px 30px rgba(0, 0, 0, 0.24),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+
+      .home-album-cover::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.6) 100%);
+        pointer-events: none;
+      }
+
+      .home-album-title {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 13px;
+        line-height: 1.15;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .home-album-subtitle {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.56);
+        font-family: 'Onest', sans-serif;
+        font-size: 12px;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .home-small-card {
+        width: 270px;
+        min-width: 270px;
+        min-height: 84px;
+        flex: 0 0 auto;
+        display: grid;
+        grid-template-columns: 72px minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+        padding: 8px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%),
+          rgba(12, 13, 18, 0.72);
+        box-shadow:
+          0 16px 28px rgba(0, 0, 0, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        scroll-snap-align: start;
+        cursor: pointer;
+        transition:
+          transform 0.25s ease,
+          border-color 0.25s ease;
+      }
+
+      .home-small-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.18);
+      }
+
+      .home-small-media {
+        position: relative;
+        width: 72px;
+        height: 72px;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      /* Remove thin outlines from home content elements */
+      .artists-carousel-control,
+      .home-filter-chip,
+      .home-section-link,
+      .home-carousel-empty,
+      .home-artist-cover-shell,
+      .home-artist-play,
+      .home-card-play,
+      .home-playlist-cover,
+      .home-playlist-logo,
+      .home-album-cover,
+      .home-small-card,
+      .home-small-media {
+        border: none !important;
+      }
+
+      .artists-carousel-control:hover:not(:disabled),
+      .home-filter-chip:hover,
+      .home-filter-chip.is-active,
+      .home-section-link:hover,
+      .home-small-card:hover {
+        border-color: transparent !important;
+      }
+
+      .section-shell {
+        content-visibility: auto;
+        contain-intrinsic-size: 420px;
+        opacity: 0;
+        transform: translateY(18px);
+        transition:
+          opacity 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .section-shell.is-in-view {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .section-shell::after {
+        content: '';
+        position: absolute;
+        inset: 12px;
+        border-radius: 26px;
+        pointer-events: none;
+        opacity: 0;
+        background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0) 64%);
+        transition: opacity 0.34s ease;
+      }
+
+      .section-shell:hover::after,
+      .section-shell:focus-within::after {
+        opacity: 1;
+      }
+
+      .section-shell.is-mode-enter {
+        animation: home-mode-enter 0.44s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        animation-delay: var(--mode-enter-delay, 0ms);
+      }
+
+      @keyframes home-mode-enter {
+        0% {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .home-section-controls {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+        transition: none;
+      }
+
+      .section-shell:hover .home-section-controls,
+      .section-shell:focus-within .home-section-controls {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+      }
+
+      .home-section-link {
+        gap: 6px;
+        transition:
+          transform 0.2s ease,
+          color 0.2s ease,
+          background 0.2s ease;
+      }
+
+      .home-section-link svg {
+        transition: transform 0.2s ease;
+      }
+
+      .home-section-link:hover svg,
+      .home-section-link:focus-visible svg {
+        transform: translateX(2px);
+      }
+
+      .home-carousel-track {
+        scroll-behavior: smooth;
+      }
+
+      .home-carousel-track [data-carousel-card] {
+        position: relative;
+        transform-origin: center bottom;
+        transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+        scroll-snap-stop: always;
+      }
+
+      .home-carousel-track [data-carousel-card]:hover,
+      .home-carousel-track [data-carousel-card]:focus-within {
+        transform: translateY(-3px) scale(1.04);
+      }
+
+      .home-carousel-track [data-carousel-card]:active {
+        transform: translateY(-1px) scale(0.985);
+      }
+
+      .home-carousel-track.is-scrolling [data-carousel-card],
+      .home-carousel-track.is-scrolling [data-carousel-card]:hover,
+      .home-carousel-track.is-scrolling [data-carousel-card]:focus-within,
+      .home-carousel-track.is-scrolling [data-carousel-card]:active {
+        transition: none !important;
+        transform: none !important;
+      }
+
+      .home-carousel-track.is-scrolling .home-card-play,
+      .home-carousel-track.is-scrolling .home-artist-play {
+        transition: none !important;
+      }
+
+      .home-carousel-track [data-carousel-card].is-stagger-ready {
+        animation: home-card-enter 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        animation-delay: var(--card-delay, 0ms);
+      }
+
+      @keyframes home-card-enter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px) scale(0.98);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .home-lazy-cover {
+        filter: blur(10px);
+        opacity: 0.86;
+        transform: scale(1.04);
+        transition:
+          filter 0.42s ease,
+          opacity 0.42s ease,
+          transform 0.42s ease;
+      }
+
+      .home-lazy-cover.is-loaded {
+        filter: blur(0);
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .home-card-badge {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 20px;
+        padding: 0 8px;
+        border-radius: 999px;
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 7px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        z-index: 3;
+        background: rgba(10, 11, 14, 0.5);
+        color: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .home-card-badge--soft {
+        background: rgba(255, 255, 255, 0.22);
+        color: #111217;
+      }
+
+      .home-card-badge--hot {
+        background: rgba(255, 255, 255, 0.9);
+        color: #090a0e;
+      }
+
+      .home-card-meta {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 11px;
+        line-height: 1.25;
+      }
+
+      .home-small-body .home-card-meta {
+        color: rgba(255, 255, 255, 0.62);
+        font-size: 10px;
+      }
+
+      .home-small-card.is-large {
+        width: 332px;
+        min-width: 332px;
+        min-height: 104px;
+        grid-template-columns: 92px minmax(0, 1fr);
+      }
+
+      .home-small-card.is-medium {
+        width: 296px;
+        min-width: 296px;
+      }
+
+      .home-playlist-card.is-featured {
+        width: 272px;
+        min-width: 272px;
+      }
+
+      .home-album-card.is-featured {
+        width: 230px;
+        min-width: 230px;
+      }
+
+      .home-artist-cover-shell::after,
+      .home-small-media::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.38) 100%);
+        pointer-events: none;
+        opacity: 0.25;
+        transition: opacity 0.25s ease;
+      }
+
+      .home-artist-card:hover .home-artist-cover-shell::after,
+      .home-artist-card:focus-within .home-artist-cover-shell::after,
+      .home-small-card:hover .home-small-media::after,
+      .home-small-card:focus-within .home-small-media::after {
+        opacity: 0.48;
+      }
+
+      .home-playlist-copy {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+
+      .home-artist-play,
+      .home-card-play {
+        will-change: transform, opacity;
+      }
+
+      .home-artist-card:hover .home-artist-play,
+      .home-artist-card:focus-within .home-artist-play,
+      .group:hover .home-card-play,
+      .group:focus-within .home-card-play {
+        animation: home-play-bounce 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      .home-artist-play::after,
+      .home-card-play::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 70%);
+        opacity: 0;
+        transform: scale(0.2);
+        pointer-events: none;
+      }
+
+      .home-artist-play.is-rippling::after,
+      .home-card-play.is-rippling::after {
+        animation: home-play-ripple 0.46s ease-out both;
+      }
+
+      @keyframes home-play-bounce {
+        0% {
+          transform: translateY(8px) scale(0.9);
+        }
+        65% {
+          transform: translateY(-1px) scale(1.08);
+        }
+        100% {
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes home-play-ripple {
+        0% {
+          opacity: 0.55;
+          transform: scale(0.22);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(1.25);
+        }
+      }
+
+      .home-filter-chip:focus-visible,
+      .home-section-link:focus-visible,
+      .artists-carousel-control:focus-visible,
+      .home-card-play:focus-visible,
+      .home-artist-play:focus-visible,
+      .home-carousel-track [data-carousel-card]:focus-within {
+        outline: 2px solid rgba(255, 255, 255, 0.6);
+        outline-offset: 2px;
+      }
+
+      .home-skeleton-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%),
+          rgba(12, 13, 18, 0.74);
+      }
+
+      .home-skeleton-card--artist {
+        width: 176px;
+        min-width: 176px;
+        aspect-ratio: 1 / 1.16;
+        border-radius: 999px 999px 20px 20px;
+      }
+
+      .home-skeleton-card--large {
+        width: 332px;
+        min-width: 332px;
+        min-height: 104px;
+      }
+
+      .home-skeleton-card--small {
+        width: 270px;
+        min-width: 270px;
+        min-height: 84px;
+      }
+
+      .home-skeleton-card--medium {
+        width: 220px;
+        min-width: 220px;
+        min-height: 220px;
+      }
+
+      .home-skeleton-shimmer {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(110deg, rgba(255, 255, 255, 0.04) 8%, rgba(255, 255, 255, 0.24) 28%, rgba(255, 255, 255, 0.04) 46%);
+        transform: translateX(-100%);
+        animation: home-skeleton-shimmer 1.3s ease-in-out infinite;
+      }
+
+      /* Disable highlight/glow accents */
+      .section-shell::after {
+        content: none !important;
+      }
+
+      .home-carousel-track [data-carousel-card]:hover,
+      .home-carousel-track [data-carousel-card]:focus-within {
+        filter: none !important;
+      }
+
+      .home-artist-cover-shell::after,
+      .home-small-media::after {
+        content: none !important;
+      }
+
+      .home-artist-play::after,
+      .home-card-play::after {
+        display: none !important;
+      }
+
+      .home-filter-chip:focus-visible,
+      .home-section-link:focus-visible,
+      .artists-carousel-control:focus-visible,
+      .home-card-play:focus-visible,
+      .home-artist-play:focus-visible,
+      .home-carousel-track [data-carousel-card]:focus-within {
+        outline: none !important;
+      }
+
+      @keyframes home-skeleton-shimmer {
+        100% {
+          transform: translateX(120%);
+        }
+      }
+
+      /* Home cards refresh: glass surfaces + cleaner typography */
+      .home-filter-chip,
+      .home-section-link,
+      .artists-carousel-control {
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.016) 100%),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.56' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+          rgba(18, 19, 21, 0.6) !important;
+        color: rgba(255, 255, 255, 0.88) !important;
+        box-shadow: 0 16px 30px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(20px) saturate(88%);
+        -webkit-backdrop-filter: blur(20px) saturate(88%);
+      }
+
+      .home-card-play,
+      .home-artist-play {
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.05) 100%),
+          rgba(0, 0, 0, 0.36) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+
+      .home-filter-chip {
+        min-height: 40px;
+        padding: 0 18px;
+        border-radius: 999px;
+        border: 0 !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+        color: rgba(255, 255, 255, 0.72) !important;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        text-shadow: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        transition:
+          background 0.2s ease,
+          color 0.2s ease,
+          border-color 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .home-filter-chip::before {
+        content: none;
+      }
+
+      .home-filter-chip::after {
+        content: none;
+      }
+
+      .home-filter-chip:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: #ffffff !important;
+        transform: translateY(-1px);
+      }
+
+      .home-filter-chip:active {
+        transform: translateY(0);
+      }
+
+      .home-filter-chip.is-active {
+        background:
+          linear-gradient(180deg, rgba(182, 199, 240, 0.98) 0%, rgba(146, 169, 225, 0.96) 100%) !important;
+        color: #111217 !important;
+        box-shadow:
+          0 12px 24px rgba(20, 26, 40, 0.28),
+          inset 0 1px 0 rgba(255, 255, 255, 0.55);
+      }
+
+      .home-filter-chip.is-active:hover {
+        background:
+          linear-gradient(180deg, rgba(188, 204, 242, 0.99) 0%, rgba(152, 174, 230, 0.97) 100%) !important;
+        color: #0f1117 !important;
+      }
+
+      .home-small-card,
+      .home-playlist-cover,
+      .home-album-cover,
+      .home-artist-cover-shell,
+      .home-carousel-empty {
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.016) 100%),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.56' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+          rgba(18, 19, 21, 0.6) !important;
+        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(20px) saturate(88%);
+        -webkit-backdrop-filter: blur(20px) saturate(88%);
+        transform: translateZ(0);
+      }
+
+      .home-small-card {
+        width: 352px;
+        min-width: 352px;
+        min-height: 110px;
+        grid-template-columns: 102px minmax(0, 1fr);
+        gap: 14px;
+        padding: 12px 14px;
+        border-radius: 26px;
+      }
+
+      .home-small-card.is-large {
+        width: 396px;
+        min-width: 396px;
+        min-height: 120px;
+        grid-template-columns: 112px minmax(0, 1fr);
+      }
+
+      .home-small-card.is-medium {
+        width: 336px;
+        min-width: 336px;
+      }
+
+      .home-small-media {
+        width: 102px;
+        height: 102px;
+        border-radius: 20px;
+      }
+
+      .home-playlist-card {
+        width: 266px;
+        min-width: 266px;
+      }
+
+      .home-playlist-card.is-featured {
+        width: 300px;
+        min-width: 300px;
+      }
+
+      .home-album-card {
+        width: 232px;
+        min-width: 232px;
+      }
+
+      .home-album-card.is-featured {
+        width: 258px;
+        min-width: 258px;
+      }
+
+      .home-artist-card {
+        width: 186px;
+        min-width: 186px;
+      }
+
+      .home-artist-name {
+        font-size: 14px;
+      }
+
+      .home-artist-role,
+      .home-card-meta,
+      .home-playlist-description {
+        display: none !important;
+      }
+
+      #home-top-tracks-row .home-playlist-logo,
+      #home-top-tracks-row .home-playlist-copy {
+        display: none !important;
+      }
+
+      #home-top-tracks-row .home-playlist-card {
+        width: 232px;
+        min-width: 232px;
+        gap: 8px;
+      }
+
+      #home-top-tracks-row .home-playlist-cover {
+        border-radius: 22px;
+      }
+
+      #home-top-tracks-row .home-playlist-overlay {
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 6%, rgba(0, 0, 0, 0.4) 100%);
+      }
+
+      #home-top-tracks-row .home-card-play {
+        top: 50%;
+        left: 50%;
+        right: auto;
+        bottom: auto;
+        transform: translate(-50%, -50%) scale(0.84);
+      }
+
+      #home-top-tracks-row .group:hover .home-card-play,
+      #home-top-tracks-row .group:focus-within .home-card-play {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        visibility: visible;
+        pointer-events: auto;
+      }
+
+      #home-top-tracks-row .home-card-play:active {
+        transform: translate(-50%, -50%) scale(0.92);
+      }
+
+      /* Unified play button: centered, large icon, no capsule background */
+      .home-card-play,
+      .home-artist-play {
+        top: 50%;
+        left: 50%;
+        right: auto;
+        bottom: auto;
+        width: 58px;
+        height: 58px;
+        border: 0 !important;
+        border-radius: 0;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: rgba(255, 255, 255, 0.97);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translate(-50%, -50%) scale(0.84);
+        transition:
+          opacity 0.24s ease,
+          transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+          visibility 0s linear 0.24s;
+        z-index: 4;
+      }
+
+      .home-card-play svg,
+      .home-artist-play svg {
+        width: 30px;
+        height: 30px;
+        filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.55));
+      }
+
+      .home-card-play::after,
+      .home-artist-play::after {
+        display: none !important;
+      }
+
+      .home-artist-card:hover .home-artist-play,
+      .home-artist-card:focus-within .home-artist-play,
+      .group:hover .home-card-play,
+      .group:focus-within .home-card-play {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translate(-50%, -50%) scale(1);
+        transition-delay: 0s;
+        animation: none;
+      }
+
+      .home-card-play:active,
+      .home-artist-play:active {
+        transform: translate(-50%, -50%) scale(0.92);
+      }
+
+      /* Hover blur for cover background under play */
+      .home-playlist-cover .home-lazy-cover,
+      .home-album-cover .home-lazy-cover,
+      .home-small-media .home-lazy-cover,
+      .home-artist-cover-shell .home-lazy-cover {
+        transition:
+          filter 0.26s ease,
+          transform 0.26s ease,
+          opacity 0.26s ease;
+        will-change: filter, transform;
+      }
+
+      .home-artist-card:hover .home-artist-cover-shell .home-lazy-cover,
+      .home-artist-card:focus-within .home-artist-cover-shell .home-lazy-cover,
+      .home-small-card:hover .home-small-media .home-lazy-cover,
+      .home-small-card:focus-within .home-small-media .home-lazy-cover,
+      .group:hover .home-playlist-cover .home-lazy-cover,
+      .group:focus-within .home-playlist-cover .home-lazy-cover,
+      .group:hover .home-album-cover .home-lazy-cover,
+      .group:focus-within .home-album-cover .home-lazy-cover {
+        filter: blur(2.3px) brightness(0.62) saturate(0.9);
+        transform: scale(1.045);
+      }
+
+      #home-top-tracks-row .home-top-track-meta {
+        min-width: 0;
+        display: grid;
+        gap: 3px;
+        padding: 2px 4px 0;
+      }
+
+      #home-top-tracks-row .home-top-track-title {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 12px;
+        line-height: 1.15;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      #home-top-tracks-row .home-top-track-artist {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.66);
+        font-family: 'Onest', sans-serif;
+        font-size: 11px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .home-small-body {
+        min-width: 0;
+        display: grid;
+        gap: 6px;
+      }
+
+      .home-small-kicker {
+        display: none !important;
+      }
+
+      .home-small-title {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
+        font-size: 15px;
+        line-height: 1.14;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .home-small-subtitle {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.66);
+        font-family: 'Onest', sans-serif;
+        font-size: 13px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
       .wave-animation {
         display: flex;
         align-items: flex-end;
@@ -1340,9 +2615,82 @@
           padding-right: 20px !important;
         }
 
+        .home-section-title {
+          font-size: clamp(22px, 5vw, 32px);
+        }
+
+        .home-artist-card {
+          width: 158px;
+          min-width: 158px;
+        }
+
+        .home-playlist-card {
+          width: 216px;
+          min-width: 216px;
+        }
+
+        .home-album-card {
+          width: 188px;
+          min-width: 188px;
+        }
+
+        .home-small-card {
+          width: 244px;
+          min-width: 244px;
+        }
+
+        .home-small-card.is-large {
+          width: 292px;
+          min-width: 292px;
+        }
+
+        .home-small-card.is-medium {
+          width: 260px;
+          min-width: 260px;
+        }
+
+        .home-playlist-card.is-featured {
+          width: 244px;
+          min-width: 244px;
+        }
+
+        .home-album-card.is-featured {
+          width: 204px;
+          min-width: 204px;
+        }
+
+        .home-skeleton-card--large {
+          width: 292px;
+          min-width: 292px;
+        }
+
+        .home-skeleton-card--small {
+          width: 244px;
+          min-width: 244px;
+        }
+
+        .home-skeleton-card--medium {
+          width: 204px;
+          min-width: 204px;
+          min-height: 204px;
+        }
+
+        .home-skeleton-card--artist {
+          width: 158px;
+          min-width: 158px;
+        }
+
       }
 
       @media (max-width: 767px) {
+        body[data-wavee-embed='app'] {
+          padding-bottom: 0;
+        }
+
+        body[data-wavee-embed='app'] .home-embed-scroll-spacer {
+          height: calc(132px + env(safe-area-inset-bottom));
+        }
+
         body::before,
         body::after {
           filter: blur(70px);
@@ -1378,6 +2726,206 @@
         .home-visualizer-canvas {
           top: -190px;
           height: calc(100% + 240px);
+        }
+
+        .home-filter-chips {
+          gap: 8px;
+        }
+
+        .home-filter-chip {
+          min-height: 36px;
+          padding: 0 14px;
+          font-size: 9px;
+        }
+
+        .home-section-header {
+          align-items: center;
+        }
+
+        .home-section-actions {
+          width: 100%;
+          justify-content: space-between;
+        }
+
+        .home-section-controls {
+          display: none !important;
+        }
+
+        .home-section-link {
+          min-height: 34px;
+          padding: 0 12px;
+          font-size: 9px;
+        }
+
+        .home-carousel-track {
+          gap: 12px;
+          padding-bottom: 14px;
+        }
+
+        .home-artist-card {
+          width: 130px;
+          min-width: 130px;
+          gap: 0;
+        }
+
+        .home-artist-play {
+          top: 50%;
+          left: 50%;
+          bottom: auto;
+          width: 50px;
+          height: 50px;
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+          transform: translate(-50%, -50%) scale(0.84);
+        }
+
+        .home-artist-info {
+          width: calc(100% - 8px);
+          margin-top: -34px;
+          min-height: 46px;
+          padding: 6px 10px;
+          border-radius: 12px;
+        }
+
+        .home-artist-name {
+          font-size: 11px;
+        }
+
+        .home-artist-name.is-long {
+          font-size: 9px;
+        }
+
+        .home-artist-name.is-xlong {
+          font-size: 8px;
+        }
+
+        .home-artist-monthly {
+          font-size: 9px;
+        }
+
+        .home-playlist-card {
+          width: 176px;
+          min-width: 176px;
+          gap: 8px;
+        }
+
+        .home-album-card {
+          width: 158px;
+          min-width: 158px;
+          gap: 8px;
+        }
+
+        .home-small-card {
+          width: 212px;
+          min-width: 212px;
+          min-height: 74px;
+          grid-template-columns: 58px minmax(0, 1fr);
+          gap: 10px;
+          padding: 7px;
+        }
+
+        .home-small-card.is-large {
+          width: 250px;
+          min-width: 250px;
+          min-height: 86px;
+          grid-template-columns: 66px minmax(0, 1fr);
+        }
+
+        .home-small-card.is-medium {
+          width: 224px;
+          min-width: 224px;
+        }
+
+        .home-small-media {
+          width: 58px;
+          height: 58px;
+          border-radius: 12px;
+        }
+
+        .home-playlist-cover {
+          border-radius: 20px;
+        }
+
+        .home-playlist-kicker {
+          font-size: 8px;
+        }
+
+        .home-playlist-artist {
+          font-size: 12px;
+        }
+
+        .home-playlist-description {
+          font-size: 11px;
+        }
+
+        .home-album-title {
+          font-size: 11px;
+        }
+
+        .home-album-subtitle {
+          font-size: 10px;
+        }
+
+        .home-playlist-card.is-featured {
+          width: 196px;
+          min-width: 196px;
+        }
+
+        .home-album-card.is-featured {
+          width: 168px;
+          min-width: 168px;
+        }
+
+        .home-skeleton-card--large {
+          width: 250px;
+          min-width: 250px;
+          min-height: 86px;
+        }
+
+        .home-skeleton-card--small {
+          width: 212px;
+          min-width: 212px;
+          min-height: 74px;
+        }
+
+        .home-skeleton-card--medium {
+          width: 176px;
+          min-width: 176px;
+          min-height: 176px;
+        }
+
+        .home-skeleton-card--artist {
+          width: 130px;
+          min-width: 130px;
+        }
+
+        .home-small-kicker {
+          display: none !important;
+        }
+
+        .home-small-title {
+          font-size: 12px;
+        }
+
+        .home-small-subtitle {
+          font-size: 11px;
+        }
+
+        .home-card-play {
+          top: 50%;
+          left: 50%;
+          width: 50px;
+          height: 50px;
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+          transform: translate(-50%, -50%) scale(0.84);
+        }
+
+        .home-carousel-track [data-carousel-card]:hover,
+        .home-carousel-track [data-carousel-card]:focus-within {
+          transform: translateY(-1px) scale(1.015);
         }
 
         .track-row {
@@ -1549,125 +3097,81 @@
       </div>
     </section>
 
-    <section class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-8">
-      <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 class="text-white" style="font-family: 'Unbounded', sans-serif; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -0.01em; line-height: 0.95">Новые релизы</h2>
-        </div>
-        <div class="flex flex-wrap items-center justify-end gap-3">
-          <a href="/library" data-nav-route="/library" class="rounded-full border border-white/10 px-4 py-2 text-white/60 hover:bg-white/5 hover:text-white" style="font-family: 'Unbounded', sans-serif; font-size: 10px; letter-spacing: 0.06em">Моя библиотека</a>
-          <div class="artists-carousel-controls" aria-label="Навигация по новым релизам">
-            <button id="home-new-releases-prev" type="button" class="artists-carousel-control" aria-label="Прокрутить новые релизы назад">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="../icons/angle-left-solid.svg#angle-left-solid"></use></svg>
-            </button>
-            <button id="home-new-releases-next" type="button" class="artists-carousel-control" aria-label="Прокрутить новые релизы вперёд">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="../icons/angle-right-solid.svg#angle-right-solid"></use></svg>
-            </button>
-          </div>
-        </div>
+    <section id="home-filter-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-6">
+      <div id="home-filter-chips" class="home-filter-chips hide-scrollbar" data-active="for-you">
+        <button type="button" class="home-filter-chip is-active" data-filter-chip data-filter="for-you" aria-pressed="true">Для тебя</button>
+        <button type="button" class="home-filter-chip" data-filter-chip data-filter="trends" aria-pressed="false">Тренды</button>
       </div>
-      <div id="home-new-releases-row" class="track-row hide-scrollbar -mx-2 flex gap-6 overflow-x-auto px-2 pb-4">
-        <div class="track-card flex-shrink-0 w-72">
-          <div class="card-soft aspect-square overflow-hidden rounded-[32px] p-3">
-            <div class="relative h-full w-full overflow-hidden rounded-[24px] bg-white/5"></div>
-          </div>
+    </section>
+
+    <section id="home-quick-access-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-6">
+      <div id="home-quick-access-header"></div>
+      <div class="home-carousel-mask">
+        <div id="home-quick-access-row" class="home-carousel-track hide-scrollbar" aria-label="Новые релизы">
+          <article class="home-album-card" data-carousel-card></article>
         </div>
       </div>
     </section>
 
-    <section class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-8">
-      <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <h2 class="text-white" style="font-family: 'Unbounded', sans-serif; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -0.01em; line-height: 0.95">Популярное сейчас</h2>
-        <div class="artists-carousel-controls" aria-label="Навигация по популярному">
-          <button id="home-popular-prev" type="button" class="artists-carousel-control" aria-label="Прокрутить популярное назад">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="../icons/angle-left-solid.svg#angle-left-solid"></use></svg>
-          </button>
-          <button id="home-popular-next" type="button" class="artists-carousel-control" aria-label="Прокрутить популярное вперёд">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="../icons/angle-right-solid.svg#angle-right-solid"></use></svg>
-          </button>
-        </div>
-      </div>
-      <div id="home-popular-row" class="track-row hide-scrollbar -mx-2 flex gap-6 overflow-x-auto px-2 pb-4">
-        <div class="track-card flex-shrink-0 w-72">
-          <div class="card-soft aspect-square overflow-hidden rounded-[32px] p-3">
-            <div class="relative h-full w-full overflow-hidden rounded-[24px] bg-white/5"></div>
-          </div>
+    <section id="home-favorite-artists-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-6">
+      <div id="home-favorite-artists-header"></div>
+      <div class="home-carousel-mask">
+        <div id="home-favorite-artists-row" class="home-carousel-track hide-scrollbar" aria-label="Любимые исполнители">
+          <article class="home-artist-card" data-carousel-card></article>
         </div>
       </div>
     </section>
 
-    <section class="section-shell home-genres-section relative z-10 mx-auto w-full max-w-7xl px-8 py-8">
-      <div class="home-genres-head mb-8">
-        <div class="home-genres-top">
-          <div class="home-genres-title-wrap">
-            <h2 class="text-white" style="font-family: 'Unbounded', sans-serif; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -0.01em; line-height: 0.95">Жанры и настроение</h2>
-            <p class="home-genres-subtitle">Собрали быстрые маршруты по жанрам, вайбу и состоянию.</p>
-          </div>
-          <div class="home-genres-toolbar hide-scrollbar" data-home-genres-toolbar>
-            <button type="button" class="home-genres-tab" data-home-genres-tab>топ</button>
-            <button type="button" class="home-genres-tab is-active" data-home-genres-tab>по жанру</button>
-            <button type="button" class="home-genres-tab" data-home-genres-tab>под настроение</button>
-            <button type="button" class="home-genres-tab" data-home-genres-tab>под занятие</button>
-          </div>
-        </div>
-      </div>
-      <div id="home-genres-grid">
-        <div class="home-genre-empty">Жанры появятся после загрузки треков.</div>
-      </div>
-    </section>
-
-    <section class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-8">
-      <div class="artists-carousel-shell">
-        <div class="artists-carousel-head">
-          <div class="artists-carousel-copy">
-            <h2 class="text-white" style="font-family: 'Unbounded', sans-serif; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -0.01em; line-height: 0.95">Исполнители для тебя</h2>
-          </div>
-          <div class="artists-carousel-controls" aria-label="Навигация по артистам">
-            <button id="home-artists-prev" type="button" class="artists-carousel-control" aria-label="Прокрутить артистов назад">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="../icons/angle-left-solid.svg#angle-left-solid"></use></svg>
-            </button>
-            <button id="home-artists-next" type="button" class="artists-carousel-control" aria-label="Прокрутить артистов вперёд">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="../icons/angle-right-solid.svg#angle-right-solid"></use></svg>
-            </button>
-          </div>
-        </div>
-        <div class="artists-carousel-mask">
-          <div id="home-artists-row" class="artists-carousel-track hide-scrollbar">
-            <div class="artist-spotlight-card"></div>
-          </div>
+    <section id="home-popular-artists-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-6">
+      <div id="home-popular-artists-header"></div>
+      <div class="home-carousel-mask">
+        <div id="home-popular-artists-row" class="home-carousel-track hide-scrollbar" aria-label="Популярные исполнители">
+          <article class="home-artist-card" data-carousel-card></article>
         </div>
       </div>
     </section>
 
-    <section class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-8">
-      <div class="mb-8">
-        <h2 class="text-white" style="font-family: 'Unbounded', sans-serif; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -0.01em; line-height: 0.95">Редакционные подборки</h2>
-      </div>
-      <div id="home-editorial-row" class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div class="mix-card card-soft rounded-[28px] p-5"></div>
+    <section id="home-subtitle-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 pb-2 pt-0">
+      <p class="home-section-subline">Подборки хитов по исполнителям.</p>
+    </section>
+
+    <section id="home-top-tracks-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 pt-6">
+      <div id="home-top-tracks-header"></div>
+      <div class="home-carousel-mask">
+        <div id="home-top-tracks-row" class="home-carousel-track hide-scrollbar" aria-label="Лучшие треки">
+          <article class="home-playlist-card" data-carousel-card></article>
+        </div>
       </div>
     </section>
 
-    <section class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-8">
-      <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <h2 class="text-white" style="font-family: 'Unbounded', sans-serif; font-size: clamp(30px, 4vw, 42px); font-weight: 600; letter-spacing: -0.01em; line-height: 0.95">Открыть новое</h2>
-        <div class="artists-carousel-controls" aria-label="Навигация по открытиям">
-          <button id="home-discovery-prev" type="button" class="artists-carousel-control" aria-label="Прокрутить открытия назад">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="../icons/angle-left-solid.svg#angle-left-solid"></use></svg>
-          </button>
-          <button id="home-discovery-next" type="button" class="artists-carousel-control" aria-label="Прокрутить открытия вперёд">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="../icons/angle-right-solid.svg#angle-right-solid"></use></svg>
-          </button>
-        </div>
-      </div>
-      <div id="home-discovery-row" class="track-row hide-scrollbar -mx-2 flex gap-6 overflow-x-auto px-2 pb-6">
-        <div class="track-card flex-shrink-0 w-72">
-          <div class="card-soft aspect-square overflow-hidden rounded-[32px] p-3">
-            <div class="relative h-full w-full overflow-hidden rounded-[24px] bg-white/5"></div>
-          </div>
+    <section id="home-mixes-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-6">
+      <div id="home-mixes-header"></div>
+      <div class="home-carousel-mask">
+        <div id="home-mixes-row" class="home-carousel-track hide-scrollbar" aria-label="Подборки и миксы">
+          <article class="home-playlist-card" data-carousel-card></article>
         </div>
       </div>
     </section>
+
+    <section id="home-podcasts-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-6">
+      <div id="home-podcasts-header"></div>
+      <div class="home-carousel-mask">
+        <div id="home-podcasts-row" class="home-carousel-track hide-scrollbar" aria-label="Подкасты и аудиокниги">
+          <article class="home-album-card" data-carousel-card></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="home-extra-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 pb-10 pt-6">
+      <div id="home-extra-header"></div>
+      <div class="home-carousel-mask">
+        <div id="home-extra-row" class="home-carousel-track hide-scrollbar" aria-label="Тренды и жанры">
+          <article class="home-small-card" data-carousel-card></article>
+        </div>
+      </div>
+    </section>
+
+    <div class="home-embed-scroll-spacer" aria-hidden="true"></div>
 
     <script src="runtime.js"></script>
   </body>

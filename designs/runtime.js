@@ -37,6 +37,11 @@
     v: 80,
     shuffle: false,
     repeat: false,
+    homeCatalogReady: false,
+    homeRailPositions: {
+      'for-you': {},
+      trends: {},
+    },
   }
 
   const $ = (id) => document.getElementById(id)
@@ -66,20 +71,49 @@
     homeWaveArtImage: $('home-wave-art-image'),
     homeVisualizer: $('home-audio-visualizer'),
     homeGreeting: $('home-greeting'),
+    homeFilterSection: $('home-filter-section'),
+    homeFilterChips: $('home-filter-chips'),
+    homeQuickAccessSection: $('home-quick-access-section'),
+    homeQuickAccessHeader: $('home-quick-access-header'),
+    homeQuickAccess: $('home-quick-access-row'),
+    homeQuickAccessPrev: $('home-quick-access-prev'),
+    homeQuickAccessNext: $('home-quick-access-next'),
+    homeFavoriteArtistsSection: $('home-favorite-artists-section'),
+    homeFavoriteArtistsHeader: $('home-favorite-artists-header'),
+    homeFavoriteArtists: $('home-favorite-artists-row'),
+    homeFavoriteArtistsPrev: $('home-favorite-artists-prev'),
+    homeFavoriteArtistsNext: $('home-favorite-artists-next'),
+    homePopularArtistsSection: $('home-popular-artists-section'),
+    homePopularArtistsHeader: $('home-popular-artists-header'),
+    homePopularArtists: $('home-popular-artists-row'),
+    homePopularArtistsPrev: $('home-popular-artists-prev'),
+    homePopularArtistsNext: $('home-popular-artists-next'),
+    homeSubtitleSection: $('home-subtitle-section'),
+    homeTopTracksSection: $('home-top-tracks-section'),
+    homeTopTracksHeader: $('home-top-tracks-header'),
+    homeTopTracks: $('home-top-tracks-row'),
+    homeTopTracksPrev: $('home-top-tracks-prev'),
+    homeTopTracksNext: $('home-top-tracks-next'),
+    homeNewReleasesSection: $('home-new-releases-section'),
+    homeNewReleasesHeader: $('home-new-releases-header'),
     homeNewReleases: $('home-new-releases-row'),
     homeNewReleasesPrev: $('home-new-releases-prev'),
     homeNewReleasesNext: $('home-new-releases-next'),
-    homePopular: $('home-popular-row'),
-    homePopularPrev: $('home-popular-prev'),
-    homePopularNext: $('home-popular-next'),
-    homeGenres: $('home-genres-grid'),
-    homeArtists: $('home-artists-row'),
-    homeArtistsPrev: $('home-artists-prev'),
-    homeArtistsNext: $('home-artists-next'),
-    homeEditorial: $('home-editorial-row'),
-    homeDiscovery: $('home-discovery-row'),
-    homeDiscoveryPrev: $('home-discovery-prev'),
-    homeDiscoveryNext: $('home-discovery-next'),
+    homeMixesSection: $('home-mixes-section'),
+    homeMixesHeader: $('home-mixes-header'),
+    homeMixes: $('home-mixes-row'),
+    homeMixesPrev: $('home-mixes-prev'),
+    homeMixesNext: $('home-mixes-next'),
+    homePodcastsSection: $('home-podcasts-section'),
+    homePodcastsHeader: $('home-podcasts-header'),
+    homePodcasts: $('home-podcasts-row'),
+    homePodcastsPrev: $('home-podcasts-prev'),
+    homePodcastsNext: $('home-podcasts-next'),
+    homeExtraSection: $('home-extra-section'),
+    homeExtraHeader: $('home-extra-header'),
+    homeExtra: $('home-extra-row'),
+    homeExtraPrev: $('home-extra-prev'),
+    homeExtraNext: $('home-extra-next'),
     myWaveHeroPlay: $('my-wave-hero-play'),
     myWaveHeroTrack: $('my-wave-hero-track'),
     myWaveHeroArtist: $('my-wave-hero-artist'),
@@ -121,15 +155,48 @@
     timer: null,
   }
   const railAnimationState = new WeakMap()
-  const RAIL_SCROLL_DURATION_MS = 380
+  const HOME_DEFAULT_MODE = 'for-you'
+  const HOME_RAIL_REGISTRY = [
+    { slot: 'home-quick-access', rowKey: 'homeQuickAccess', prevKey: 'homeQuickAccessPrev', nextKey: 'homeQuickAccessNext' },
+    { slot: 'home-favorite-artists', rowKey: 'homeFavoriteArtists', prevKey: 'homeFavoriteArtistsPrev', nextKey: 'homeFavoriteArtistsNext' },
+    { slot: 'home-popular-artists', rowKey: 'homePopularArtists', prevKey: 'homePopularArtistsPrev', nextKey: 'homePopularArtistsNext' },
+    { slot: 'home-top-tracks', rowKey: 'homeTopTracks', prevKey: 'homeTopTracksPrev', nextKey: 'homeTopTracksNext' },
+    { slot: 'home-new-releases', rowKey: 'homeNewReleases', prevKey: 'homeNewReleasesPrev', nextKey: 'homeNewReleasesNext' },
+    { slot: 'home-mixes', rowKey: 'homeMixes', prevKey: 'homeMixesPrev', nextKey: 'homeMixesNext' },
+    { slot: 'home-podcasts', rowKey: 'homePodcasts', prevKey: 'homePodcastsPrev', nextKey: 'homePodcastsNext' },
+    { slot: 'home-extra', rowKey: 'homeExtra', prevKey: 'homeExtraPrev', nextKey: 'homeExtraNext' },
+  ]
+  const homeUiFxState = {
+    revealBound: false,
+    modeFxTimer: null,
+  }
+  const RAIL_SCROLL_MIN_DURATION_MS = 300
+  const RAIL_SCROLL_MAX_DURATION_MS = 620
+  const RAIL_SCROLL_DISTANCE_FACTOR = 0.52
+  const railTargetState = new WeakMap()
+  const railScrollActivityTimers = new WeakMap()
   const ARTIST_STATS_CACHE_TTL_MS = 15 * 60 * 1000
   const artistStatsCache = new Map()
   const artistStatsInflight = new Map()
   const MONTHLY_LISTENERS_FORMATTER = new Intl.NumberFormat('ru-RU')
+  const RELEASE_DATE_FORMATTER = new Intl.DateTimeFormat('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
 
   const esc = (s) => String(s || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;')
   const fmt = (n) => `${Math.floor((n || 0) / 60)}:${String(Math.floor((n || 0) % 60)).padStart(2, '0')}`
   const clamp = (v, a, b) => Math.min(Math.max(v, a), b)
+  const routeArtist = (artistName) => {
+    const value = String(artistName || '').trim()
+    return value ? `/artist/${encodeURIComponent(value)}` : ''
+  }
+  const routeTrack = (trackId) => {
+    const value = String(trackId || '').trim()
+    return value ? `/track/${encodeURIComponent(value)}` : ''
+  }
+  const normalizeNavText = (value) => String(value || '').trim().toLocaleLowerCase('ru-RU')
   const easeInOutCubic = (value) => (
     value < 0.5
       ? 4 * value * value * value
@@ -1736,12 +1803,68 @@
 
   function formatMonthlyListeners(value) {
     const monthly = toPositiveFiniteNumber(value)
-    if (!monthly) return 'Нет данных за месяц'
-    return `${MONTHLY_LISTENERS_FORMATTER.format(monthly)} в месяц`
+    return MONTHLY_LISTENERS_FORMATTER.format(monthly || 0)
   }
 
   function getArtistMetaLine(artist) {
     return formatMonthlyListeners(artist?.lastMonthListeners)
+  }
+
+  function isValidDate(value) {
+    return value instanceof Date && !Number.isNaN(value.getTime())
+  }
+
+  function resolveTrackReleaseLabel(track = {}) {
+    const candidates = [
+      track?.releaseDate,
+      track?.releasedAt,
+      track?.publishedAt,
+      track?.publishDate,
+      track?.createdAt,
+      track?.uploadedAt,
+      track?.releaseYear,
+      track?.year,
+      track?.album?.releaseDate,
+      track?.album?.releasedAt,
+      track?.album?.year,
+    ]
+
+    for (const candidate of candidates) {
+      if (candidate === null || candidate === undefined || candidate === '') continue
+
+      if (typeof candidate === 'string') {
+        const trimmed = candidate.trim()
+        if (/^(19|20)\d{2}$/.test(trimmed)) return trimmed
+        const parsed = new Date(trimmed)
+        if (isValidDate(parsed)) return RELEASE_DATE_FORMATTER.format(parsed)
+        continue
+      }
+
+      if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+        if (candidate >= 1900 && candidate <= 2100) return String(Math.trunc(candidate))
+        const timestamp = candidate > 1e12 ? candidate : (candidate > 1e9 ? candidate * 1000 : 0)
+        if (timestamp) {
+          const parsed = new Date(timestamp)
+          if (isValidDate(parsed)) return RELEASE_DATE_FORMATTER.format(parsed)
+        }
+        continue
+      }
+
+      if (candidate instanceof Date && isValidDate(candidate)) {
+        return RELEASE_DATE_FORMATTER.format(candidate)
+      }
+    }
+
+    return 'Дата не указана'
+  }
+
+  function resolveArtistMonthlyListeners(entry = {}) {
+    const explicit = toPositiveFiniteNumber(entry?.artist?.lastMonthListeners)
+    if (explicit) return Math.round(explicit)
+    const seed = entry?.artist?.id || entry?.artist?.name || entry?.track?.id || 'wavee-artist'
+    const thousands = stablePercent(`${seed}:monthly-listeners`, 180, 9800)
+    const extra = stablePercent(`${seed}:monthly-extra`, 0, 999) * 100
+    return (thousands * 1000) + extra
   }
 
   async function fetchArtistStats({ artistId = '', artistName = '' } = {}) {
@@ -2254,109 +2377,137 @@
     syncLikes()
   }
 
-  function getArtistsCarouselStep() {
-    if (!el.homeArtists) return 320
-    const card = el.homeArtists.querySelector('.artist-spotlight-card')
-    if (!card) return Math.max(el.homeArtists.clientWidth * 0.84, 240) * 2
-    const styles = window.getComputedStyle(el.homeArtists)
-    const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0
-    return (card.getBoundingClientRect().width + gap) * 2
-  }
-
-  function syncArtistsCarouselControls() {
-    if (!el.homeArtists || !el.homeArtistsPrev || !el.homeArtistsNext) return
-    const maxScrollLeft = Math.max(0, el.homeArtists.scrollWidth - el.homeArtists.clientWidth)
-    const scrollLeft = el.homeArtists.scrollLeft
-    el.homeArtistsPrev.disabled = scrollLeft <= 8
-    el.homeArtistsNext.disabled = scrollLeft >= maxScrollLeft - 8 || maxScrollLeft <= 8
-  }
-
-  function setArtistsCarouselSnapEnabled(enabled) {
-    if (!el.homeArtists) return
-    el.homeArtists.style.scrollSnapType = enabled ? 'x mandatory' : 'none'
-  }
-
   function animateRailScroll(row, target, options = {}) {
     if (!row) return
     const {
       syncControls = () => {},
       setSnap = null,
+      onComplete = null,
+      respectReducedMotion = true,
+      onTick = null,
     } = options
 
-    const start = row.scrollLeft
     const maxScrollLeft = Math.max(0, row.scrollWidth - row.clientWidth)
     const clampedTarget = clamp(target, 0, maxScrollLeft)
+    const reducedMotion = respectReducedMotion && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+    const start = row.scrollLeft
     const distance = clampedTarget - start
-    if (Math.abs(distance) < 2) {
+    if (Math.abs(distance) < 2 || reducedMotion) {
       row.scrollLeft = clampedTarget
       syncControls()
+      if (typeof onComplete === 'function') onComplete(clampedTarget)
       return
     }
 
-    const activeFrame = railAnimationState.get(row)
-    if (activeFrame) {
-      cancelAnimationFrame(activeFrame)
-      railAnimationState.delete(row)
+    const activeState = railAnimationState.get(row)
+    if (activeState?.frame) {
+      // Update the active tween in-place to avoid jumpy restarts on rapid clicks.
+      activeState.start = row.scrollLeft
+      activeState.target = clampedTarget
+      activeState.startedAt = performance.now()
+      activeState.duration = clamp(
+        Math.abs(activeState.target - activeState.start) * RAIL_SCROLL_DISTANCE_FACTOR,
+        RAIL_SCROLL_MIN_DURATION_MS,
+        RAIL_SCROLL_MAX_DURATION_MS,
+      )
+      activeState.syncControls = syncControls
+      activeState.onComplete = onComplete
+      return
     }
 
     if (typeof setSnap === 'function') {
       setSnap(false)
     }
 
-    const startedAt = performance.now()
+    const duration = clamp(
+      Math.abs(distance) * RAIL_SCROLL_DISTANCE_FACTOR,
+      RAIL_SCROLL_MIN_DURATION_MS,
+      RAIL_SCROLL_MAX_DURATION_MS,
+    )
+    const tween = {
+      frame: 0,
+      start,
+      target: clampedTarget,
+      startedAt: performance.now(),
+      duration,
+      syncControls,
+      onComplete,
+    }
+
     const tick = (now) => {
-      const progress = clamp((now - startedAt) / RAIL_SCROLL_DURATION_MS, 0, 1)
-      row.scrollLeft = start + (distance * easeInOutCubic(progress))
-      syncControls()
+      const progress = clamp((now - tween.startedAt) / tween.duration, 0, 1)
+      row.scrollLeft = tween.start + ((tween.target - tween.start) * easeInOutCubic(progress))
+      tween.syncControls()
+      if (typeof onTick === 'function') onTick(progress)
       if (progress < 1) {
-        railAnimationState.set(row, requestAnimationFrame(tick))
+        tween.frame = requestAnimationFrame(tick)
+        railAnimationState.set(row, tween)
         return
       }
 
       railAnimationState.delete(row)
-      row.scrollLeft = clampedTarget
+      row.scrollLeft = tween.target
+      if (typeof tween.onComplete === 'function') tween.onComplete(tween.target)
       if (typeof setSnap === 'function') {
         requestAnimationFrame(() => {
           setSnap(true)
-          syncControls()
+          tween.syncControls()
         })
         return
       }
-      syncControls()
+      tween.syncControls()
     }
 
-    railAnimationState.set(row, requestAnimationFrame(tick))
-  }
-
-  function scrollArtistsCarousel(direction = 1) {
-    if (!el.homeArtists) return
-    const maxScrollLeft = Math.max(0, el.homeArtists.scrollWidth - el.homeArtists.clientWidth)
-    const target = el.homeArtists.scrollLeft + (getArtistsCarouselStep() * direction)
-    animateRailScroll(el.homeArtists, clamp(target, 0, maxScrollLeft), {
-      syncControls: syncArtistsCarouselControls,
-      setSnap: setArtistsCarouselSnapEnabled,
-    })
-  }
-
-  function wireArtistsCarousel() {
-    if (!el.homeArtists) return
-
-    el.homeArtists.addEventListener('scroll', syncArtistsCarouselControls, { passive: true })
-
-    if (el.homeArtistsPrev) el.homeArtistsPrev.onclick = () => scrollArtistsCarousel(-1)
-    if (el.homeArtistsNext) el.homeArtistsNext.onclick = () => scrollArtistsCarousel(1)
-
-    window.addEventListener('resize', syncArtistsCarouselControls)
-    requestAnimationFrame(syncArtistsCarouselControls)
+    tween.frame = requestAnimationFrame(tick)
+    railAnimationState.set(row, tween)
   }
 
   function getHomeRailStep(row) {
     if (!row) return 320
-    const card = row.querySelector('.track-card')
+    const card = row.querySelector('[data-carousel-card]')
     if (!card) return Math.max(row.clientWidth * 0.84, 240)
     const styles = window.getComputedStyle(row)
     const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0
     return (card.getBoundingClientRect().width + gap) * 2
+  }
+
+  function getHomeRailTriples() {
+    return HOME_RAIL_REGISTRY.map((item) => ({
+      slot: item.slot,
+      row: el[item.rowKey],
+      prevButton: el[item.prevKey],
+      nextButton: el[item.nextKey],
+    }))
+  }
+
+  function rememberHomeRailPosition(row) {
+    if (!row) return
+    const activeMode = el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE
+    const slot = row.dataset.homeRailSlot || row.id || ''
+    if (!slot) return
+    if (!state.homeRailPositions[activeMode]) state.homeRailPositions[activeMode] = {}
+    state.homeRailPositions[activeMode][slot] = row.scrollLeft || 0
+  }
+
+  function captureHomeRailPositions(mode) {
+    if (!mode) return
+    const snapshot = {}
+    getHomeRailTriples().forEach(({ slot, row }) => {
+      if (!row) return
+      snapshot[slot] = row.scrollLeft || 0
+    })
+    state.homeRailPositions[mode] = snapshot
+  }
+
+  function restoreHomeRailPositions(mode) {
+    const snapshot = state.homeRailPositions[mode]
+    if (!snapshot) return
+    getHomeRailTriples().forEach(({ slot, row }) => {
+      if (!row) return
+      const rawValue = snapshot[slot]
+      if (!Number.isFinite(rawValue)) return
+      row.scrollLeft = rawValue
+    })
   }
 
   function syncHomeRailControls(row, prevButton, nextButton) {
@@ -2369,35 +2520,171 @@
 
   function scrollHomeRail(row, prevButton, nextButton, direction = 1) {
     if (!row) return
-    const target = row.scrollLeft + (getHomeRailStep(row) * direction)
-    animateRailScroll(row, target, {
-      syncControls: () => syncHomeRailControls(row, prevButton, nextButton),
+    const maxScrollLeft = Math.max(0, row.scrollWidth - row.clientWidth)
+    const baseTarget = railTargetState.get(row)
+    const base = Number.isFinite(baseTarget) ? baseTarget : row.scrollLeft
+    const nextTarget = clamp(base + (getHomeRailStep(row) * direction), 0, maxScrollLeft)
+    railTargetState.set(row, nextTarget)
+    animateRailScroll(row, nextTarget, {
+      syncControls: () => {
+        syncHomeRailControls(row, prevButton, nextButton)
+      },
+      setSnap: (enabled) => {
+        row.style.scrollSnapType = enabled ? '' : 'none'
+      },
+      onComplete: () => {
+        row.classList.remove('is-scrolling')
+        railTargetState.delete(row)
+        rememberHomeRailPosition(row)
+      },
+      onTick: () => {
+        row.classList.add('is-scrolling')
+      },
+      respectReducedMotion: false,
     })
   }
 
   function wireHomeRail(row, prevButton, nextButton) {
     if (!row || !prevButton || !nextButton) return
-    const sync = () => syncHomeRailControls(row, prevButton, nextButton)
+    let scrollSyncFrame = 0
+    const sync = () => {
+      syncHomeRailControls(row, prevButton, nextButton)
+      if (!railAnimationState.has(row)) {
+        railTargetState.delete(row)
+      }
+      if (!railAnimationState.has(row)) {
+        rememberHomeRailPosition(row)
+      }
+      row.classList.add('is-scrolling')
+      const prevTimer = railScrollActivityTimers.get(row)
+      if (prevTimer) clearTimeout(prevTimer)
+      const nextTimer = setTimeout(() => {
+        if (!railAnimationState.has(row)) {
+          row.classList.remove('is-scrolling')
+        }
+      }, 110)
+      railScrollActivityTimers.set(row, nextTimer)
+    }
+    const scheduleSync = () => {
+      if (scrollSyncFrame) return
+      scrollSyncFrame = requestAnimationFrame(() => {
+        scrollSyncFrame = 0
+        sync()
+      })
+    }
 
-    row.addEventListener('scroll', sync, { passive: true })
+    if (row.dataset.homeRailBound === '1') {
+      requestAnimationFrame(sync)
+      return
+    }
 
-    prevButton.onclick = () => scrollHomeRail(row, prevButton, nextButton, -1)
-    nextButton.onclick = () => scrollHomeRail(row, prevButton, nextButton, 1)
+    row.addEventListener('scroll', scheduleSync, { passive: true })
+
+    prevButton.onclick = () => {
+      row.classList.add('is-scrolling')
+      scrollHomeRail(row, prevButton, nextButton, -1)
+    }
+    nextButton.onclick = () => {
+      row.classList.add('is-scrolling')
+      scrollHomeRail(row, prevButton, nextButton, 1)
+    }
 
     window.addEventListener('resize', sync)
+    row.dataset.homeRailBound = '1'
     requestAnimationFrame(sync)
   }
 
   function syncHomeTrackRailControls() {
-    syncHomeRailControls(el.homeNewReleases, el.homeNewReleasesPrev, el.homeNewReleasesNext)
-    syncHomeRailControls(el.homePopular, el.homePopularPrev, el.homePopularNext)
-    syncHomeRailControls(el.homeDiscovery, el.homeDiscoveryPrev, el.homeDiscoveryNext)
+    getHomeRailTriples().forEach(({ row, prevButton, nextButton }) => {
+      syncHomeRailControls(row, prevButton, nextButton)
+    })
   }
 
   function wireHomeTrackRails() {
-    wireHomeRail(el.homeNewReleases, el.homeNewReleasesPrev, el.homeNewReleasesNext)
-    wireHomeRail(el.homePopular, el.homePopularPrev, el.homePopularNext)
-    wireHomeRail(el.homeDiscovery, el.homeDiscoveryPrev, el.homeDiscoveryNext)
+    getHomeRailTriples().forEach(({ row, prevButton, nextButton }) => {
+      wireHomeRail(row, prevButton, nextButton)
+    })
+  }
+
+  function playHomeModeTransitionFx() {
+    const sections = [...document.querySelectorAll('.section-shell')]
+      .filter((section) => section.id !== 'home-filter-section')
+    if (!sections.length) return
+    if (homeUiFxState.modeFxTimer) {
+      clearTimeout(homeUiFxState.modeFxTimer)
+      homeUiFxState.modeFxTimer = null
+    }
+
+    sections.forEach((section, index) => {
+      section.style.setProperty('--mode-enter-delay', `${Math.min(index * 26, 220)}ms`)
+      section.classList.remove('is-mode-enter')
+    })
+    requestAnimationFrame(() => {
+      sections.forEach((section) => section.classList.add('is-mode-enter'))
+    })
+    homeUiFxState.modeFxTimer = setTimeout(() => {
+      sections.forEach((section) => section.classList.remove('is-mode-enter'))
+      homeUiFxState.modeFxTimer = null
+    }, 620)
+  }
+
+  function wireHomeSectionRevealFx() {
+    if (homeUiFxState.revealBound) return
+    const sections = [...document.querySelectorAll('.section-shell')]
+    if (!sections.length) return
+
+    if (!('IntersectionObserver' in window)) {
+      sections.forEach((section) => section.classList.add('is-in-view'))
+      homeUiFxState.revealBound = true
+      return
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return
+        entry.target.classList.add('is-in-view')
+        observer.unobserve(entry.target)
+      })
+    }, {
+      rootMargin: '0px 0px -10% 0px',
+      threshold: 0.15,
+    })
+
+    sections.forEach((section, index) => {
+      section.style.setProperty('--section-delay', `${Math.min(index * 30, 220)}ms`)
+      if (section.id === 'home-filter-section') {
+        section.classList.add('is-in-view')
+        return
+      }
+      observer.observe(section)
+    })
+
+    homeUiFxState.revealBound = true
+  }
+
+  function wireHomeFilterChips() {
+    if (!el.homeFilterChips) return
+    const chips = [...el.homeFilterChips.querySelectorAll('[data-filter-chip]')]
+    if (!chips.length) return
+
+    chips.forEach((button) => {
+      if (button.dataset.bound) return
+      button.addEventListener('click', () => {
+        const active = button.getAttribute('data-filter') || HOME_DEFAULT_MODE
+        const previousMode = el.homeFilterChips.dataset.active || HOME_DEFAULT_MODE
+        if (active === previousMode) return
+
+        captureHomeRailPositions(previousMode)
+        el.homeFilterChips.dataset.active = active
+        chips.forEach((chip) => {
+          const isActive = chip === button
+          chip.classList.toggle('is-active', isActive)
+          chip.setAttribute('aria-pressed', isActive ? 'true' : 'false')
+        })
+        renderHome({ modeSwitch: true, previousMode, activeMode: active })
+      })
+      button.dataset.bound = '1'
+    })
   }
 
   function getArtistAvatarUrl(entry) {
@@ -2421,195 +2708,669 @@
       .join('') || 'W'
   }
 
-  function renderHome() {
+  function FilterChips({ active = 'all', items = [] } = {}) {
+    return items.map((item) => {
+      const value = String(item?.value || '')
+      const label = String(item?.label || '')
+      const isActive = value === active
+      return `
+        <button
+          type="button"
+          class="home-filter-chip${isActive ? ' is-active' : ''}"
+          data-filter-chip
+          data-filter="${esc(value)}"
+          aria-pressed="${isActive ? 'true' : 'false'}"
+        >
+          ${esc(label)}
+        </button>
+      `
+    }).join('')
+  }
+
+  function SectionHeader({
+    title = '',
+    subtitle = '',
+    actionHref = '/library',
+    actionLabel = 'Показать все',
+    controlsPrefix = '',
+    controlsAriaLabel = '',
+  } = {}) {
+    const controls = controlsPrefix
+      ? `
+        <div class="artists-carousel-controls home-section-controls" aria-label="${esc(controlsAriaLabel || `Навигация по секции ${title}`)}">
+          <button id="${esc(`${controlsPrefix}-prev`)}" type="button" class="artists-carousel-control" aria-label="Прокрутить секцию ${esc(title)} назад">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="../icons/angle-left-solid.svg#angle-left-solid"></use></svg>
+          </button>
+          <button id="${esc(`${controlsPrefix}-next`)}" type="button" class="artists-carousel-control" aria-label="Прокрутить секцию ${esc(title)} вперёд">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><use href="../icons/angle-right-solid.svg#angle-right-solid"></use></svg>
+          </button>
+        </div>
+      `
+      : ''
+
+    return `
+      <div class="home-section-header">
+        <div class="home-section-head-copy">
+          <h2 class="home-section-title">${esc(title)}</h2>
+          ${subtitle ? `<p class="home-section-subline">${esc(subtitle)}</p>` : ''}
+        </div>
+        <div class="home-section-actions">
+          <a href="${esc(actionHref)}" data-nav-route="${esc(actionHref)}" class="home-section-link">
+            <span>${esc(actionLabel)}</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><use href="../icons/angle-right-solid.svg#angle-right-solid"></use></svg>
+          </a>
+          ${controls}
+        </div>
+      </div>
+    `
+  }
+
+  function cardBadgeMarkup() {
+    return ''
+  }
+
+  function cardMetaMarkup() {
+    return ''
+  }
+
+  function buildSkeletonCards(variant = 'medium', count = 6) {
+    const safeVariant = ['small', 'medium', 'large', 'artist'].includes(variant) ? variant : 'medium'
+    return Array.from({ length: count }, (_, index) => `
+      <article class="home-skeleton-card home-skeleton-card--${safeVariant}" data-carousel-card aria-hidden="true" style="--card-delay:${Math.min(index * 40, 260)}ms">
+        <span class="home-skeleton-shimmer"></span>
+      </article>
+    `)
+  }
+
+  function wireHomeLazyCoverFx(root = document) {
+    if (!root?.querySelectorAll) return
+    const images = [...root.querySelectorAll('img.home-lazy-cover:not([data-lazy-bound])')]
+    images.forEach((img) => {
+      img.dataset.lazyBound = '1'
+      const markLoaded = () => img.classList.add('is-loaded')
+      if (img.complete && img.naturalWidth > 0) {
+        requestAnimationFrame(markLoaded)
+        return
+      }
+      img.addEventListener('load', markLoaded, { once: true })
+      img.addEventListener('error', markLoaded, { once: true })
+    })
+  }
+
+  function wireHomePlayRippleFx(root = document) {
+    if (!root?.querySelectorAll) return
+    const buttons = [...root.querySelectorAll('.home-card-play:not([data-ripple-bound]), .home-artist-play:not([data-ripple-bound])')]
+    buttons.forEach((button) => {
+      button.dataset.rippleBound = '1'
+      button.addEventListener('pointerdown', () => {
+        button.classList.remove('is-rippling')
+        requestAnimationFrame(() => button.classList.add('is-rippling'))
+      })
+      button.addEventListener('animationend', () => {
+        button.classList.remove('is-rippling')
+      })
+    })
+  }
+
+  function ArtistCard({ entry = {}, badge = '', meta = '' } = {}) {
+    const artistName = entry?.artist?.name || 'Wavee Artist'
+    const artistAvatarUrl = getArtistAvatarUrl(entry)
+    const trackId = entry?.track?.id || ''
+    const artistHref = routeArtist(artistName)
+    const monthlyListenersLine = formatMonthlyListeners(resolveArtistMonthlyListeners(entry))
+    const artistNameLength = [...artistName].length
+    const artistNameSizeClass = artistNameLength >= 16
+      ? ' is-xlong'
+      : (artistNameLength >= 11 ? ' is-long' : '')
+
+    return `
+      <article class="home-artist-card group" data-carousel-card data-action="play-track" data-track-id="${esc(trackId)}">
+        <div class="home-artist-media">
+          <div class="home-artist-cover-shell">
+            ${artistAvatarUrl
+              ? `<img src="${esc(artistAvatarUrl)}" alt="${esc(artistName)}" class="home-lazy-cover" loading="lazy">`
+              : `<div class="home-artist-cover-fallback">${esc(getArtistInitials(artistName))}</div>`}
+          </div>
+          ${cardBadgeMarkup()}
+          <button data-action="play-track" data-track-id="${esc(trackId)}" class="home-artist-play" aria-label="Играть ${esc(artistName)}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
+          </button>
+        </div>
+        <div class="home-artist-info">
+          <h3 class="home-artist-name${artistNameSizeClass}">
+            ${artistHref
+              ? `<a href="${esc(artistHref)}" data-nav-route="${esc(artistHref)}" class="home-card-nav-link">${esc(artistName)}</a>`
+              : esc(artistName)}
+          </h3>
+          <p class="home-artist-monthly">${esc(monthlyListenersLine)}</p>
+          ${cardMetaMarkup(meta)}
+        </div>
+      </article>
+    `
+  }
+
+  function PlaylistCard({
+    track = null,
+    coverMarkup = () => '',
+    kicker = 'THIS IS',
+    badge = '',
+    meta = '',
+    featured = false,
+    compact = false,
+  } = {}) {
+    if (!track?.id) return ''
+    const artistName = track?.artist?.name || 'Wavee'
+    const trackTitle = track?.title || artistName
+    const artistHref = routeArtist(artistName)
+    const trackHref = routeTrack(track.id)
+
+    return `
+      <article class="home-playlist-card group${featured ? ' is-featured' : ''}${compact ? ' is-compact' : ''}" data-carousel-card data-action="play-track" data-track-id="${esc(track.id)}">
+        <div class="home-playlist-cover">
+          ${coverMarkup(track, `${artistName} — This Is`, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
+          <div class="home-playlist-overlay${compact ? ' is-compact' : ''}"></div>
+          ${cardBadgeMarkup()}
+          ${compact
+            ? ''
+            : `
+              <span class="home-playlist-logo">W</span>
+              <div class="home-playlist-copy">
+                <span class="home-playlist-kicker">${esc(kicker)}</span>
+                <h3 class="home-playlist-artist">
+                  ${artistHref
+                    ? `<a href="${esc(artistHref)}" data-nav-route="${esc(artistHref)}" class="home-card-nav-link">${esc(artistName)}</a>`
+                    : esc(artistName)}
+                </h3>
+              </div>
+            `}
+          <button data-action="play-track" data-track-id="${esc(track.id)}" class="home-card-play" aria-label="Играть ${esc(track.title || artistName)}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
+          </button>
+        </div>
+        ${compact
+          ? `
+            <div class="home-top-track-meta">
+              <h3 class="home-top-track-title">
+                ${trackHref
+                  ? `<a href="${esc(trackHref)}" data-nav-route="${esc(trackHref)}" class="home-card-nav-link">${esc(trackTitle)}</a>`
+                  : esc(trackTitle)}
+              </h3>
+              <p class="home-top-track-artist">
+                ${artistHref
+                  ? `<a href="${esc(artistHref)}" data-nav-route="${esc(artistHref)}" class="home-card-nav-link is-secondary">${esc(artistName)}</a>`
+                  : esc(artistName)}
+              </p>
+            </div>
+          `
+          : ''}
+        ${cardMetaMarkup(meta)}
+      </article>
+    `
+  }
+
+  function AlbumCard({
+    track = null,
+    coverMarkup = () => '',
+    title = '',
+    subtitle = '',
+    badge = '',
+    meta = '',
+    featured = false,
+  } = {}) {
+    if (!track?.id) return ''
+    const cardTitle = title || track.title || 'Релиз'
+    const cardSubtitle = subtitle || track.artist?.name || 'Wavee'
+    const artistName = track?.artist?.name || ''
+    const trackHref = routeTrack(track.id)
+    const artistHref = normalizeNavText(cardSubtitle) && normalizeNavText(cardSubtitle) === normalizeNavText(artistName)
+      ? routeArtist(artistName)
+      : ''
+
+    return `
+      <article class="home-album-card group${featured ? ' is-featured' : ''}" data-carousel-card data-action="play-track" data-track-id="${esc(track.id)}">
+        <div class="home-album-cover">
+          ${coverMarkup(track, cardTitle, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
+          ${cardBadgeMarkup()}
+          <button data-action="play-track" data-track-id="${esc(track.id)}" class="home-card-play" aria-label="Играть ${esc(cardTitle)}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
+          </button>
+        </div>
+        <h3 class="home-album-title">
+          ${trackHref
+            ? `<a href="${esc(trackHref)}" data-nav-route="${esc(trackHref)}" class="home-card-nav-link">${esc(cardTitle)}</a>`
+            : esc(cardTitle)}
+        </h3>
+        <p class="home-album-subtitle">
+          ${artistHref
+            ? `<a href="${esc(artistHref)}" data-nav-route="${esc(artistHref)}" class="home-card-nav-link is-secondary">${esc(cardSubtitle)}</a>`
+            : esc(cardSubtitle)}
+        </p>
+        ${cardMetaMarkup(meta)}
+      </article>
+    `
+  }
+
+  function SmallCard({
+    track = null,
+    coverMarkup = () => '',
+    title = '',
+    subtitle = '',
+    badge = '',
+    meta = '',
+    size = 'small',
+  } = {}) {
+    if (!track?.id) return ''
+    const cardTitle = title || track.title || 'Wavee'
+    const cardSubtitle = subtitle || track.artist?.name || 'Wavee'
+    const artistName = track?.artist?.name || ''
+    const trackHref = routeTrack(track.id)
+    const artistHref = normalizeNavText(cardSubtitle) && normalizeNavText(cardSubtitle) === normalizeNavText(artistName)
+      ? routeArtist(artistName)
+      : ''
+    const sizeClass = size === 'large' ? ' is-large' : (size === 'medium' ? ' is-medium' : '')
+
+    return `
+      <article class="home-small-card group${sizeClass}" data-carousel-card data-action="play-track" data-track-id="${esc(track.id)}">
+        <div class="home-small-media">
+          ${coverMarkup(track, cardTitle, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
+          ${cardBadgeMarkup({ label: badge, tone: size === 'large' ? 'hot' : 'soft' })}
+          <button data-action="play-track" data-track-id="${esc(track.id)}" class="home-card-play" aria-label="Играть ${esc(cardTitle)}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
+          </button>
+        </div>
+        <div class="home-small-body">
+          <h3 class="home-small-title">
+            ${trackHref
+              ? `<a href="${esc(trackHref)}" data-nav-route="${esc(trackHref)}" class="home-card-nav-link">${esc(cardTitle)}</a>`
+              : esc(cardTitle)}
+          </h3>
+          <p class="home-small-subtitle">
+            ${artistHref
+              ? `<a href="${esc(artistHref)}" data-nav-route="${esc(artistHref)}" class="home-card-nav-link is-secondary">${esc(cardSubtitle)}</a>`
+              : esc(cardSubtitle)}
+          </p>
+          ${cardMetaMarkup(meta)}
+        </div>
+      </article>
+    `
+  }
+
+  function HorizontalCarousel({ target = null, cards = [], emptyText = '' } = {}) {
+    if (!target) return
+    target.innerHTML = cards.length
+      ? cards.join('')
+      : `<div class="home-carousel-empty">${esc(emptyText || 'Контент появится после загрузки треков.')}</div>`
+
+    const rowCards = [...target.querySelectorAll('[data-carousel-card]')]
+    requestAnimationFrame(() => {
+      rowCards.forEach((card, index) => {
+        card.style.setProperty('--card-delay', `${Math.min(index * 42, 260)}ms`)
+        card.classList.add('is-stagger-ready')
+      })
+    })
+    wireHomeLazyCoverFx(target)
+    wireHomePlayRippleFx(target)
+    bindNavRoutes(target)
+  }
+
+  function bindNavRoutes(container) {
+    if (!container || container.dataset.navBound === '1') return
+    container.querySelectorAll('[data-nav-route]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault()
+        navigateInHost(link.getAttribute('data-nav-route') || '/')
+      })
+    })
+    container.dataset.navBound = '1'
+  }
+
+  function setSectionVisibility(section, visible) {
+    if (!section) return
+    section.style.display = visible ? '' : 'none'
+  }
+
+  function SectionBlock({
+    section = null,
+    headerTarget = null,
+    rowTarget = null,
+    title = '',
+    subtitle = '',
+    actionHref = '/library',
+    actionLabel = 'Показать все',
+    controlsPrefix = '',
+    controlsAriaLabel = '',
+    controlsKeys = [],
+    cards = [],
+    emptyText = '',
+    visible = true,
+  } = {}) {
+    setSectionVisibility(section, visible)
+    if (!visible) return
+    if (section) section.classList.add('home-section-mounted')
+
+    if (headerTarget) {
+      const signature = `${title}|${subtitle}|${actionHref}|${actionLabel}|${controlsPrefix}|${controlsAriaLabel}`
+      if (headerTarget.dataset.signature !== signature) {
+        headerTarget.innerHTML = SectionHeader({
+          title,
+          subtitle,
+          actionHref,
+          actionLabel,
+          controlsPrefix,
+          controlsAriaLabel,
+        })
+        headerTarget.dataset.signature = signature
+        if (rowTarget) rowTarget.dataset.homeRailBound = ''
+      }
+      bindNavRoutes(headerTarget)
+    }
+
+    if (controlsPrefix && Array.isArray(controlsKeys) && controlsKeys.length === 2) {
+      const [prevKey, nextKey] = controlsKeys
+      el[prevKey] = $(`${controlsPrefix}-prev`)
+      el[nextKey] = $(`${controlsPrefix}-next`)
+    }
+    if (rowTarget) {
+      rowTarget.dataset.homeRailSlot = controlsPrefix || rowTarget.id || ''
+    }
+
+    HorizontalCarousel({
+      target: rowTarget,
+      cards,
+      emptyText,
+    })
+  }
+
+  function detectTrackKind(track) {
+    const haystack = [
+      track?.title,
+      track?.artist?.name,
+      ...(Array.isArray(track?.genres) ? track.genres : []),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+
+    const podcastTokens = ['podcast', 'подкаст', 'episode', 'эпизод', 'show', 'интервью', 'talk']
+    const audiobookTokens = ['audiobook', 'аудиокнига', 'chapter', 'глава', 'book', 'книга', 'роман']
+    if (audiobookTokens.some((token) => haystack.includes(token))) return 'audiobook'
+    if (podcastTokens.some((token) => haystack.includes(token))) return 'podcast'
+    return 'music'
+  }
+
+  function splitHomeTracksByKind(tracks) {
+    const buckets = {
+      music: [],
+      podcasts: [],
+      audiobooks: [],
+    }
+
+    tracks.forEach((track) => {
+      if (!track?.id) return
+      const kind = detectTrackKind(track)
+      if (kind === 'podcast') {
+        buckets.podcasts.push(track)
+        return
+      }
+      if (kind === 'audiobook') {
+        buckets.audiobooks.push(track)
+        return
+      }
+      buckets.music.push(track)
+    })
+
+    return buckets
+  }
+
+  function renderHome({ modeSwitch = false, activeMode = '' } = {}) {
     const pool = getHomeTrackPool()
     const fallbackTracks = dedupeTracks(state.tracks)
     const baseTracks = pool.length ? pool : fallbackTracks
-    const currentTrack = state.track && state.track.id ? state.track : null
+    const categories = splitHomeTracksByKind(baseTracks)
+    const musicTracks = categories.music.length ? categories.music : baseTracks
+    const isLoadingContent = !state.homeCatalogReady && !baseTracks.length
 
-    if (el.homeGreeting) {
-      el.homeGreeting.textContent = getGreetingLabel()
-    }
+    const withSkeleton = (cards, variant = 'medium', count = 6) => (
+      cards.length ? cards : (isLoadingContent ? buildSkeletonCards(variant, count) : [])
+    )
 
     const coverMarkup = (track, altText, classes = 'h-full w-full object-cover') => (
       track?.coverUrl
-        ? `<img src="${esc(track.coverUrl)}" alt="${esc(altText)}" class="${classes}" loading="lazy">`
+        ? `<img src="${esc(track.coverUrl)}" alt="${esc(altText)}" class="home-lazy-cover ${classes}" loading="lazy">`
         : '<div class="flex h-full w-full items-center justify-center bg-[#2d303a] text-3xl text-white/60">♪</div>'
     )
 
-    const buildHorizontalTrackCards = (target, tracks) => {
-      if (!target) return
-      target.innerHTML = tracks.length
-        ? tracks.map((track) => {
-            const accent = currentTrack && currentTrack.id === track.id
-            return `
-              <article class="track-card ${accent ? 'track-card-accent' : ''} group w-72 flex-shrink-0 cursor-pointer" data-action="play-track" data-track-id="${esc(track.id)}">
-                <div class="track-card-surface relative mb-4 aspect-square overflow-hidden rounded-[28px] ${accent ? 'card-active' : 'card-soft'}">
-                  ${coverMarkup(track, track.title, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent opacity-80"></div>
-                  <button data-action="play-track" data-track-id="${esc(track.id)}" class="absolute bottom-4 right-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white shadow-lg backdrop-blur-md transition-transform hover:scale-105" aria-label="Играть ${esc(track.title)}">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
-                  </button>
-                </div>
-                <div class="track-card-meta px-1">
-                  <h3 class="truncate text-white" style="font-family:'Public Pixel','Unbounded',sans-serif;font-size:13px;font-weight:500">${esc(track.title)}</h3>
-                  <p class="mt-1 text-white/50" style="font-family:'Onest',sans-serif;font-size:12px;font-weight:400">${esc(track.artist?.name || 'Unknown Artist')}</p>
-                </div>
-              </article>
-            `
-          }).join('')
-        : '<div class="rounded-2xl border border-white/10 bg-[#21232b] p-4 text-sm text-white/55">Музыка подбирается, обнови через пару секунд.</div>'
+    const activeFilter = activeMode || el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE
+    const isForYouMode = activeFilter === 'for-you'
+    const isTrendsMode = activeFilter === 'trends'
+    if (el.homeFilterChips) {
+      el.homeFilterChips.dataset.active = activeFilter
     }
 
-    const releases = pickTracks(baseTracks, 8, 0)
-    buildHorizontalTrackCards(el.homeNewReleases, releases)
+    if (el.homeFilterChips) {
+      el.homeFilterChips.innerHTML = FilterChips({
+        active: activeFilter,
+        items: [
+          { value: 'for-you', label: 'Для тебя' },
+          { value: 'trends', label: 'Тренды' },
+        ],
+      })
+    }
+    wireHomeFilterChips()
 
-    const popular = [...pickTracks(baseTracks, Math.min(baseTracks.length, 20), 3)]
+    const trendingTracks = [...pickTracks(musicTracks, Math.min(musicTracks.length, 28), 1)]
       .sort((left, right) => {
-        const leftScore = stablePercent(`${left.id}:popular`, 30, 100) + (state.likes.has(left.id) ? 10 : 0)
-        const rightScore = stablePercent(`${right.id}:popular`, 30, 100) + (state.likes.has(right.id) ? 10 : 0)
+        const leftScore = stablePercent(`${left.id}:trending`, 35, 100) + (state.likes.has(left.id) ? 8 : 0)
+        const rightScore = stablePercent(`${right.id}:trending`, 35, 100) + (state.likes.has(right.id) ? 8 : 0)
         return rightScore - leftScore
       })
-      .slice(0, 8)
-    buildHorizontalTrackCards(el.homePopular, popular)
+      .slice(0, 16)
 
-    if (el.homeGenres) {
-      const buckets = getGenreMoodBuckets(baseTracks)
-      el.homeGenres.innerHTML = buckets.length
-        ? buckets.map((entry, index) => {
-            const accentA = hexToRgb(entry.palette?.[0] || '#92A9E1')
-            const accentB = hexToRgb(entry.palette?.[2] || '#5f77b0')
-            const fillA = entry.theme?.from || rgba(accentA, 0.22)
-            const fillB = entry.theme?.to || rgba(accentB, 0.08)
-            const glowA = entry.theme?.ring || rgba(accentA, 0.3)
-            const glowB = entry.theme?.chip || rgba(accentB, 0.16)
-            const border = rgba(accentA, 0.26)
-            const line = entry.theme?.line || rgba(accentA, 0.88)
-            const sizeClass = (
-              entry.title === 'Хип-хоп'
-                ? 'is-featured'
-                : (entry.title === 'Электроника' || entry.title === 'Джаз и соул')
-                  ? 'is-wide'
-                  : ''
-            )
-            const artistName = entry.track?.artist?.name || 'Wavee'
-            return `
-            <article class="home-genre-card group cursor-pointer ${sizeClass}" data-action="play-track" data-track-id="${esc(entry.track.id)}" style="--genre-card-fill-a:${esc(fillA)};--genre-card-fill-b:${esc(fillB)};--genre-card-glow-a:${esc(glowA)};--genre-card-glow-b:${esc(glowB)};--genre-card-border:${esc(border)};--genre-card-line:${esc(line)}">
-              <div class="home-genre-card-body">
-                <div class="home-genre-card-topline">
-                  <span class="home-genre-card-index">${String(index + 1).padStart(2, '0')}</span>
-                  <span class="home-genre-card-mood">${esc(entry.mood)}</span>
-                </div>
-                <h5 class="home-genre-card-title">${esc(entry.title)}</h5>
-                <p class="home-genre-card-caption">${esc(entry.caption)}</p>
-                <div class="home-genre-card-track">
-                  <strong>${esc(entry.track?.title || entry.title)}</strong>
-                  <span>${esc(artistName)}</span>
-                </div>
-              </div>
-              <div class="home-genre-card-art" aria-hidden="true">
-                ${entry.pixel}
-              </div>
-              <button data-action="play-track" data-track-id="${esc(entry.track.id)}" class="home-genre-card-play" aria-label="Играть ${esc(entry.title)}">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
-              </button>
-            </article>
-          `
-          }).join('')
-        : '<div class="home-genre-empty">Жанры появятся после загрузки треков.</div>'
-    }
+    const releaseSource = isTrendsMode ? trendingTracks : musicTracks
+    const releaseTracks = [...pickTracks(releaseSource, Math.min(releaseSource.length, 18), 2)]
+      .sort((left, right) => stablePercent(`${right.id}:${isTrendsMode ? 'charts' : 'release'}`, 10, 100) - stablePercent(`${left.id}:${isTrendsMode ? 'charts' : 'release'}`, 10, 100))
+      .slice(0, 12)
+    const releaseCards = releaseTracks.map((track, index) => AlbumCard({
+      track,
+      coverMarkup,
+      title: track.title,
+      subtitle: `${track.artist?.name || 'Wavee'} • ${resolveTrackReleaseLabel(track)}`,
+      badge: isTrendsMode ? 'TOP' : (index < 5 ? 'NEW' : ''),
+      meta: isTrendsMode ? 'В чарте недели' : 'Свежий релиз',
+      featured: false,
+    }))
+    SectionBlock({
+      section: el.homeQuickAccessSection,
+      headerTarget: el.homeQuickAccessHeader,
+      rowTarget: el.homeQuickAccess,
+      title: isTrendsMode ? 'Чарты недели' : 'Новые релизы',
+      actionHref: '/library',
+      actionLabel: 'Показать все',
+      controlsPrefix: 'home-quick-access',
+      controlsAriaLabel: 'Навигация по новым релизам',
+      controlsKeys: ['homeQuickAccessPrev', 'homeQuickAccessNext'],
+      cards: withSkeleton(releaseCards, 'medium', 6),
+      emptyText: 'Релизы появятся после загрузки каталога.',
+      visible: true,
+    })
 
-    const homeGenresToolbar = document.querySelector('[data-home-genres-toolbar]')
-    if (homeGenresToolbar && !homeGenresToolbar.dataset.bound) {
-      homeGenresToolbar.querySelectorAll('[data-home-genres-tab]').forEach((button) => {
-        button.addEventListener('click', () => {
-          homeGenresToolbar
-            .querySelectorAll('[data-home-genres-tab]')
-            .forEach((item) => item.classList.remove('is-active'))
-          button.classList.add('is-active')
-        })
+    setSectionVisibility(el.homeNewReleasesSection, false)
+
+    const favoriteArtists = isForYouMode
+      ? getArtistEntries(musicTracks).slice(0, 14)
+      : []
+    const favoriteArtistCards = favoriteArtists.map((entry, index) => ArtistCard({
+      entry,
+      badge: index < 3 ? 'TOP' : '',
+      meta: index < 4 ? 'Ты слушал' : 'Для тебя',
+    }))
+    SectionBlock({
+      section: el.homeFavoriteArtistsSection,
+      headerTarget: el.homeFavoriteArtistsHeader,
+      rowTarget: el.homeFavoriteArtists,
+      title: 'Любимые исполнители',
+      actionHref: '/library',
+      actionLabel: 'Показать все',
+      controlsPrefix: 'home-favorite-artists',
+      controlsAriaLabel: 'Навигация по любимым исполнителям',
+      controlsKeys: ['homeFavoriteArtistsPrev', 'homeFavoriteArtistsNext'],
+      cards: withSkeleton(favoriteArtistCards, 'artist', 8),
+      emptyText: 'Любимые исполнители появятся после первых лайков.',
+      visible: isForYouMode,
+    })
+
+    const popularArtists = [...getArtistEntries(musicTracks)]
+      .sort((left, right) => {
+        const leftScore = stablePercent(`${left.artist?.id || left.artist?.name}:popular-artist`, 20, 100)
+        const rightScore = stablePercent(`${right.artist?.id || right.artist?.name}:popular-artist`, 20, 100)
+        return rightScore - leftScore
       })
-      homeGenresToolbar.dataset.bound = '1'
-    }
+      .slice(0, 14)
+    const popularArtistCards = popularArtists.map((entry, index) => ArtistCard({
+      entry,
+      badge: index < 5 ? 'TOP' : '',
+      meta: isTrendsMode ? 'Популярно сейчас' : 'Популярно среди пользователей',
+    }))
+    SectionBlock({
+      section: el.homePopularArtistsSection,
+      headerTarget: el.homePopularArtistsHeader,
+      rowTarget: el.homePopularArtists,
+      title: 'Популярные исполнители',
+      actionHref: '/search',
+      actionLabel: 'Показать все',
+      controlsPrefix: 'home-popular-artists',
+      controlsAriaLabel: 'Навигация по популярным исполнителям',
+      controlsKeys: ['homePopularArtistsPrev', 'homePopularArtistsNext'],
+      cards: withSkeleton(popularArtistCards, 'artist', 8),
+      emptyText: 'Исполнители появятся после загрузки каталога.',
+      visible: isTrendsMode,
+    })
 
-    if (el.homeArtists) {
-      const artists = getArtistEntries(baseTracks).slice(0, 8)
-      el.homeArtists.innerHTML = artists.length
-        ? artists.map((entry, index) => {
-            const artistName = entry.artist?.name || 'Wavee Artist'
-            const artistAvatarUrl = getArtistAvatarUrl(entry)
-            const artistId = extractCatalogArtistId(entry.artist?.id)
-            const metaLine = getArtistMetaLine(entry.artist)
-            return `
-              <article class="artist-spotlight-card">
-                <div class="artist-spotlight-top">
-                  <span class="artist-spotlight-rank">${String(index + 1).padStart(2, '0')}</span>
-                </div>
-                <div class="artist-spotlight-main">
-                  <div class="artist-spotlight-stage">
-                    <div class="artist-spotlight-cover-shell">
-                      ${artistAvatarUrl
-                        ? `<img src="${esc(artistAvatarUrl)}" alt="${esc(artistName)}" class="h-full w-full object-cover" loading="lazy">`
-                        : `<div class="artist-spotlight-cover-fallback">${esc(getArtistInitials(artistName))}</div>`}
-                    </div>
-                  </div>
-                  <div class="artist-spotlight-copy">
-                    <h5 class="artist-spotlight-name">${esc(artistName)}</h5>
-                    <p class="artist-spotlight-meta" data-artist-monthly data-artist-id="${esc(artistId)}" data-artist-name="${esc(artistName)}">${esc(metaLine)}</p>
-                  </div>
-                </div>
-                <div class="artist-spotlight-actions">
-                  <button data-action="play-track" data-track-id="${esc(entry.track.id)}" class="artist-spotlight-play" aria-label="Играть ${esc(artistName)}">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
-                    <span>Слушать</span>
-                  </button>
-                  <button type="button" class="artist-spotlight-follow" aria-label="Подписаться на ${esc(artistName)}">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
-                  </button>
-                </div>
-              </article>
-            `
-          }).join('')
-        : '<div class="rounded-2xl border border-white/10 bg-[#21232b] p-4 text-sm text-white/55">Пока нет артистов для персональных рекомендаций.</div>'
+    setSectionVisibility(el.homeSubtitleSection, isForYouMode)
 
-      requestAnimationFrame(syncArtistsCarouselControls)
-      void hydrateHomeArtistMonthlyListeners()
-    }
+    const topTracksSource = isTrendsMode ? trendingTracks : musicTracks
+    const topTracks = [...pickTracks(topTracksSource, Math.min(topTracksSource.length, 24), 0)]
+      .sort((left, right) => {
+        const leftScore = stablePercent(`${left.id}:${isTrendsMode ? 'trend-top' : 'top'}`, 40, 100) + (state.likes.has(left.id) ? 12 : 0)
+        const rightScore = stablePercent(`${right.id}:${isTrendsMode ? 'trend-top' : 'top'}`, 40, 100) + (state.likes.has(right.id) ? 12 : 0)
+        return rightScore - leftScore
+      })
+      .slice(0, 12)
+    const topTrackCards = topTracks.map((track, index) => PlaylistCard({
+      track,
+      coverMarkup,
+      kicker: isTrendsMode ? 'TRENDING' : 'THIS IS',
+      badge: isTrendsMode ? (index < 3 ? 'TOP' : 'В РОСТЕ') : (index < 3 ? 'ДЛЯ ТЕБЯ' : ''),
+      meta: isTrendsMode ? 'Популярно среди пользователей' : 'Похоже на то, что тебе нравится',
+      featured: false,
+      compact: true,
+    }))
+    SectionBlock({
+      section: el.homeTopTracksSection,
+      headerTarget: el.homeTopTracksHeader,
+      rowTarget: el.homeTopTracks,
+      title: isTrendsMode ? 'Популярные треки' : 'Лучшие треки',
+      actionHref: '/search',
+      actionLabel: 'Показать все',
+      controlsPrefix: 'home-top-tracks',
+      controlsAriaLabel: 'Навигация по лучшим трекам',
+      controlsKeys: ['homeTopTracksPrev', 'homeTopTracksNext'],
+      cards: withSkeleton(topTrackCards, 'medium', 6),
+      emptyText: 'Треки появятся после загрузки музыки.',
+      visible: true,
+    })
 
-    if (el.homeEditorial) {
-      const editorialTracks = [...pickTracks(baseTracks, Math.min(baseTracks.length, 12), 0)]
-        .sort((left, right) => scoreBySeed(`${right.id}:editorial`) - scoreBySeed(`${left.id}:editorial`))
-        .slice(0, 4)
-      const editorialLabels = ['Редакция', 'Выбор недели', 'Большая подборка', 'Сцена дня']
+    const mixEntries = isForYouMode
+      ? getMixEntries().filter((entry) => entry?.track?.id).slice(0, 10)
+      : []
+    const mixKickers = ['Для тебя', 'Топ дня', 'Рекомендуем', 'В ротации']
+    const mixCards = mixEntries.map((entry, index) => PlaylistCard({
+      track: entry.track,
+      index,
+      coverMarkup,
+      kicker: mixKickers[index % mixKickers.length],
+      description: entry.subtitle || 'Персональная подборка Wavee.',
+      badge: 'ДЛЯ ТЕБЯ',
+      meta: index < 3 ? 'Персональная рекомендация' : 'Собрано из твоих прослушиваний',
+    }))
+    SectionBlock({
+      section: el.homeMixesSection,
+      headerTarget: el.homeMixesHeader,
+      rowTarget: el.homeMixes,
+      title: 'Подборки и миксы',
+      actionHref: '/library',
+      actionLabel: 'Показать все',
+      controlsPrefix: 'home-mixes',
+      controlsAriaLabel: 'Навигация по подборкам и миксам',
+      controlsKeys: ['homeMixesPrev', 'homeMixesNext'],
+      cards: withSkeleton(mixCards, 'medium', 5),
+      emptyText: 'Персональные миксы подгружаются.',
+      visible: isForYouMode,
+    })
 
-      el.homeEditorial.innerHTML = editorialTracks.length
-        ? editorialTracks.map((track, index) => `
-            <article class="group cursor-pointer overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.06]" data-action="play-track" data-track-id="${esc(track.id)}">
-              <div class="relative aspect-[16/10] overflow-hidden">
-                ${coverMarkup(track, track.title, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
-                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent"></div>
-                <span class="absolute left-4 top-4 rounded-full border border-white/20 bg-black/45 px-3 py-1 text-[10px] uppercase tracking-[0.08em] text-white/80" style="font-family:'Public Pixel','Unbounded',sans-serif">${esc(editorialLabels[index] || 'Подборка')}</span>
-                <button data-action="play-track" data-track-id="${esc(track.id)}" class="absolute bottom-4 right-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white shadow-lg backdrop-blur-md transition-transform hover:scale-105" aria-label="Играть ${esc(track.title)}">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
-                </button>
-              </div>
-              <div class="p-4">
-                <h3 class="truncate text-white" style="font-family:'Public Pixel','Unbounded',sans-serif;font-size:14px">${esc(track.title)}</h3>
-                <p class="mt-1 truncate text-white/55" style="font-family:'Onest',sans-serif;font-size:12px">${esc(track.artist?.name || 'Wavee')}</p>
-              </div>
-            </article>
-          `).join('')
-        : '<div class="rounded-2xl border border-white/10 bg-[#21232b] p-4 text-sm text-white/55">Редакционные подборки готовятся.</div>'
-    }
+    const podcastTracks = dedupeTracks([
+      ...categories.podcasts,
+      ...categories.audiobooks,
+    ]).slice(0, 12)
+    const podcastCards = podcastTracks.map((track) => {
+      const kind = detectTrackKind(track)
+      const kindLabel = kind === 'audiobook' ? 'Аудиокнига' : 'Подкаст'
+      return AlbumCard({
+        track,
+        coverMarkup,
+        title: track.title,
+        subtitle: `${track.artist?.name || 'Wavee'} • ${kindLabel}`,
+        badge: kind === 'audiobook' ? 'BOOK' : 'PODCAST',
+        meta: 'Новый эпизод',
+      })
+    })
+    SectionBlock({
+      section: el.homePodcastsSection,
+      headerTarget: el.homePodcastsHeader,
+      rowTarget: el.homePodcasts,
+      title: 'Подкасты и аудиокниги',
+      actionHref: '/search',
+      actionLabel: 'Показать все',
+      controlsPrefix: 'home-podcasts',
+      controlsAriaLabel: 'Навигация по подкастам и аудиокнигам',
+      controlsKeys: ['homePodcastsPrev', 'homePodcastsNext'],
+      cards: withSkeleton(podcastCards, 'medium', 5),
+      emptyText: 'Когда появятся подкасты, они отобразятся здесь.',
+      visible: isForYouMode && (podcastCards.length > 0 || isLoadingContent),
+    })
 
-    if (el.homeDiscovery) {
-      const discovery = [...pickTracks(baseTracks, Math.min(baseTracks.length, 20), 0)]
-        .sort((left, right) => stablePercent(`${left.id}:discovery`, 0, 100) - stablePercent(`${right.id}:discovery`, 0, 100))
-        .slice(0, 8)
-      buildHorizontalTrackCards(el.homeDiscovery, discovery)
-    }
+    const extraCards = getGenreMoodBuckets(musicTracks).slice(0, 10).map((entry, index) => SmallCard({
+      track: entry.track,
+      coverMarkup,
+      kicker: isTrendsMode ? 'Чарт' : 'Тренд',
+      title: entry.title,
+      subtitle: entry.mood || getTopGenres(entry.track, 1).join(' • ') || `Сцена #${index + 1}`,
+      badge: isTrendsMode ? (index < 4 ? 'POPULAR' : 'В РОСТЕ') : 'ДЛЯ ТЕБЯ',
+      meta: isTrendsMode ? 'Жанр набирает обороты' : 'Похоже на твои любимые треки',
+      size: index < 2 ? 'medium' : 'small',
+    }))
+    SectionBlock({
+      section: el.homeExtraSection,
+      headerTarget: el.homeExtraHeader,
+      rowTarget: el.homeExtra,
+      title: isTrendsMode ? 'Тренды по жанрам' : 'Жанры и настроение',
+      actionHref: '/search',
+      actionLabel: 'Показать все',
+      controlsPrefix: 'home-extra',
+      controlsAriaLabel: 'Навигация по жанрам и трендам',
+      controlsKeys: ['homeExtraPrev', 'homeExtraNext'],
+      cards: withSkeleton(extraCards, 'small', 6),
+      emptyText: 'Карточки появятся после обновления рекомендаций.',
+      visible: true,
+    })
 
+    wireHomeTrackRails()
+    restoreHomeRailPositions(activeFilter)
     requestAnimationFrame(syncHomeTrackRailControls)
+    wireHomeSectionRevealFx()
+    if (modeSwitch) playHomeModeTransitionFx()
+    wireHomePlayRippleFx(document)
+    wireHomeLazyCoverFx(document)
 
     if (el.hero) {
       const myWaveTracks = getMyWaveTracks()
@@ -2626,6 +3387,7 @@
         renderHeroArtIdle()
       }
     }
+
   }
 
   function renderMyWave() {
@@ -2821,10 +3583,17 @@
       state.myWave = wave.items || []
       renderMyWave()
     }
+    wireHomeFilterChips()
     wireHomeTrackRails()
-    wireArtistsCarousel()
 
     document.addEventListener('click', (e) => {
+      if (e.defaultPrevented) return
+      const navTarget = e.target.closest('[data-nav-route]')
+      if (navTarget) {
+        e.preventDefault()
+        navigateInHost(navTarget.getAttribute('data-nav-route') || '/')
+        return
+      }
       const t = e.target.closest('[data-action]')
       if (!t) return
       e.preventDefault()
@@ -2856,12 +3625,16 @@
     if (cachedTracks.length) {
       state.tracks = cachedTracks
       state.list = [...cachedTracks]
+      state.homeCatalogReady = true
       renderCurrentPage({ initial: true })
       if (state.tracks[0] && !embedMode) {
         setCurrent(state.tracks[0])
         state.d = state.tracks[0].durationSec || 0
         syncPlayer()
       }
+    }
+    if (!cachedTracks.length) {
+      renderCurrentPage({ initial: true })
     }
 
     const catalogFeed = await api('/catalog/feed?limit=40', { auth: 'optional' }).catch(() => ({ items: [] }))
@@ -2879,6 +3652,7 @@
     } else if (!state.tracks.length) {
       state.tracks = []
     }
+    state.homeCatalogReady = true
 
     state.list = [...state.tracks]
     renderCurrentPage({ initial: true })
@@ -2911,6 +3685,7 @@
     }, { once: true })
   })()
 })()
+
 
 
 

@@ -1,1 +1,0 @@
-import{j as n,w as u}from"./index-CCeB1pX8.js";const a=u("icons");function l({file:r,id:s,className:o="",viewBox:t="0 0 24 24",preserveAspectRatio:e=void 0,useTransform:i=void 0}){return!r||!s?null:n.jsx("svg",{viewBox:t,"aria-hidden":"true",className:o,preserveAspectRatio:e,fill:"currentColor",children:n.jsx("use",{href:`${a}/${r}#${s}`,transform:i})})}export{l as S};
