@@ -5,7 +5,12 @@
   const TOKEN = 'wavee_access_token'
   const REFRESH = 'wavee_refresh_token'
   const API_DEFAULT = 'http://127.0.0.1:8787'
-  const TRACKS_CACHE_TTL_MS = 45_000
+  const REQUEST_TIMEOUT_MS = 8_000
+  const TRACKS_CACHE_TTL_MS = 3 * 60 * 1000
+  const TRACKS_CACHE_STALE_TTL_MS = 24 * 60 * 60 * 1000
+  const HOME_RECO_CACHE_TTL_MS = 3 * 60 * 1000
+  const HOME_RECO_STALE_TTL_MS = 30 * 60 * 1000
+  const HOME_FORCE_DISCONNECTED_PLACEHOLDERS = false
   const page = document.body?.dataset?.waveePage || ''
   const ACTIVE_RUNTIME_PAGES = new Set(['home', 'my-wave'])
   if (!ACTIVE_RUNTIME_PAGES.has(page)) return
@@ -18,16 +23,41 @@
     return q || localStorage.getItem('wavee_api_base') || API_DEFAULT
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
+  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v2_${apiBase}`
   const COVER_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMDNhOWYiLz48dGV4dCB4PSI1MCUiIHk9IjUzJSIgZmlsbD0iI2YxZjVmOSIgc3R5bGU9ImZvbnQ6IGJvbGQgNDJweCBtb25vc3BhY2U7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imao8L3RleHQ+PC9zdmc+'
 
   document.body.dataset.waveeEmbed = embedMode ? 'app' : 'standalone'
+
+  function stripRecoPrefix(id) {
+    if (typeof id !== 'string') return id
+    return id.startsWith('reco-') ? id.slice(5) : id
+  }
+
+  function notifyParent(type, payload) {
+    if (typeof window !== 'undefined' && window.top && window.top !== window) {
+      window.top.postMessage(
+        {
+          source: 'wavee-design-runtime',
+          type,
+          ...payload,
+        },
+        window.location.origin
+      )
+    }
+  }
 
   const state = {
     tracks: [],
     list: [],
     likes: new Set(),
+    dislikes: new Set(),
     playlists: [],
     myWave: [],
+    myWaveSettings: {
+      character: 'favorite',
+      mood: 'calm',
+      activity: 'work',
+    },
     queue: [],
     idx: -1,
     track: null,
@@ -38,10 +68,23 @@
     shuffle: false,
     repeat: false,
     homeCatalogReady: false,
+    homeRecommendationsByMode: {
+      'for-you': null,
+      trends: null,
+    },
+    homeRecommendationsLoadingByMode: {
+      'for-you': false,
+      trends: false,
+    },
     homeRailPositions: {
       'for-you': {},
       trends: {},
     },
+    playbackSession: null,
+  }
+  const personalizationRefreshState = {
+    inflight: null,
+    lastAt: 0,
   }
 
   const $ = (id) => document.getElementById(id)
@@ -155,7 +198,15 @@
     timer: null,
   }
   const railAnimationState = new WeakMap()
-  const HOME_DEFAULT_MODE = 'for-you'
+  const homeRecommendationsInflight = new Map()
+  const HOME_DEFAULT_MODE = hasSessionToken() ? 'for-you' : 'trends'
+  const HOME_RECOMMENDATIONS_LIMIT = 20
+  const MY_WAVE_RECOMMENDATIONS_LIMIT = 40
+  const WAVE_SETTING_VALUES = {
+    character: new Set(['favorite', 'unfamiliar', 'popular']),
+    mood: new Set(['energetic', 'happy', 'calm', 'sad']),
+    activity: new Set(['sleep', 'wake', 'road', 'work', 'training']),
+  }
   const HOME_RAIL_REGISTRY = [
     { slot: 'home-quick-access', rowKey: 'homeQuickAccess', prevKey: 'homeQuickAccessPrev', nextKey: 'homeQuickAccessNext' },
     { slot: 'home-favorite-artists', rowKey: 'homeFavoriteArtists', prevKey: 'homeFavoriteArtistsPrev', nextKey: 'homeFavoriteArtistsNext' },
@@ -169,10 +220,11 @@
   const homeUiFxState = {
     revealBound: false,
     modeFxTimer: null,
+    filterSwipeTimer: null,
   }
-  const RAIL_SCROLL_MIN_DURATION_MS = 300
-  const RAIL_SCROLL_MAX_DURATION_MS = 620
-  const RAIL_SCROLL_DISTANCE_FACTOR = 0.52
+  const RAIL_SCROLL_MIN_DURATION_MS = 220
+  const RAIL_SCROLL_MAX_DURATION_MS = 460
+  const RAIL_SCROLL_DISTANCE_FACTOR = 0.46
   const railTargetState = new WeakMap()
   const railScrollActivityTimers = new WeakMap()
   const ARTIST_STATS_CACHE_TTL_MS = 15 * 60 * 1000
@@ -184,19 +236,23 @@
     month: '2-digit',
     year: 'numeric',
   })
+  const RELEASE_DATE_PREMIUM_FORMATTER = new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+  })
 
   const esc = (s) => String(s || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;')
   const fmt = (n) => `${Math.floor((n || 0) / 60)}:${String(Math.floor((n || 0) % 60)).padStart(2, '0')}`
   const clamp = (v, a, b) => Math.min(Math.max(v, a), b)
-  const routeArtist = (artistName) => {
-    const value = String(artistName || '').trim()
-    return value ? `/artist/${encodeURIComponent(value)}` : ''
+  const fastHash = (text) => {
+    let hash = 2166136261
+    const source = String(text || '')
+    for (let i = 0; i < source.length; i += 1) {
+      hash ^= source.charCodeAt(i)
+      hash = Math.imul(hash, 16777619)
+    }
+    return (hash >>> 0).toString(36)
   }
-  const routeTrack = (trackId) => {
-    const value = String(trackId || '').trim()
-    return value ? `/track/${encodeURIComponent(value)}` : ''
-  }
-  const normalizeNavText = (value) => String(value || '').trim().toLocaleLowerCase('ru-RU')
   const easeInOutCubic = (value) => (
     value < 0.5
       ? 4 * value * value * value
@@ -239,7 +295,6 @@
       rgb: '187,187,187',
       soft: 'rgba(187,187,187,0.16)',
       muted: 'rgba(187,187,187,0.07)',
-      tone: 'Ð¢Ð¸Ñ…Ð¸Ð¹ Ð²Ð¾Ð·Ð´ÑƒÑ…',
     },
     {
       key: 'electronic',
@@ -248,7 +303,7 @@
       rgb: '168,168,168',
       soft: 'rgba(168,168,168,0.16)',
       muted: 'rgba(168,168,168,0.07)',
-      tone: 'ÐÐ¾Ñ‡Ð½Ð¾Ð¹ Ñ‚Ð¾Ðº',
+      tone: 'Ð Ð¾Ñ‡Ð½Ð¾Ð¹ Ñ‚Ð¾Ðº',
     },
   ]
   const MY_WAVE_FALLBACK_ACCENT = {
@@ -257,8 +312,9 @@
     rgb: '214,214,214',
     soft: 'rgba(214,214,214,0.16)',
     muted: 'rgba(214,214,214,0.07)',
-    tone: 'Ð¢ÐµÐ¿Ð»Ñ‹Ð¹ ÑÑ„Ð¸Ñ€',
+    tone: 'Ð¢ÐµÐ¿Ð»Ñ‹Ð¹ Ñ Ñ„Ð¸Ñ€',
   }
+
   const HERO_ART_VARIANTS = [
     {
       id: 'cat',
@@ -621,36 +677,6 @@
     }
   }
 
-  function buildHeroWaveRows(phase) {
-    const width = 27
-    const height = 6
-    const palette = ['.', ':', '+', '#', '@']
-    const rows = []
-
-    for (let row = height; row >= 1; row -= 1) {
-      let line = ''
-      for (let column = 0; column < width; column += 1) {
-        const motion = (
-          Math.sin((column * 0.38) + (phase * 0.2))
-          + (Math.sin((column * 0.16) - (phase * 0.27)) * 0.52)
-          + 2
-        ) / 3.4
-        const level = Math.max(1, Math.round(clamp01(motion) * height))
-
-        if (level >= row) {
-          const density = clamp(Math.round(((height - row + 1) + (motion * height)) / 2), 1, height)
-          const glyphIndex = clamp(Math.round((density / height) * (palette.length - 1)), 0, palette.length - 1)
-          line += `${palette[glyphIndex]} `
-        } else {
-          line += '  '
-        }
-      }
-      rows.push(`      ${line.trimEnd()}`)
-    }
-
-    return rows
-  }
-
   function renderHeroArtActiveFrame() {
     if (page !== 'home') {
       return
@@ -699,6 +725,49 @@
     }, 96)
   }
 
+  function setHomeHeroOverlayHidden(hidden) {
+    if (page !== 'home' || !el.hero) {
+      return
+    }
+
+    heroArtState.overlayHidden = Boolean(hidden)
+    el.hero.classList.toggle('is-hidden', heroArtState.overlayHidden)
+    el.homeHeroTip?.classList.toggle('is-hidden', heroArtState.overlayHidden || heroArtState.active)
+  }
+
+
+
+  function buildHeroWaveRows(phase) {
+    const width = 27
+    const height = 6
+    const palette = ['.', ':', '+', '#', '@']
+    const rows = []
+
+    for (let row = height; row >= 1; row -= 1) {
+      let line = ''
+      for (let column = 0; column < width; column += 1) {
+        const motion = (
+          Math.sin((column * 0.38) + (phase * 0.2))
+          + (Math.sin((column * 0.16) - (phase * 0.27)) * 0.52)
+          + 2
+        ) / 3.4
+        const level = Math.max(1, Math.round(clamp01(motion) * height))
+
+        if (level >= row) {
+          const density = clamp(Math.round(((height - row + 1) + (motion * height)) / 2), 1, height)
+          const glyphIndex = clamp(Math.round((density / height) * (palette.length - 1)), 0, palette.length - 1)
+          line += `${palette[glyphIndex]} `
+        } else {
+          line += '  '
+        }
+      }
+      rows.push(`      ${line.trimEnd()}`)
+    }
+
+    return rows
+  }
+
+
   function setHomeWaveActive(active) {
     if (page !== 'home' || !document.body) {
       return
@@ -729,15 +798,6 @@
     }
   }
 
-  function setHomeHeroOverlayHidden(hidden) {
-    if (page !== 'home' || !el.hero) {
-      return
-    }
-
-    heroArtState.overlayHidden = Boolean(hidden)
-    el.hero.classList.toggle('is-hidden', heroArtState.overlayHidden)
-    el.homeHeroTip?.classList.toggle('is-hidden', heroArtState.overlayHidden || heroArtState.active)
-  }
 
   function initHomeVisualizer() {
     if (page !== 'home' || !el.homeVisualizer) {
@@ -899,6 +959,8 @@
       colors: colorDefaults.map(hexToRgb),
       targetColors: colorDefaults.map(hexToRgb),
       isPlaying: false,
+      showPlaybackVisual: false,
+      playbackHideDelayTimer: 0,
       isForceHidden: false,
       isClearedWhileHidden: false,
       state: 'idle',
@@ -918,6 +980,58 @@
       rafId: 0,
       lastTs: 0,
       lastRenderAt: 0,
+    }
+    const HOME_MASCOT_RETURN_DELAY_MS = 3000
+
+    const clearPlaybackHideDelay = () => {
+      if (!visualizer.playbackHideDelayTimer) {
+        return
+      }
+      window.clearTimeout(visualizer.playbackHideDelayTimer)
+      visualizer.playbackHideDelayTimer = 0
+    }
+
+    const applyHomePlaybackVisibility = (active) => {
+      const nextActive = Boolean(active)
+      visualizer.showPlaybackVisual = nextActive
+      canvas.classList.toggle('active', nextActive && !visualizer.isForceHidden)
+      setHomeWaveActive(nextActive)
+    }
+
+    const syncHomePlaybackVisibility = ({ hasTrack, isPlaying }) => {
+      const nextHasTrack = Boolean(hasTrack)
+      const nextIsPlaying = Boolean(isPlaying)
+      const wasPlaying = Boolean(visualizer.isPlaying)
+      const wasShowingPlayback = Boolean(visualizer.showPlaybackVisual)
+
+      visualizer.hasTrack = nextHasTrack
+      visualizer.isPlaying = nextIsPlaying
+
+      if (!nextHasTrack) {
+        clearPlaybackHideDelay()
+        applyHomePlaybackVisibility(false)
+        return
+      }
+
+      if (nextIsPlaying) {
+        clearPlaybackHideDelay()
+        applyHomePlaybackVisibility(true)
+        return
+      }
+
+      if ((wasPlaying || wasShowingPlayback) && !visualizer.playbackHideDelayTimer) {
+        visualizer.playbackHideDelayTimer = window.setTimeout(() => {
+          visualizer.playbackHideDelayTimer = 0
+          if (!visualizer.isPlaying) {
+            applyHomePlaybackVisibility(false)
+          }
+        }, HOME_MASCOT_RETURN_DELAY_MS)
+        return
+      }
+
+      if (!wasPlaying && !wasShowingPlayback) {
+        applyHomePlaybackVisibility(false)
+      }
     }
 
     const rebuildNoisePattern = () => {
@@ -1132,13 +1246,11 @@
         visualizer.isForceHidden = !isVisible
         visualizer.isClearedWhileHidden = false
         setHomeHeroOverlayHidden(!isVisible)
-        if (isVisible && (visualizer.hasTrack || visualizer.isPlaying)) {
-          canvas.classList.add('active')
-        } else {
-          canvas.classList.remove('active')
-        }
         if (!isVisible) {
-          setHomeWaveActive(false)
+          clearPlaybackHideDelay()
+          applyHomePlaybackVisibility(false)
+        } else {
+          applyHomePlaybackVisibility(visualizer.showPlaybackVisual)
         }
         return
       }
@@ -1174,17 +1286,12 @@
       visualizer.targetSignalPresence = clamp01(Number(next.signalPresence ?? legacyPresence ?? 0) * volumeFactor)
       visualizer.state = nextState
       visualizer.hasSignal = Boolean(next.hasSignal ?? visualizer.targetSignalPresence > 0.08)
-      visualizer.isPlaying = nextState === 'playing'
       visualizer.volume = volumeLevel
       const hasTrack = Boolean(next.trackId)
-      visualizer.hasTrack = hasTrack
-      setHomeWaveActive(hasTrack && (nextState === 'playing' || nextState === 'paused'))
-
-      if (hasTrack && (nextState === 'playing' || nextState === 'paused') && !visualizer.isForceHidden) {
-        canvas.classList.add('active')
-      } else {
-        canvas.classList.remove('active')
-      }
+      syncHomePlaybackVisibility({
+        hasTrack,
+        isPlaying: nextState === 'playing',
+      })
       visualizer.targetColors = colors.map(hexToRgb)
       applyHomeVisualizerPalette(colors)
     }
@@ -1492,6 +1599,7 @@
       if (drawTimeoutId) {
         window.clearTimeout(drawTimeoutId)
       }
+      clearPlaybackHideDelay()
       window.removeEventListener('resize', resize)
       window.removeEventListener('message', handleMessage)
     }
@@ -1542,13 +1650,40 @@
     return dedupeTracks([...exact, ...ruOnly, ...indieOnly, ...state.tracks]).slice(0, 8)
   }
 
+  function isTrackDisliked(track) {
+    return Boolean(track?.id) && state.dislikes.has(stripRecoPrefix(track.id))
+  }
+
+  function filterDislikedTracks(items) {
+    return dedupeTracks((Array.isArray(items) ? items : []).filter((track) => track?.id && !isTrackDisliked(track)))
+  }
+
+  function filterDislikedWaveItems(items) {
+    return (Array.isArray(items) ? items : []).filter((item) => item?.track?.id && !isTrackDisliked(item.track))
+  }
+
   function getMyWaveTracks() {
-    return dedupeTracks(state.myWave.map((item) => item?.track).filter((track) => track?.id))
+    return filterDislikedTracks(state.myWave.map((item) => item?.track).filter((track) => track?.id))
+  }
+
+  function getAllHomeRecommendationTracks() {
+    const buckets = Object.values(state.homeRecommendationsByMode || {})
+      .map((entry) => entry?.blocks || null)
+      .filter(Boolean)
+
+    const tracks = []
+    for (const blocks of buckets) {
+      for (const items of Object.values(blocks)) {
+        tracks.push(...getTracksFromRecommendationBlock(items))
+      }
+    }
+
+    return filterDislikedTracks(tracks)
   }
 
   function getMixEntries() {
     if (state.myWave.length) {
-      return state.myWave
+      return filterDislikedWaveItems(state.myWave)
         .filter((item) => item?.track?.id)
         .slice(0, 6)
         .map((item, index) => {
@@ -1593,9 +1728,11 @@
     const playlistTracks = state.playlists.flatMap((playlist) => (
       Array.isArray(playlist?.tracks) ? playlist.tracks : []
     ))
+    const recommendationTracks = getAllHomeRecommendationTracks()
 
     return dedupeTracks([
       ...getMyWaveTracks(),
+      ...recommendationTracks,
       ...state.tracks,
       ...playlistTracks,
     ]).filter((track) => track?.id)
@@ -1803,7 +1940,10 @@
 
   function formatMonthlyListeners(value) {
     const monthly = toPositiveFiniteNumber(value)
-    return MONTHLY_LISTENERS_FORMATTER.format(monthly || 0)
+    if (!monthly) {
+      return '—'
+    }
+    return MONTHLY_LISTENERS_FORMATTER.format(monthly)
   }
 
   function getArtistMetaLine(artist) {
@@ -1816,18 +1956,38 @@
 
   function resolveTrackReleaseLabel(track = {}) {
     const candidates = [
-      track?.releaseDate,
       track?.releasedAt,
+      track?.releaseDate,
+      track?.released_at,
+      track?.release_date,
       track?.publishedAt,
       track?.publishDate,
       track?.createdAt,
       track?.uploadedAt,
       track?.releaseYear,
       track?.year,
-      track?.album?.releaseDate,
       track?.album?.releasedAt,
+      track?.album?.releaseDate,
+      track?.album?.released_at,
+      track?.album?.release_date,
       track?.album?.year,
     ]
+
+    const format = (date) => {
+      if (!isValidDate(date)) return 'Дата не указана'
+      const now = new Date()
+      // Сбрасываем часы для точного сравнения дней
+      const dayStart = (d) => new Date(d).setHours(0, 0, 0, 0)
+      const diffDays = Math.floor((dayStart(now) - dayStart(date)) / (1000 * 60 * 60 * 24))
+
+      if (diffDays === 0) return 'Сегодня'
+      if (diffDays === 1) return 'Вчера'
+      
+      const isSameYear = date.getFullYear() === now.getFullYear()
+      if (isSameYear) return RELEASE_DATE_PREMIUM_FORMATTER.format(date)
+      
+      return RELEASE_DATE_FORMATTER.format(date)
+    }
 
     for (const candidate of candidates) {
       if (candidate === null || candidate === undefined || candidate === '') continue
@@ -1836,7 +1996,7 @@
         const trimmed = candidate.trim()
         if (/^(19|20)\d{2}$/.test(trimmed)) return trimmed
         const parsed = new Date(trimmed)
-        if (isValidDate(parsed)) return RELEASE_DATE_FORMATTER.format(parsed)
+        if (isValidDate(parsed)) return format(parsed)
         continue
       }
 
@@ -1845,13 +2005,13 @@
         const timestamp = candidate > 1e12 ? candidate : (candidate > 1e9 ? candidate * 1000 : 0)
         if (timestamp) {
           const parsed = new Date(timestamp)
-          if (isValidDate(parsed)) return RELEASE_DATE_FORMATTER.format(parsed)
+          if (isValidDate(parsed)) return format(parsed)
         }
         continue
       }
 
       if (candidate instanceof Date && isValidDate(candidate)) {
-        return RELEASE_DATE_FORMATTER.format(candidate)
+        return format(candidate)
       }
     }
 
@@ -1859,12 +2019,20 @@
   }
 
   function resolveArtistMonthlyListeners(entry = {}) {
-    const explicit = toPositiveFiniteNumber(entry?.artist?.lastMonthListeners)
-    if (explicit) return Math.round(explicit)
-    const seed = entry?.artist?.id || entry?.artist?.name || entry?.track?.id || 'wavee-artist'
-    const thousands = stablePercent(`${seed}:monthly-listeners`, 180, 9800)
-    const extra = stablePercent(`${seed}:monthly-extra`, 0, 999) * 100
-    return (thousands * 1000) + extra
+    const candidates = [
+      entry?.artist?.lastMonthListeners,
+      entry?.artist?.stats?.lastMonthListeners,
+      entry?.artist?.stats?.last_month_listeners,
+      entry?.artist?.stats?.monthlyListeners,
+      entry?.artist?.counts?.listeners,
+    ]
+
+    for (const candidate of candidates) {
+      const explicit = toPositiveFiniteNumber(candidate)
+      if (explicit) return Math.round(explicit)
+    }
+
+    return null
   }
 
   async function fetchArtistStats({ artistId = '', artistName = '' } = {}) {
@@ -1915,8 +2083,7 @@
   }
 
   async function hydrateHomeArtistMonthlyListeners() {
-    if (!el.homeArtists) return
-    const rows = [...el.homeArtists.querySelectorAll('[data-artist-monthly]')]
+    const rows = [...document.querySelectorAll('[data-artist-monthly]')]
     if (!rows.length) return
 
     await Promise.all(rows.map(async (row) => {
@@ -1924,7 +2091,9 @@
       const artistName = row.getAttribute('data-artist-name') || ''
       const artist = await fetchArtistStats({ artistId, artistName })
       if (!row.isConnected) return
-      row.textContent = getArtistMetaLine(artist)
+      const resolvedMonthly = resolveArtistMonthlyListeners({ artist })
+      if (!resolvedMonthly) return
+      row.textContent = formatMonthlyListeners(resolvedMonthly)
     }))
   }
 
@@ -1997,14 +2166,16 @@
     target.dataset.waveState = isEmpty ? 'empty' : 'active'
   }
 
-  function readCachedTracks() {
+  function readCachedTracks({ allowStale = true } = {}) {
     try {
       const raw = localStorage.getItem(TRACKS_CACHE_KEY)
       if (!raw) return []
       const payload = JSON.parse(raw)
       if (!payload || !Array.isArray(payload.items)) return []
-      if (Date.now() - Number(payload.at || 0) > TRACKS_CACHE_TTL_MS) return []
-      return payload.items
+      const age = Date.now() - Number(payload.at || 0)
+      if (age <= TRACKS_CACHE_TTL_MS) return payload.items
+      if (allowStale && age <= TRACKS_CACHE_STALE_TTL_MS) return payload.items
+      return []
     } catch {
       return []
     }
@@ -2018,44 +2189,448 @@
     }
   }
 
+  function getUserCacheScope() {
+    try {
+      const raw = localStorage.getItem('wavee_user')
+      if (!raw) return 'guest'
+      const user = JSON.parse(raw)
+      const id = String(user?.id || user?.email || '').trim().toLowerCase()
+      return id || 'guest'
+    } catch {
+      return 'guest'
+    }
+  }
+
+  function getHomeRecoCacheKey(mode, tokenPresent) {
+    const scope = tokenPresent ? getUserCacheScope() : 'guest'
+    return `${HOME_RECO_CACHE_KEY_PREFIX}:${scope}:${mode}`
+  }
+
+  function readCachedHomeRecommendations(mode, tokenPresent) {
+    try {
+      const key = getHomeRecoCacheKey(mode, tokenPresent)
+      const raw = localStorage.getItem(key)
+      if (!raw) return null
+      const payload = JSON.parse(raw)
+      if (!payload || typeof payload !== 'object') return null
+      if (!payload.data || typeof payload.data !== 'object') return null
+      const cachedAt = Number(payload.cachedAt || 0)
+      if (!Number.isFinite(cachedAt) || cachedAt <= 0) return null
+      if (Date.now() - cachedAt > HOME_RECO_STALE_TTL_MS) return null
+      return {
+        ...payload.data,
+        __cachedAt: cachedAt,
+      }
+    } catch {
+      return null
+    }
+  }
+
+  function writeCachedHomeRecommendations(mode, tokenPresent, data) {
+    if (!data?.blocks) return
+    try {
+      const key = getHomeRecoCacheKey(mode, tokenPresent)
+      localStorage.setItem(key, JSON.stringify({
+        cachedAt: Date.now(),
+        data,
+      }))
+    } catch {
+      // ignore cache write errors
+    }
+  }
+
+  function hydrateHomeRecommendationsFromCache() {
+    const tokenPresent = hasSessionToken()
+    const modes = tokenPresent ? ['for-you', 'trends'] : ['trends']
+    let hydrated = false
+
+    modes.forEach((mode) => {
+      const cached = readCachedHomeRecommendations(mode, tokenPresent)
+      if (!cached?.blocks) return
+      state.homeRecommendationsByMode[mode] = cached
+      hydrated = true
+    })
+
+    return hydrated
+  }
+
   async function refreshToken() {
     const rt = localStorage.getItem(REFRESH) || ''
     if (!rt) return ''
     const r = await fetch(`${apiBase}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) })
-    if (!r.ok) return ''
+    if (!r.ok) {
+      if (r.status === 401) {
+        localStorage.removeItem(TOKEN)
+        localStorage.removeItem(REFRESH)
+      }
+      return ''
+    }
     const p = await r.json().catch(() => ({}))
     if (p.accessToken) localStorage.setItem(TOKEN, p.accessToken)
+    if (p.refreshToken) localStorage.setItem(REFRESH, p.refreshToken)
+    if (p.user) localStorage.setItem('wavee_user', JSON.stringify(p.user))
     return p.accessToken || ''
   }
 
-  async function api(path, { method = 'GET', body, auth = 'none', retry = true, signal } = {}) {
+  async function api(path, { method = 'GET', body, auth = 'none', retry = true, signal, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
     let token = (auth === 'required' || auth === 'optional') ? (localStorage.getItem(TOKEN) || '') : ''
+    if ((auth === 'required' || auth === 'optional') && !token && retry) {
+      token = await refreshToken()
+    }
     if (auth === 'required' && !token) throw Object.assign(new Error('Unauthorized'), { status: 401 })
     const headers = { 'Content-Type': 'application/json' }
     if (token) headers.Authorization = `Bearer ${token}`
-    const r = await fetch(`${apiBase}${path}`, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-      signal,
-    })
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    const abortFromParent = () => controller.abort()
+    if (signal) {
+      if (signal.aborted) {
+        controller.abort()
+      } else {
+        signal.addEventListener('abort', abortFromParent, { once: true })
+      }
+    }
+
+    let r
+    try {
+      r = await fetch(`${apiBase}${path}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+      })
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        throw Object.assign(new Error(`Request timeout after ${timeoutMs}ms`), { status: 504 })
+      }
+      throw error
+    } finally {
+      clearTimeout(timer)
+      if (signal) {
+        signal.removeEventListener('abort', abortFromParent)
+      }
+    }
+
     if (r.status === 204) return null
     if (r.status === 401 && auth !== 'none' && retry) {
       const t = await refreshToken()
-      if (t) return api(path, { method, body, auth, retry: false, signal })
+      if (t) return api(path, { method, body, auth, retry: false, signal, timeoutMs })
     }
     const p = await r.json().catch(() => ({}))
     if (!r.ok) throw Object.assign(new Error(p.error || `HTTP ${r.status}`), { status: r.status })
     return p
   }
 
+  function hasSessionToken() {
+    return Boolean(localStorage.getItem(TOKEN))
+  }
+
+  function normalizeWaveSettings(settings = {}) {
+    const next = {
+      ...state.myWaveSettings,
+      ...settings,
+    }
+    return {
+      character: WAVE_SETTING_VALUES.character.has(next.character) ? next.character : 'favorite',
+      mood: WAVE_SETTING_VALUES.mood.has(next.mood) ? next.mood : 'calm',
+      activity: WAVE_SETTING_VALUES.activity.has(next.activity) ? next.activity : 'work',
+    }
+  }
+
+  function buildMyWaveQuery(settings = state.myWaveSettings, limit = MY_WAVE_RECOMMENDATIONS_LIMIT) {
+    const normalized = normalizeWaveSettings(settings)
+    const params = new URLSearchParams()
+    params.set('limit', String(limit))
+    params.set('character', normalized.character)
+    params.set('mood', normalized.mood)
+    params.set('activity', normalized.activity)
+    return params.toString()
+  }
+
+  async function ingestEvents(events = []) {
+    if (!hasSessionToken() || !Array.isArray(events) || events.length === 0) return
+    await api('/events', {
+      method: 'POST',
+      auth: 'required',
+      body: { events },
+    }).catch(() => {})
+  }
+
+  function createPlaybackContext(track, contextType = 'manual') {
+    return {
+      artistId: track?.artist?.id ?? null,
+      contextType,
+      page,
+      surface: embedMode ? 'embed' : 'standalone',
+    }
+  }
+
+  function beginPlaybackSession(track, contextType = 'manual') {
+    if (embedMode || !track?.id) {
+      state.playbackSession = null
+      return
+    }
+
+    const occurredAt = new Date().toISOString()
+    state.playbackSession = {
+      trackId: track.id,
+      artistId: track.artist?.id ?? null,
+      contextType,
+      maxSeconds: 0,
+      startedAt: occurredAt,
+    }
+
+    void ingestEvents([
+      {
+        entityType: 'track',
+        entityId: track.id,
+        eventType: 'play_start',
+        eventValue: 0,
+        occurredAt,
+        context: createPlaybackContext(track, contextType),
+      },
+    ])
+  }
+
+  function touchPlaybackSession() {
+    const session = state.playbackSession
+    if (!session || !state.track || session.trackId !== state.track.id) {
+      return
+    }
+    const current = Math.max(0, Math.floor(Number(state.t) || 0))
+    if (current > session.maxSeconds) {
+      session.maxSeconds = current
+    }
+  }
+
+  function endPlaybackSession({ completed = false, contextType = 'playback' } = {}) {
+    const session = state.playbackSession
+    if (!session) return
+    state.playbackSession = null
+
+    if (embedMode) {
+      return
+    }
+
+    const track = findTrack(session.trackId) || state.track
+    if (!track?.id) {
+      return
+    }
+
+    const duration = Math.max(0, Math.floor(Number(track.durationSec) || 0))
+    const playedSeconds = Math.max(
+      0,
+      Math.floor(Number(state.t) || 0),
+      Math.floor(Number(session.maxSeconds) || 0),
+      completed ? duration : 0,
+    )
+    if (playedSeconds <= 0 && !completed) {
+      return
+    }
+
+    const completeByRatio = duration > 0 && playedSeconds >= Math.max(30, Math.floor(duration * 0.85))
+    const eventType = completed || completeByRatio ? 'play_complete' : 'skip'
+    const occurredAt = new Date().toISOString()
+
+    void ingestEvents([
+      {
+        entityType: 'track',
+        entityId: track.id,
+        eventType,
+        eventValue: Math.min(32767, playedSeconds),
+        occurredAt,
+        context: createPlaybackContext(track, session.contextType || contextType),
+      },
+    ])
+  }
+
+  function syncMyWaveSettingChips() {
+    const chips = [...document.querySelectorAll('[data-wave-setting][data-wave-value]')]
+    if (!chips.length) return
+    chips.forEach((chip) => {
+      const key = chip.getAttribute('data-wave-setting')
+      const value = chip.getAttribute('data-wave-value')
+      const active = Boolean(key && value && state.myWaveSettings?.[key] === value)
+      chip.classList.toggle('is-accent', active)
+      chip.setAttribute('aria-pressed', active ? 'true' : 'false')
+    })
+  }
+
+  async function fetchHomeRecommendationsMode(mode) {
+    if (!(mode in state.homeRecommendationsByMode)) return null
+
+    const tokenPresent = hasSessionToken()
+    if (mode === 'for-you' && !tokenPresent) {
+      return null
+    }
+
+    const current = state.homeRecommendationsByMode[mode]
+    if (current && current.__cachedAt && (Date.now() - current.__cachedAt < HOME_RECO_CACHE_TTL_MS)) {
+      return current
+    }
+
+    if (!current?.blocks) {
+      const cached = readCachedHomeRecommendations(mode, tokenPresent)
+      if (cached?.blocks) {
+        state.homeRecommendationsByMode[mode] = cached
+        if (page === 'home') renderHome()
+      }
+    }
+
+    const activeRequest = homeRecommendationsInflight.get(mode)
+    if (activeRequest) {
+      return activeRequest
+    }
+
+    state.homeRecommendationsLoadingByMode[mode] = true
+    const authMode = tokenPresent ? 'optional' : 'none'
+    const path = `/recommendations/home?limit=${HOME_RECOMMENDATIONS_LIMIT}&mode=${encodeURIComponent(mode)}`
+
+    const request = api(path, { auth: authMode })
+      .then((payload) => {
+        if (payload?.blocks) {
+          const enriched = { ...payload, __cachedAt: Date.now() }
+          state.homeRecommendationsByMode[mode] = enriched
+          writeCachedHomeRecommendations(mode, tokenPresent, payload)
+          return enriched
+        }
+        return null
+      })
+      .catch(() => {
+        const fallback = readCachedHomeRecommendations(mode, tokenPresent)
+        if (fallback?.blocks) {
+          state.homeRecommendationsByMode[mode] = fallback
+          return fallback
+        }
+        return null
+      })
+      .finally(() => {
+        state.homeRecommendationsLoadingByMode[mode] = false
+        homeRecommendationsInflight.delete(mode)
+        if (page === 'home') renderHome()
+      })
+
+    homeRecommendationsInflight.set(mode, request)
+    return request
+  }
+
+  let myWaveLoadRequestVersion = 0
+  async function loadMyWaveRecommendations({ settings = null, persistSettings = false, rerender = true } = {}) {
+    if (!hasSessionToken()) {
+      state.myWave = []
+      if (rerender) {
+        if (page === 'my-wave') renderMyWave()
+        if (page === 'home') renderHome()
+      }
+      return null
+    }
+
+    const nextSettings = normalizeWaveSettings(settings || state.myWaveSettings)
+    const requestVersion = ++myWaveLoadRequestVersion
+
+    if (persistSettings) {
+      await api('/recommendations/my-wave/settings', {
+        method: 'PUT',
+        auth: 'required',
+        body: nextSettings,
+      }).catch(() => null)
+    }
+
+    const query = buildMyWaveQuery(nextSettings, MY_WAVE_RECOMMENDATIONS_LIMIT)
+    const [payload, dislikes] = await Promise.all([
+      api(`/recommendations/my-wave?${query}`, {
+        auth: 'required',
+      }).catch(() => null),
+      api('/library/dislikes', { auth: 'required' }).catch(() => ({ items: [] })),
+    ])
+
+    if (requestVersion !== myWaveLoadRequestVersion) {
+      return payload
+    }
+
+    if (payload?.settings) {
+      state.myWaveSettings = normalizeWaveSettings(payload.settings)
+    } else {
+      state.myWaveSettings = nextSettings
+    }
+
+    state.dislikes = new Set(Array.isArray(dislikes?.items) ? dislikes.items.map((id) => stripRecoPrefix(id)).filter(Boolean) : [])
+    state.myWave = filterDislikedWaveItems(Array.isArray(payload?.items) ? payload.items : [])
+    syncMyWaveSettingChips()
+
+    if (rerender) {
+      if (page === 'my-wave') renderMyWave()
+      if (page === 'home') renderHome()
+    }
+
+    schedulePlaybackPrefetch(getMyWaveTracks())
+    return payload
+  }
+
+  async function refreshPersonalization({ includePlaylists = false, rerender = true, force = false } = {}) {
+    if (!hasSessionToken()) {
+      state.likes = new Set()
+      state.dislikes = new Set()
+      state.myWave = []
+      if (rerender) {
+        if (page === 'my-wave') renderMyWave()
+        if (page === 'home') renderHome()
+      }
+      return null
+    }
+
+    const now = Date.now()
+    if (!force && personalizationRefreshState.inflight) {
+      return personalizationRefreshState.inflight
+    }
+    if (!force && (now - personalizationRefreshState.lastAt) < 15_000) {
+      return null
+    }
+
+    const request = (async () => {
+      const requests = [
+        api('/library/likes', { auth: 'required' }).catch(() => ({ items: [] })),
+        api('/library/dislikes', { auth: 'required' }).catch(() => ({ items: [] })),
+        api(`/recommendations/my-wave?${buildMyWaveQuery(state.myWaveSettings, MY_WAVE_RECOMMENDATIONS_LIMIT)}`, { auth: 'required' }).catch(() => ({ items: [] })),
+      ]
+
+      if (includePlaylists) {
+        requests.push(api('/playlists', { auth: 'required' }).catch(() => ({ items: [] })))
+      }
+
+      const [likes, dislikes, wave, playlists] = await Promise.all(requests)
+      state.likes = new Set((likes?.items || []).map((track) => stripRecoPrefix(track?.id)).filter(Boolean))
+      state.dislikes = new Set((dislikes?.items || []).map((id) => stripRecoPrefix(id)).filter(Boolean))
+      state.myWave = filterDislikedWaveItems(Array.isArray(wave?.items) ? wave.items : [])
+      if (wave?.settings) {
+        state.myWaveSettings = normalizeWaveSettings(wave.settings)
+      }
+      if (includePlaylists) {
+        state.playlists = playlists?.items || []
+      }
+      personalizationRefreshState.lastAt = Date.now()
+      syncMyWaveSettingChips()
+      syncLikes()
+      if (rerender) {
+        if (page === 'my-wave') renderMyWave()
+        if (page === 'home') renderHome()
+      }
+      return wave
+    })().finally(() => {
+      personalizationRefreshState.inflight = null
+    })
+
+    personalizationRefreshState.inflight = request
+    return request
+  }
+
   function syncLikes() {
     document.querySelectorAll('[data-track-like-id]').forEach((b) => {
-      const id = b.getAttribute('data-track-like-id')
+      const id = stripRecoPrefix(b.getAttribute('data-track-like-id'))
       b.textContent = state.likes.has(id) ? 'â™¥' : 'â™¡'
     })
     if (el.like) {
-      const active = Boolean(state.track && state.likes.has(state.track.id))
+      const active = Boolean(state.track && state.likes.has(stripRecoPrefix(state.track.id)))
       el.like.innerHTML = heartIcon(active)
       el.like.style.color = active ? '#f2f2f2' : 'rgba(255,255,255,0.58)'
     }
@@ -2084,10 +2659,11 @@
   }
 
   function findTrack(id) {
-    const myWaveTracks = state.myWave.map((item) => item?.track).filter((track) => track?.id)
-    for (const arr of [state.list, myWaveTracks, state.tracks, ...state.playlists.map((p) => p.tracks || [])]) {
+    const myWaveTracks = getMyWaveTracks()
+    const recommendationTracks = getAllHomeRecommendationTracks()
+    for (const arr of [state.list, myWaveTracks, recommendationTracks, state.tracks, ...state.playlists.map((p) => p.tracks || [])]) {
       const f = arr.find((t) => t.id === id)
-      if (f) return f
+      if (f && !isTrackDisliked(f)) return f
     }
     return null
   }
@@ -2107,11 +2683,16 @@
 
   function getPlaybackListForPage() {
     if (page === 'my-wave') {
-      const waveTracks = state.myWave.map((item) => item?.track).filter((track) => track?.id)
+      const waveTracks = getMyWaveTracks()
       if (waveTracks.length) return dedupeTracks(waveTracks)
     }
 
-    return dedupeTracks(state.tracks)
+    if (page === 'home') {
+      const homeTracks = getHomeTrackPool()
+      if (homeTracks.length) return homeTracks
+    }
+
+    return filterDislikedTracks(state.tracks)
   }
 
   function navigateInHost(path) {
@@ -2246,6 +2827,7 @@
 
   async function play(track, ctx = 'manual', options = {}) {
     if (!track) return
+    if (isTrackDisliked(track)) return
 
     if (embedMode) {
       playViaHost(track, ctx, options)
@@ -2262,16 +2844,22 @@
     }
 
     if (!(playbackTrack.sourceType === 'youtube' && playbackTrack.sourceId)) {
+      endPlaybackSession({ completed: false, contextType: 'unavailable-source' })
       state.playing = false
       syncPlayer()
       setHomeWaveActive(false)
       return
     }
 
+    if (state.playbackSession?.trackId && state.playbackSession.trackId !== playbackTrack.id) {
+      endPlaybackSession({ completed: false, contextType: 'switch-track' })
+    }
+
     setCurrent(playbackTrack)
+    beginPlaybackSession(playbackTrack, ctx)
     state.t = 0
     state.d = playbackTrack.durationSec || 0
-    const overrideList = Array.isArray(options.list) ? dedupeTracks(options.list) : []
+    const overrideList = Array.isArray(options.list) ? filterDislikedTracks(options.list) : []
     const base = overrideList.length ? overrideList : getPlaybackListForPage()
     state.queue = base.length ? [...base] : [playbackTrack]
     state.idx = state.queue.findIndex((t) => t.id === playbackTrack.id)
@@ -2288,7 +2876,7 @@
         events: {
           onReady: (e) => { e.target.setVolume(state.v); e.target.playVideo(); state.d = e.target.getDuration?.() || state.d; syncPlayer() },
           onStateChange: (e) => {
-            if (e.data === YT.PlayerState.ENDED) next()
+            if (e.data === YT.PlayerState.ENDED) next('ended')
             if (e.data === YT.PlayerState.PLAYING) { state.playing = true; syncPlayer() }
             if (e.data === YT.PlayerState.PAUSED) { state.playing = false; syncPlayer() }
           },
@@ -2305,13 +2893,13 @@
       state.t = yt.player?.getCurrentTime?.() || 0
       const d = yt.player?.getDuration?.() || 0
       if (d > 0) state.d = d
+      touchPlaybackSession()
       syncPlayer()
     }, 250)
 
     state.playing = true
     syncPlayer()
     markRows()
-    api('/events/play', { method: 'POST', auth: 'required', body: { trackId: playbackTrack.id, playedSeconds: 0, finished: false, contextType: ctx } }).catch(() => {})
   }
 
   function pause() {
@@ -2346,12 +2934,15 @@
     state.t = clamp(sec, 0, state.d || 0)
     if (state.track.sourceType === 'youtube') yt.player?.seekTo?.(state.t, true)
     else if (audio) audio.currentTime = state.t
+    touchPlaybackSession()
     syncPlayer()
   }
 
-  function next() {
+  function next(reason = 'next') {
     if (embedMode) return
     if (!state.queue.length) return
+    const completed = reason === 'ended'
+    endPlaybackSession({ completed, contextType: reason })
     if (state.repeat && state.track) return play(state.track, 'repeat')
     if (state.shuffle) return play(state.queue[Math.floor(Math.random() * state.queue.length)], 'shuffle-next')
     const n = state.queue[state.idx + 1]
@@ -2362,19 +2953,28 @@
   function prev() {
     if (embedMode) return
     if (!state.queue.length) return
+    endPlaybackSession({ completed: false, contextType: 'previous' })
     play(state.queue[Math.max(state.idx - 1, 0)], 'previous')
   }
 
   async function toggleLike(id) {
-    if (!localStorage.getItem(TOKEN)) return
-    if (state.likes.has(id)) {
-      await api(`/likes/${encodeURIComponent(id)}`, { method: 'DELETE', auth: 'required' }).catch(() => {})
-      state.likes.delete(id)
-    } else {
-      await api(`/likes/${encodeURIComponent(id)}`, { method: 'POST', auth: 'required' }).catch(() => {})
-      state.likes.add(id)
+    if (!id || !localStorage.getItem(TOKEN)) return
+    const cleanId = stripRecoPrefix(id)
+    const active = state.likes.has(cleanId)
+
+    try {
+      if (active) {
+        await api(`/likes/${encodeURIComponent(cleanId)}`, { method: 'DELETE', auth: 'required' })
+        state.likes.delete(cleanId)
+      } else {
+        await api(`/likes/${encodeURIComponent(cleanId)}`, { method: 'POST', auth: 'required' })
+        state.likes.add(cleanId)
+      }
+      syncLikes()
+      notifyParent('wavee-toggle-like', { trackId: cleanId, active: !active })
+    } catch (e) {
+      console.error('Failed to toggle like', e)
     }
-    syncLikes()
   }
 
   function animateRailScroll(row, target, options = {}) {
@@ -2384,7 +2984,6 @@
       setSnap = null,
       onComplete = null,
       respectReducedMotion = true,
-      onTick = null,
     } = options
 
     const maxScrollLeft = Math.max(0, row.scrollWidth - row.clientWidth)
@@ -2438,7 +3037,6 @@
       const progress = clamp((now - tween.startedAt) / tween.duration, 0, 1)
       row.scrollLeft = tween.start + ((tween.target - tween.start) * easeInOutCubic(progress))
       tween.syncControls()
-      if (typeof onTick === 'function') onTick(progress)
       if (progress < 1) {
         tween.frame = requestAnimationFrame(tick)
         railAnimationState.set(row, tween)
@@ -2536,9 +3134,6 @@
         row.classList.remove('is-scrolling')
         railTargetState.delete(row)
         rememberHomeRailPosition(row)
-      },
-      onTick: () => {
-        row.classList.add('is-scrolling')
       },
       respectReducedMotion: false,
     })
@@ -2674,6 +3269,19 @@
         const previousMode = el.homeFilterChips.dataset.active || HOME_DEFAULT_MODE
         if (active === previousMode) return
 
+        const swipeDirection = active === 'trends' ? 'right' : 'left'
+        el.homeFilterChips.dataset.swipeFx = swipeDirection
+        if (homeUiFxState.filterSwipeTimer) {
+          clearTimeout(homeUiFxState.filterSwipeTimer)
+          homeUiFxState.filterSwipeTimer = null
+        }
+        homeUiFxState.filterSwipeTimer = setTimeout(() => {
+          if (el.homeFilterChips) {
+            delete el.homeFilterChips.dataset.swipeFx
+          }
+          homeUiFxState.filterSwipeTimer = null
+        }, 420)
+
         captureHomeRailPositions(previousMode)
         el.homeFilterChips.dataset.active = active
         chips.forEach((chip) => {
@@ -2682,6 +3290,13 @@
           chip.setAttribute('aria-pressed', isActive ? 'true' : 'false')
         })
         renderHome({ modeSwitch: true, previousMode, activeMode: active })
+        if (!state.homeRecommendationsByMode[active]) {
+          void fetchHomeRecommendationsMode(active).then((payload) => {
+            if (!payload) return
+            if ((el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE) !== active) return
+            renderHome({ modeSwitch: false, activeMode: active })
+          })
+        }
       })
       button.dataset.bound = '1'
     })
@@ -2721,7 +3336,7 @@
           data-filter="${esc(value)}"
           aria-pressed="${isActive ? 'true' : 'false'}"
         >
-          ${esc(label)}
+          <span class="home-filter-chip-label">${esc(label)}</span>
         </button>
       `
     }).join('')
@@ -2750,15 +3365,13 @@
 
     return `
       <div class="home-section-header">
-        <div class="home-section-head-copy">
-          <h2 class="home-section-title">${esc(title)}</h2>
-          ${subtitle ? `<p class="home-section-subline">${esc(subtitle)}</p>` : ''}
-        </div>
+        <a href="${esc(actionHref)}" data-nav-route="${esc(actionHref)}" class="home-section-title-link">
+          <div class="home-section-head-copy">
+            <h2 class="home-section-title">${esc(title)}</h2>
+            ${subtitle ? `<p class="home-section-subline">${esc(subtitle)}</p>` : ''}
+          </div>
+        </a>
         <div class="home-section-actions">
-          <a href="${esc(actionHref)}" data-nav-route="${esc(actionHref)}" class="home-section-link">
-            <span>${esc(actionLabel)}</span>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><use href="../icons/angle-right-solid.svg#angle-right-solid"></use></svg>
-          </a>
           ${controls}
         </div>
       </div>
@@ -2774,10 +3387,33 @@
   }
 
   function buildSkeletonCards(variant = 'medium', count = 6) {
+    return [`
+      <div class="home-runtime-loading" aria-label="Загрузка" role="status">
+        <span class="home-runtime-loading-spinner" aria-hidden="true"></span>
+      </div>
+    `]
+  }
+
+  function buildDisconnectedCards(variant = 'medium', count = 6) {
     const safeVariant = ['small', 'medium', 'large', 'artist'].includes(variant) ? variant : 'medium'
     return Array.from({ length: count }, (_, index) => `
       <article class="home-skeleton-card home-skeleton-card--${safeVariant}" data-carousel-card aria-hidden="true" style="--card-delay:${Math.min(index * 40, 260)}ms">
         <span class="home-skeleton-shimmer"></span>
+        <div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:10px;padding:12px;height:100%;pointer-events:none;">
+          <div style="position:relative;flex:1;min-height:0;border-radius:14px;background:linear-gradient(160deg,rgba(16,22,36,0.92),rgba(7,10,18,0.98));border:1px solid rgba(151,171,224,0.16);display:flex;align-items:center;justify-content:center;">
+            <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" style="color:rgba(221,231,255,0.9);opacity:0.92;">
+              <path d="M3 9.5c2.1-2 4.6-3 7.5-3 2.1 0 4 .5 5.8 1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M5.6 12.3c1.4-1.2 3-1.8 4.9-1.8 1.2 0 2.3.2 3.4.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M8.7 15.2c.6-.5 1.2-.7 1.9-.7.5 0 1 .1 1.4.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+              <circle cx="10.6" cy="18.1" r="1.2" fill="currentColor"></circle>
+              <path d="M18.8 5.2 4.9 19.1" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <span style="height:10px;border-radius:999px;background:rgba(208,219,252,0.72);width:72%;"></span>
+            <span style="height:8px;border-radius:999px;background:rgba(152,170,219,0.42);width:56%;"></span>
+          </div>
+        </div>
       </article>
     `)
   }
@@ -2816,7 +3452,7 @@
     const artistName = entry?.artist?.name || 'Wavee Artist'
     const artistAvatarUrl = getArtistAvatarUrl(entry)
     const trackId = entry?.track?.id || ''
-    const artistHref = routeArtist(artistName)
+    const artistId = entry?.artist?.id || ''
     const monthlyListenersLine = formatMonthlyListeners(resolveArtistMonthlyListeners(entry))
     const artistNameLength = [...artistName].length
     const artistNameSizeClass = artistNameLength >= 16
@@ -2837,12 +3473,8 @@
           </button>
         </div>
         <div class="home-artist-info">
-          <h3 class="home-artist-name${artistNameSizeClass}">
-            ${artistHref
-              ? `<a href="${esc(artistHref)}" data-nav-route="${esc(artistHref)}" class="home-card-nav-link">${esc(artistName)}</a>`
-              : esc(artistName)}
-          </h3>
-          <p class="home-artist-monthly">${esc(monthlyListenersLine)}</p>
+          <h3 class="home-artist-name${artistNameSizeClass}">${esc(artistName)}</h3>
+          <p class="home-artist-monthly" data-artist-monthly data-artist-id="${esc(artistId)}" data-artist-name="${esc(artistName)}">${esc(monthlyListenersLine)}</p>
           ${cardMetaMarkup(meta)}
         </div>
       </article>
@@ -2861,8 +3493,6 @@
     if (!track?.id) return ''
     const artistName = track?.artist?.name || 'Wavee'
     const trackTitle = track?.title || artistName
-    const artistHref = routeArtist(artistName)
-    const trackHref = routeTrack(track.id)
 
     return `
       <article class="home-playlist-card group${featured ? ' is-featured' : ''}${compact ? ' is-compact' : ''}" data-carousel-card data-action="play-track" data-track-id="${esc(track.id)}">
@@ -2876,11 +3506,7 @@
               <span class="home-playlist-logo">W</span>
               <div class="home-playlist-copy">
                 <span class="home-playlist-kicker">${esc(kicker)}</span>
-                <h3 class="home-playlist-artist">
-                  ${artistHref
-                    ? `<a href="${esc(artistHref)}" data-nav-route="${esc(artistHref)}" class="home-card-nav-link">${esc(artistName)}</a>`
-                    : esc(artistName)}
-                </h3>
+                <h3 class="home-playlist-artist">${esc(artistName)}</h3>
               </div>
             `}
           <button data-action="play-track" data-track-id="${esc(track.id)}" class="home-card-play" aria-label="Играть ${esc(track.title || artistName)}">
@@ -2890,16 +3516,8 @@
         ${compact
           ? `
             <div class="home-top-track-meta">
-              <h3 class="home-top-track-title">
-                ${trackHref
-                  ? `<a href="${esc(trackHref)}" data-nav-route="${esc(trackHref)}" class="home-card-nav-link">${esc(trackTitle)}</a>`
-                  : esc(trackTitle)}
-              </h3>
-              <p class="home-top-track-artist">
-                ${artistHref
-                  ? `<a href="${esc(artistHref)}" data-nav-route="${esc(artistHref)}" class="home-card-nav-link is-secondary">${esc(artistName)}</a>`
-                  : esc(artistName)}
-              </p>
+              <h3 class="home-top-track-title">${esc(trackTitle)}</h3>
+              <p class="home-top-track-artist">${esc(artistName)}</p>
             </div>
           `
           : ''}
@@ -2920,11 +3538,6 @@
     if (!track?.id) return ''
     const cardTitle = title || track.title || 'Релиз'
     const cardSubtitle = subtitle || track.artist?.name || 'Wavee'
-    const artistName = track?.artist?.name || ''
-    const trackHref = routeTrack(track.id)
-    const artistHref = normalizeNavText(cardSubtitle) && normalizeNavText(cardSubtitle) === normalizeNavText(artistName)
-      ? routeArtist(artistName)
-      : ''
 
     return `
       <article class="home-album-card group${featured ? ' is-featured' : ''}" data-carousel-card data-action="play-track" data-track-id="${esc(track.id)}">
@@ -2935,16 +3548,8 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
           </button>
         </div>
-        <h3 class="home-album-title">
-          ${trackHref
-            ? `<a href="${esc(trackHref)}" data-nav-route="${esc(trackHref)}" class="home-card-nav-link">${esc(cardTitle)}</a>`
-            : esc(cardTitle)}
-        </h3>
-        <p class="home-album-subtitle">
-          ${artistHref
-            ? `<a href="${esc(artistHref)}" data-nav-route="${esc(artistHref)}" class="home-card-nav-link is-secondary">${esc(cardSubtitle)}</a>`
-            : esc(cardSubtitle)}
-        </p>
+        <h3 class="home-album-title">${esc(cardTitle)}</h3>
+        <p class="home-album-subtitle">${esc(cardSubtitle)}</p>
         ${cardMetaMarkup(meta)}
       </article>
     `
@@ -2962,11 +3567,6 @@
     if (!track?.id) return ''
     const cardTitle = title || track.title || 'Wavee'
     const cardSubtitle = subtitle || track.artist?.name || 'Wavee'
-    const artistName = track?.artist?.name || ''
-    const trackHref = routeTrack(track.id)
-    const artistHref = normalizeNavText(cardSubtitle) && normalizeNavText(cardSubtitle) === normalizeNavText(artistName)
-      ? routeArtist(artistName)
-      : ''
     const sizeClass = size === 'large' ? ' is-large' : (size === 'medium' ? ' is-medium' : '')
 
     return `
@@ -2979,16 +3579,8 @@
           </button>
         </div>
         <div class="home-small-body">
-          <h3 class="home-small-title">
-            ${trackHref
-              ? `<a href="${esc(trackHref)}" data-nav-route="${esc(trackHref)}" class="home-card-nav-link">${esc(cardTitle)}</a>`
-              : esc(cardTitle)}
-          </h3>
-          <p class="home-small-subtitle">
-            ${artistHref
-              ? `<a href="${esc(artistHref)}" data-nav-route="${esc(artistHref)}" class="home-card-nav-link is-secondary">${esc(cardSubtitle)}</a>`
-              : esc(cardSubtitle)}
-          </p>
+          <h3 class="home-small-title">${esc(cardTitle)}</h3>
+          <p class="home-small-subtitle">${esc(cardSubtitle)}</p>
           ${cardMetaMarkup(meta)}
         </div>
       </article>
@@ -2997,20 +3589,32 @@
 
   function HorizontalCarousel({ target = null, cards = [], emptyText = '' } = {}) {
     if (!target) return
-    target.innerHTML = cards.length
+    const nextMarkup = cards.length
       ? cards.join('')
       : `<div class="home-carousel-empty">${esc(emptyText || 'Контент появится после загрузки треков.')}</div>`
+    const nextSignature = fastHash(nextMarkup)
+    const prevSignature = target.dataset.carouselSignature || ''
+    const markupChanged = prevSignature !== nextSignature
 
-    const rowCards = [...target.querySelectorAll('[data-carousel-card]')]
-    requestAnimationFrame(() => {
-      rowCards.forEach((card, index) => {
-        card.style.setProperty('--card-delay', `${Math.min(index * 42, 260)}ms`)
-        card.classList.add('is-stagger-ready')
+    if (markupChanged) {
+      target.innerHTML = nextMarkup
+      target.dataset.carouselSignature = nextSignature
+      target.dataset.carouselHadContent = cards.length ? '1' : '0'
+    }
+
+    const shouldAnimateEnter = markupChanged && target.dataset.carouselEnterPlayed !== '1'
+    if (shouldAnimateEnter) {
+      const rowCards = [...target.querySelectorAll('[data-carousel-card]')]
+      requestAnimationFrame(() => {
+        rowCards.forEach((card, index) => {
+          card.style.setProperty('--card-delay', `${Math.min(index * 42, 260)}ms`)
+          card.classList.add('is-stagger-ready')
+        })
       })
-    })
+      target.dataset.carouselEnterPlayed = '1'
+    }
     wireHomeLazyCoverFx(target)
     wireHomePlayRippleFx(target)
-    bindNavRoutes(target)
   }
 
   function bindNavRoutes(container) {
@@ -3123,15 +3727,20 @@
   }
 
   function renderHome({ modeSwitch = false, activeMode = '' } = {}) {
-    const pool = getHomeTrackPool()
-    const fallbackTracks = dedupeTracks(state.tracks)
+    const forceDisconnectedPlaceholders = HOME_FORCE_DISCONNECTED_PLACEHOLDERS
+    const pool = forceDisconnectedPlaceholders ? [] : getHomeTrackPool()
+    const fallbackTracks = forceDisconnectedPlaceholders ? [] : dedupeTracks(state.tracks)
     const baseTracks = pool.length ? pool : fallbackTracks
     const categories = splitHomeTracksByKind(baseTracks)
     const musicTracks = categories.music.length ? categories.music : baseTracks
-    const isLoadingContent = !state.homeCatalogReady && !baseTracks.length
+    let isLoadingContent = !state.homeCatalogReady && !baseTracks.length
 
     const withSkeleton = (cards, variant = 'medium', count = 6) => (
-      cards.length ? cards : (isLoadingContent ? buildSkeletonCards(variant, count) : [])
+      forceDisconnectedPlaceholders
+        ? buildDisconnectedCards(variant, count)
+        : (
+            cards.length ? cards : (isLoadingContent ? buildSkeletonCards(variant, count) : [])
+          )
     )
 
     const coverMarkup = (track, altText, classes = 'h-full w-full object-cover') => (
@@ -3143,6 +3752,13 @@
     const activeFilter = activeMode || el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE
     const isForYouMode = activeFilter === 'for-you'
     const isTrendsMode = activeFilter === 'trends'
+    const recommendationBlocks = getHomeRecommendationBlocks(activeFilter)
+    const hasRecommendationBlocks = Boolean(recommendationBlocks)
+    const isWaitingForPersonal = isForYouMode && !hasRecommendationBlocks && hasSessionToken()
+
+    if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
+      isLoadingContent = true
+    }
     if (el.homeFilterChips) {
       el.homeFilterChips.dataset.active = activeFilter
     }
@@ -3164,12 +3780,31 @@
         const rightScore = stablePercent(`${right.id}:trending`, 35, 100) + (state.likes.has(right.id) ? 8 : 0)
         return rightScore - leftScore
       })
-      .slice(0, 16)
+      .slice(0, 20)
 
-    const releaseSource = isTrendsMode ? trendingTracks : musicTracks
-    const releaseTracks = [...pickTracks(releaseSource, Math.min(releaseSource.length, 18), 2)]
-      .sort((left, right) => stablePercent(`${right.id}:${isTrendsMode ? 'charts' : 'release'}`, 10, 100) - stablePercent(`${left.id}:${isTrendsMode ? 'charts' : 'release'}`, 10, 100))
-      .slice(0, 12)
+    const recommendedReleaseTracks = getTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
+    // Если мы ждем персоналку, не подставляем общие треки в источник, чтобы не было фликера
+    const releaseSource = recommendedReleaseTracks.length
+      ? recommendedReleaseTracks
+      : (isWaitingForPersonal ? [] : (isTrendsMode ? trendingTracks : musicTracks))
+    
+    const getTrackReleaseTs = (t) => {
+      const candidates = [t?.releasedAt, t?.releaseDate, t?.createdAt, t?.album?.releasedAt]
+      for (const c of candidates) {
+        if (!c) continue
+        if (typeof c === 'number') return c > 1e12 ? c : c * 1000
+        const s = String(c).trim()
+        const ruMatch = s.match(/^(\d{2})\.(\d{2})\.(\d{4})/)
+        if (ruMatch) return new Date(ruMatch[3], ruMatch[2] - 1, ruMatch[1]).getTime() || 0
+        const ts = new Date(s).getTime()
+        if (Number.isFinite(ts)) return ts
+      }
+      return 0
+    }
+
+    const releaseTracks = [...releaseSource]
+      .sort((a, b) => getTrackReleaseTs(b) - getTrackReleaseTs(a))
+      .slice(0, 20)
     const releaseCards = releaseTracks.map((track, index) => AlbumCard({
       track,
       coverMarkup,
@@ -3197,7 +3832,14 @@
     setSectionVisibility(el.homeNewReleasesSection, false)
 
     const favoriteArtists = isForYouMode
-      ? getArtistEntries(musicTracks).slice(0, 14)
+      ? (
+          Array.isArray(recommendationBlocks?.favoriteArtists)
+            ? recommendationBlocks.favoriteArtists
+              .map((item) => ({ artist: item?.artist, track: item?.track }))
+              .filter((item) => item?.artist?.id || item?.artist?.name)
+              .slice(0, 20)
+            : (isWaitingForPersonal ? [] : getArtistEntries(musicTracks).slice(0, 20))
+        )
       : []
     const favoriteArtistCards = favoriteArtists.map((entry, index) => ArtistCard({
       entry,
@@ -3219,13 +3861,18 @@
       visible: isForYouMode,
     })
 
-    const popularArtists = [...getArtistEntries(musicTracks)]
-      .sort((left, right) => {
-        const leftScore = stablePercent(`${left.artist?.id || left.artist?.name}:popular-artist`, 20, 100)
-        const rightScore = stablePercent(`${right.artist?.id || right.artist?.name}:popular-artist`, 20, 100)
-        return rightScore - leftScore
-      })
-      .slice(0, 14)
+    const popularArtists = Array.isArray(recommendationBlocks?.popularArtists)
+      ? recommendationBlocks.popularArtists
+        .map((item) => ({ artist: item?.artist, track: item?.track }))
+        .filter((item) => item?.artist?.id || item?.artist?.name)
+        .slice(0, 20)
+      : (isWaitingForPersonal ? [] : [...getArtistEntries(musicTracks)]
+        .sort((left, right) => {
+          const leftScore = stablePercent(`${left.artist?.id || left.artist?.name}:popular-artist`, 20, 100)
+          const rightScore = stablePercent(`${right.artist?.id || right.artist?.name}:popular-artist`, 20, 100)
+          return rightScore - leftScore
+        })
+        .slice(0, 20))
     const popularArtistCards = popularArtists.map((entry, index) => ArtistCard({
       entry,
       badge: index < 5 ? 'TOP' : '',
@@ -3248,14 +3895,11 @@
 
     setSectionVisibility(el.homeSubtitleSection, isForYouMode)
 
-    const topTracksSource = isTrendsMode ? trendingTracks : musicTracks
-    const topTracks = [...pickTracks(topTracksSource, Math.min(topTracksSource.length, 24), 0)]
-      .sort((left, right) => {
-        const leftScore = stablePercent(`${left.id}:${isTrendsMode ? 'trend-top' : 'top'}`, 40, 100) + (state.likes.has(left.id) ? 12 : 0)
-        const rightScore = stablePercent(`${right.id}:${isTrendsMode ? 'trend-top' : 'top'}`, 40, 100) + (state.likes.has(right.id) ? 12 : 0)
-        return rightScore - leftScore
-      })
-      .slice(0, 12)
+    const recommendedBestTracks = getTracksFromRecommendationBlock(recommendationBlocks?.bestTracks)
+    const topTracksSource = recommendedBestTracks.length
+      ? recommendedBestTracks
+      : (isWaitingForPersonal ? [] : (isTrendsMode ? trendingTracks : musicTracks))
+    const topTracks = topTracksSource.slice(0, 20)
     const topTrackCards = topTracks.map((track, index) => PlaylistCard({
       track,
       coverMarkup,
@@ -3281,7 +3925,13 @@
     })
 
     const mixEntries = isForYouMode
-      ? getMixEntries().filter((entry) => entry?.track?.id).slice(0, 10)
+      ? (
+          Array.isArray(recommendationBlocks?.mixes)
+            ? recommendationBlocks.mixes
+              .filter((entry) => entry?.track?.id)
+              .slice(0, 20)
+            : (isWaitingForPersonal ? [] : getMixEntries().filter((entry) => entry?.track?.id).slice(0, 20))
+        )
       : []
     const mixKickers = ['Для тебя', 'Топ дня', 'Рекомендуем', 'В ротации']
     const mixCards = mixEntries.map((entry, index) => PlaylistCard({
@@ -3339,7 +3989,10 @@
       visible: isForYouMode && (podcastCards.length > 0 || isLoadingContent),
     })
 
-    const extraCards = getGenreMoodBuckets(musicTracks).slice(0, 10).map((entry, index) => SmallCard({
+    const genresAndMoodsEntries = Array.isArray(recommendationBlocks?.genresAndMoods)
+      ? recommendationBlocks.genresAndMoods
+      : getGenreMoodBuckets(musicTracks)
+    const extraCards = genresAndMoodsEntries.slice(0, 20).map((entry, index) => SmallCard({
       track: entry.track,
       coverMarkup,
       kicker: isTrendsMode ? 'Чарт' : 'Тренд',
@@ -3371,6 +4024,7 @@
     if (modeSwitch) playHomeModeTransitionFx()
     wireHomePlayRippleFx(document)
     wireHomeLazyCoverFx(document)
+    void hydrateHomeArtistMonthlyListeners()
 
     if (el.hero) {
       const myWaveTracks = getMyWaveTracks()
@@ -3392,8 +4046,9 @@
 
   function renderMyWave() {
     if (!el.myWaveStreamRow || !el.myWaveEmpty) return
-    const items = state.myWave.filter((item) => item?.track?.id)
+    const items = filterDislikedWaveItems(state.myWave)
     const hasSession = Boolean(localStorage.getItem(TOKEN))
+    syncMyWaveSettingChips()
     const heroEntry = items[0] || null
     const heroTrack = heroEntry?.track || null
     const palette = getMyWavePalette(items)
@@ -3577,45 +4232,109 @@
       }
     }
     if (el.myWaveRefresh) el.myWaveRefresh.onclick = async () => {
-      const wave = localStorage.getItem(TOKEN)
-        ? await api('/recommendations/my-wave', { auth: 'required' }).catch(() => ({ items: [] }))
-        : { items: [] }
-      state.myWave = wave.items || []
-      renderMyWave()
+      await loadMyWaveRecommendations({
+        settings: state.myWaveSettings,
+        persistSettings: false,
+        rerender: true,
+      })
     }
+
+    document.querySelectorAll('[data-wave-setting][data-wave-value]').forEach((button) => {
+      if (button.dataset.bound === '1') return
+      button.addEventListener('click', async () => {
+        if (!hasSessionToken()) {
+          syncMyWaveSettingChips()
+          return
+        }
+
+        const key = button.getAttribute('data-wave-setting') || ''
+        const value = button.getAttribute('data-wave-value') || ''
+        if (!(key in WAVE_SETTING_VALUES)) return
+        if (!WAVE_SETTING_VALUES[key].has(value)) return
+        if (state.myWaveSettings[key] === value) return
+
+        const nextSettings = normalizeWaveSettings({
+          ...state.myWaveSettings,
+          [key]: value,
+        })
+        state.myWaveSettings = nextSettings
+        syncMyWaveSettingChips()
+
+        await loadMyWaveRecommendations({
+          settings: nextSettings,
+          persistSettings: true,
+          rerender: true,
+        })
+      })
+      button.dataset.bound = '1'
+    })
     wireHomeFilterChips()
     wireHomeTrackRails()
 
     document.addEventListener('click', (e) => {
-      if (e.defaultPrevented) return
-      const navTarget = e.target.closest('[data-nav-route]')
-      if (navTarget) {
-        e.preventDefault()
-        navigateInHost(navTarget.getAttribute('data-nav-route') || '/')
-        return
-      }
       const t = e.target.closest('[data-action]')
       if (!t) return
       e.preventDefault()
       const id = t.getAttribute('data-track-id') || ''
-      if (t.getAttribute('data-action') === 'play-track') { const tr = findTrack(id); if (tr) play(tr, 'list-click') }
+      if (t.getAttribute('data-action') === 'play-track') {
+        const tr = findTrack(id)
+        if (tr) {
+          const list = page === 'home' ? getHomeTrackPool() : getPlaybackListForPage()
+          play(tr, 'list-click', { list })
+        }
+      }
       if (t.getAttribute('data-action') === 'like-track') toggleLike(id)
     })
 
     if (audio) {
       audio.onloadedmetadata = () => { state.d = Number.isFinite(audio.duration) ? audio.duration : state.d; syncPlayer() }
-      audio.ontimeupdate = () => { state.t = audio.currentTime || 0; syncPlayer() }
-      audio.onended = () => next()
+      audio.ontimeupdate = () => { state.t = audio.currentTime || 0; touchPlaybackSession(); syncPlayer() }
+      audio.onended = () => next('ended')
       audio.onplay = () => { state.playing = true; syncPlayer() }
       audio.onpause = () => { if (state.track?.sourceType !== 'youtube') { state.playing = false; syncPlayer() } }
     }
   }
 
+  function getHomeRecommendationBlocks(mode) {
+    return state.homeRecommendationsByMode?.[mode]?.blocks || null
+  }
+
+  function getTracksFromRecommendationBlock(items) {
+    if (!Array.isArray(items)) return []
+    return dedupeTracks(items.map((item) => item?.track).filter((track) => track?.id))
+  }
+
+  function runDeferred(task, timeout = 1200) {
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const callbackId = window.requestIdleCallback(task, { timeout })
+      return () => window.cancelIdleCallback(callbackId)
+    }
+
+    const timer = setTimeout(task, Math.min(400, timeout))
+    return () => clearTimeout(timer)
+  }
+
   ;(async () => {
-    const disposeHomeVisualizer = initHomeVisualizer()
+    let disposeHomeVisualizer = () => {}
+    let visualizerStarted = false
+    const startHomeVisualizer = () => {
+      if (visualizerStarted) return
+      visualizerStarted = true
+      disposeHomeVisualizer = initHomeVisualizer()
+    }
+    const cancelDeferredVisualizer = runDeferred(() => {
+      if (page === 'home') {
+        startHomeVisualizer()
+      }
+    }, 1400)
+    window.addEventListener('pointerdown', startHomeVisualizer, { once: true, passive: true })
+    window.addEventListener('keydown', startHomeVisualizer, { once: true })
+
     wire()
     const hasSession = Boolean(localStorage.getItem(TOKEN))
     const cachedTracks = readCachedTracks()
+    const hydratedReco = hydrateHomeRecommendationsFromCache()
+    syncMyWaveSettingChips()
 
     const renderCurrentPage = ({ initial = false } = {}) => {
       if (page === 'home') renderHome()
@@ -3637,10 +4356,14 @@
       renderCurrentPage({ initial: true })
     }
 
-    const catalogFeed = await api('/catalog/feed?limit=40', { auth: 'optional' }).catch(() => ({ items: [] }))
+    if (hydratedReco && !cachedTracks.length) {
+      renderCurrentPage({ initial: true })
+    }
+
+    const catalogFeed = await api('/catalog/feed?limit=40', { auth: 'optional', timeoutMs: 1_800 }).catch(() => ({ items: [] }))
     const tracks = (Array.isArray(catalogFeed.items) && catalogFeed.items.length)
       ? { items: [] }
-      : await api('/tracks?query=&limit=40&offset=0', { auth: 'optional' }).catch(() => ({ items: [] }))
+      : await api('/tracks?query=&limit=40&offset=0', { auth: 'optional', timeoutMs: 4_500 }).catch(() => ({ items: [] }))
 
     const nextTracks = Array.isArray(catalogFeed.items) && catalogFeed.items.length
       ? catalogFeed.items
@@ -3666,22 +4389,49 @@
     }
 
     if (hasSession) {
+      const primaryMode = HOME_DEFAULT_MODE === 'trends' ? 'trends' : 'for-you'
+      const secondaryMode = primaryMode === 'for-you' ? 'trends' : 'for-you'
+
       void Promise.all([
-        api('/library/likes', { auth: 'required' }).catch(() => ({ items: [] })),
-        api('/recommendations/my-wave', { auth: 'required' }).catch(() => ({ items: [] })),
-        api('/playlists', { auth: 'required' }).catch(() => ({ items: [] })),
-      ]).then(([likes, wave, playlists]) => {
-        state.likes = new Set((likes.items || []).map((t) => t.id))
-        state.myWave = wave.items || []
-        state.playlists = playlists.items || []
+        refreshPersonalization({ includePlaylists: true, rerender: false, force: true }),
+        fetchHomeRecommendationsMode(primaryMode),
+      ]).then(() => {
         renderCurrentPage({ initial: false })
         syncLikes()
-      }).catch(() => {})
+        void runDeferred(() => {
+          void fetchHomeRecommendationsMode(secondaryMode).catch(() => {})
+        }, 1800)
+      }).catch(() => {
+        state.homeCatalogReady = true
+        renderCurrentPage({ initial: false })
+      })
+    } else {
+      void fetchHomeRecommendationsMode('trends').then(() => {
+        state.homeCatalogReady = true
+        if (page === 'home') renderHome()
+      }).catch(() => {
+        state.homeCatalogReady = true
+        if (page === 'home') renderHome()
+      })
     }
 
+    const handleVisibilityRefresh = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshPersonalization({ rerender: true, force: true })
+      }
+    }
+    const handleFocusRefresh = () => {
+      void refreshPersonalization({ rerender: true, force: true })
+    }
+    window.addEventListener('focus', handleFocusRefresh)
+    document.addEventListener('visibilitychange', handleVisibilityRefresh)
     window.addEventListener('pagehide', () => {
+      endPlaybackSession({ completed: false, contextType: 'pagehide' })
+      cancelDeferredVisualizer()
       disposeHomeVisualizer()
       stopHeroArtAnimation()
+      window.removeEventListener('focus', handleFocusRefresh)
+      document.removeEventListener('visibilitychange', handleVisibilityRefresh)
     }, { once: true })
   })()
 })()

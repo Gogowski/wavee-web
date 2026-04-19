@@ -1,1 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?><svg id="folder-solid" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polygon points="23 6 23 21 22 21 22 22 2 22 2 21 1 21 1 3 2 3 2 2 11 2 11 3 12 3 12 4 13 4 13 5 22 5 22 6 23 6"/></svg>
+<svg id="folder-solid" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M3 7V18a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5.17a2 2 0 01-1.41-.59l-1.42-1.42A2 2 0 009.59 4.5H5a2 2 0 00-2 2V7z" fill="currentColor"/>
+</svg>

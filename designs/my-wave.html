@@ -27,7 +27,7 @@
           var(--bg-dark);
         background-attachment: fixed;
         color: #fff;
-        font-family: 'Onest', sans-serif;
+        font-family: var(--wavee-body-font);
         overflow-x: hidden;
         transition: background 0.45s ease;
       }
@@ -88,6 +88,7 @@
       .text-gradient {
         background: linear-gradient(to right, #fff, #bbb);
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
       }
       .wave-animation {
@@ -156,7 +157,7 @@
         align-items: center;
         gap: 0.75rem;
         margin-bottom: 1rem;
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 0.64rem;
         letter-spacing: 0.28em;
         text-transform: uppercase;
@@ -172,7 +173,7 @@
       }
       .my-wave-title {
         margin: 0;
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: clamp(2.8rem, 5vw, 4.5rem);
         line-height: 0.96;
         letter-spacing: -0.05em;
@@ -200,7 +201,7 @@
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.04);
         color: rgba(255, 255, 255, 0.76);
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 0.64rem;
         letter-spacing: 0.11em;
         text-transform: uppercase;
@@ -243,7 +244,7 @@
         min-height: 3.4rem;
         padding: 0 1.5rem;
         border-radius: 999px;
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 0.7rem;
         letter-spacing: 0.12em;
         text-transform: uppercase;
@@ -289,7 +290,7 @@
         -webkit-backdrop-filter: blur(24px);
       }
       .my-wave-now-label {
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 0.58rem;
         letter-spacing: 0.18em;
         text-transform: uppercase;
@@ -297,7 +298,7 @@
       }
       .my-wave-now-title {
         margin-top: 0.7rem;
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 1.1rem;
         line-height: 1.15;
         color: #ffffff;
@@ -416,7 +417,7 @@
         border-radius: 999px;
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(10, 10, 10, 0.2);
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 0.58rem;
         letter-spacing: 0.18em;
         text-transform: uppercase;
@@ -425,7 +426,7 @@
       .my-wave-stage-copy strong {
         display: block;
         margin-top: 0;
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 1.45rem;
         line-height: 1.1;
         color: #ffffff;
@@ -473,7 +474,7 @@
       }
       .my-wave-section-kicker {
         margin: 0 0 0.4rem;
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 0.62rem;
         letter-spacing: 0.22em;
         text-transform: uppercase;
@@ -481,7 +482,7 @@
       }
       .my-wave-section-title {
         margin: 0;
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 1.45rem;
         font-weight: 500;
         letter-spacing: -0.03em;
@@ -564,7 +565,7 @@
         border-radius: 999px;
         background: rgba(8, 8, 8, 0.24);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 0.56rem;
         letter-spacing: 0.18em;
         text-transform: uppercase;
@@ -613,7 +614,7 @@
       }
       .my-wave-stream-title {
         margin: 0;
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 1rem;
         line-height: 1.18;
         color: #ffffff;
@@ -672,7 +673,7 @@
       }
       .my-wave-secondary-title {
         margin: 0;
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 0.83rem;
         line-height: 1.18;
         color: #ffffff;
@@ -724,7 +725,7 @@
       }
       .my-wave-empty-copy h2 {
         margin: 0;
-        font-family: 'Unbounded', sans-serif;
+        font-family: var(--wavee-heading-font);
         font-size: 1.6rem;
         font-weight: 500;
         color: #ffffff;
@@ -870,23 +871,7 @@
     </style>
   </head>
   <body data-wavee-page="my-wave" class="relative flex min-h-screen flex-col selection:bg-[#92A9E1] selection:text-black">
-    <nav class="sticky top-4 z-50 mx-auto flex w-[95%] items-center justify-between rounded-full px-6 py-4 glass-panel">
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2">
-          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#92A9E1]" style="box-shadow:0 0 16px rgba(146,169,225,0.35)">
-            <svg viewBox="0 0 10 10" class="h-5 w-5" fill="#000"><rect x="1" y="5" width="1" height="2"></rect><rect x="2" y="4" width="1" height="3"></rect><rect x="3" y="3" width="1" height="4"></rect><rect x="4" y="2" width="1" height="5"></rect><rect x="5" y="3" width="1" height="4"></rect><rect x="6" y="4" width="1" height="3"></rect><rect x="7" y="5" width="1" height="2"></rect><rect x="8" y="6" width="1" height="1"></rect></svg>
-          </div>
-          <span class="text-base font-bold uppercase tracking-[0.15em] text-white" style="font-family:'Unbounded',sans-serif">wavee</span>
-        </div>
-      </div>
-      <div class="hidden md:flex items-center gap-2 text-sm font-medium">
-        <a href="/" data-nav-route="/" class="rounded-full px-5 py-2.5 text-white/70 hover:bg-white/10 hover:text-white" style="font-family:'Unbounded',sans-serif;font-size:11px;letter-spacing:0.05em">Главная</a>
-        
-        <a href="/search" data-nav-route="/search" class="rounded-full px-5 py-2.5 text-white/70 hover:bg-white/10 hover:text-white" style="font-family:'Unbounded',sans-serif;font-size:11px;letter-spacing:0.05em">Поиск</a>
-        <a href="/library" data-nav-route="/library" class="rounded-full px-5 py-2.5 text-white/70 hover:bg-white/10 hover:text-white" style="font-family:'Unbounded',sans-serif;font-size:11px;letter-spacing:0.05em">Библиотека</a>
-      </div>
-      <div class="h-10 w-10 overflow-hidden rounded-full border border-white/10"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Stephanie" alt="Profile" class="h-full w-full object-cover" /></div>
-    </nav>
+    <!-- Legacy Navigation Removed -->
 
     <header class="my-wave-page-shell">
       <section class="my-wave-hero-shell">
@@ -898,11 +883,25 @@
           <h1 class="my-wave-title text-gradient">Моя волна</h1>
           <p class="my-wave-description">Живой эфир, который собирается из твоих жанров, артистов и недавних сигналов. Wavee оставляет свой лайм, а тон потока подхватывает цвет твоей музыки.</p>
 
-          <div class="my-wave-chip-row" aria-label="Быстрые настройки волны">
-            <button type="button" class="my-wave-chip is-accent">По любимым</button>
-            <button type="button" class="my-wave-chip">Энергичнее</button>
-            <button type="button" class="my-wave-chip">Спокойнее</button>
-            <button type="button" class="my-wave-chip">Новое рядом</button>
+          <div id="my-wave-settings-panel" aria-label="Настройки волны">
+            <div class="my-wave-chip-row" aria-label="Характер волны">
+              <button type="button" class="my-wave-chip is-accent" data-wave-setting="character" data-wave-value="favorite">Любимое</button>
+              <button type="button" class="my-wave-chip" data-wave-setting="character" data-wave-value="unfamiliar">Незнакомое</button>
+              <button type="button" class="my-wave-chip" data-wave-setting="character" data-wave-value="popular">Популярное</button>
+            </div>
+            <div class="my-wave-chip-row" aria-label="Настроение">
+              <button type="button" class="my-wave-chip" data-wave-setting="mood" data-wave-value="energetic">Бодрое</button>
+              <button type="button" class="my-wave-chip" data-wave-setting="mood" data-wave-value="happy">Весёлое</button>
+              <button type="button" class="my-wave-chip is-accent" data-wave-setting="mood" data-wave-value="calm">Спокойное</button>
+              <button type="button" class="my-wave-chip" data-wave-setting="mood" data-wave-value="sad">Грустное</button>
+            </div>
+            <div class="my-wave-chip-row" aria-label="Занятие">
+              <button type="button" class="my-wave-chip" data-wave-setting="activity" data-wave-value="sleep">Засыпаю</button>
+              <button type="button" class="my-wave-chip" data-wave-setting="activity" data-wave-value="wake">Просыпаюсь</button>
+              <button type="button" class="my-wave-chip" data-wave-setting="activity" data-wave-value="road">В дороге</button>
+              <button type="button" class="my-wave-chip is-accent" data-wave-setting="activity" data-wave-value="work">Работаю</button>
+              <button type="button" class="my-wave-chip" data-wave-setting="activity" data-wave-value="training">Тренируюсь</button>
+            </div>
           </div>
 
           <div class="my-wave-action-row">
