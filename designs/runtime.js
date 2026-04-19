@@ -2964,10 +2964,10 @@
 
     try {
       if (active) {
-        await api(`/likes/${encodeURIComponent(cleanId)}`, { method: 'DELETE', auth: 'required' })
+        await api(`/library/likes/${encodeURIComponent(cleanId)}`, { method: 'DELETE', auth: 'required' })
         state.likes.delete(cleanId)
       } else {
-        await api(`/likes/${encodeURIComponent(cleanId)}`, { method: 'POST', auth: 'required' })
+        await api(`/library/likes/${encodeURIComponent(cleanId)}`, { method: 'POST', auth: 'required' })
         state.likes.add(cleanId)
       }
       syncLikes()
