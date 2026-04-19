@@ -2315,6 +2315,9 @@
     if (r.status === 401 && auth !== 'none' && retry) {
       const t = await refreshToken()
       if (t) return api(path, { method, body, auth, retry: false, signal, timeoutMs })
+      if (auth === 'optional') {
+        return api(path, { method, body, auth: 'none', retry: false, signal, timeoutMs })
+      }
     }
     const p = await r.json().catch(() => ({}))
     if (!r.ok) throw Object.assign(new Error(p.error || `HTTP ${r.status}`), { status: r.status })
