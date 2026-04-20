@@ -2272,6 +2272,45 @@
     return p.accessToken || ''
   }
 
+  async function publicApi(path, { method = 'GET', body, signal, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
+    const headers = { 'Content-Type': 'application/json' }
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    const abortFromParent = () => controller.abort()
+    if (signal) {
+      if (signal.aborted) {
+        controller.abort()
+      } else {
+        signal.addEventListener('abort', abortFromParent, { once: true })
+      }
+    }
+
+    let r
+    try {
+      r = await fetch(`${apiBase}${path}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+      })
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        throw Object.assign(new Error(`Request timeout after ${timeoutMs}ms`), { status: 504 })
+      }
+      throw error
+    } finally {
+      clearTimeout(timer)
+      if (signal) {
+        signal.removeEventListener('abort', abortFromParent)
+      }
+    }
+
+    if (r.status === 204) return null
+    const p = await r.json().catch(() => ({}))
+    if (!r.ok) throw Object.assign(new Error(p.error || `HTTP ${r.status}`), { status: r.status })
+    return p
+  }
+
   async function api(path, { method = 'GET', body, auth = 'none', retry = true, signal, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
     let token = (auth === 'required' || auth === 'optional') ? (localStorage.getItem(TOKEN) || '') : ''
     if ((auth === 'required' || auth === 'optional') && !token && retry) {
@@ -4363,10 +4402,16 @@
       renderCurrentPage({ initial: true })
     }
 
-    const catalogFeed = await api('/catalog/feed?limit=40', { auth: 'optional', timeoutMs: 1_800 }).catch(() => ({ items: [] }))
-    const tracks = (Array.isArray(catalogFeed.items) && catalogFeed.items.length)
+    let catalogFeed = await api('/catalog/feed?limit=40', { auth: 'optional', timeoutMs: 1_800 }).catch(() => ({ items: [] }))
+    if (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0) {
+      catalogFeed = await publicApi('/catalog/feed?limit=40', { timeoutMs: 1_800 }).catch(() => ({ items: [] }))
+    }
+    let tracks = (Array.isArray(catalogFeed.items) && catalogFeed.items.length)
       ? { items: [] }
       : await api('/tracks?query=&limit=40&offset=0', { auth: 'optional', timeoutMs: 4_500 }).catch(() => ({ items: [] }))
+    if ((!Array.isArray(tracks?.items) || tracks.items.length === 0) && (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0)) {
+      tracks = await publicApi('/tracks?query=&limit=40&offset=0', { timeoutMs: 4_500 }).catch(() => ({ items: [] }))
+    }
 
     const nextTracks = Array.isArray(catalogFeed.items) && catalogFeed.items.length
       ? catalogFeed.items
