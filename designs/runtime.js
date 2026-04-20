@@ -28,6 +28,52 @@
 
   document.body.dataset.waveeEmbed = embedMode ? 'app' : 'standalone'
 
+  function resetEmbedScrollPosition() {
+    if (!embedMode) return
+    try {
+      if (typeof history !== 'undefined' && 'scrollRestoration' in history) {
+        history.scrollRestoration = 'manual'
+      }
+    } catch {
+      // ignore
+    }
+
+    try {
+      window.scrollTo(0, 0)
+    } catch {
+      // ignore
+    }
+
+    try {
+      if (document.documentElement) {
+        document.documentElement.scrollTop = 0
+      }
+      if (document.body) {
+        document.body.scrollTop = 0
+      }
+      if (document.scrollingElement) {
+        document.scrollingElement.scrollTop = 0
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  function scheduleEmbedScrollReset() {
+    if (!embedMode) return
+    resetEmbedScrollPosition()
+    requestAnimationFrame(() => {
+      resetEmbedScrollPosition()
+      requestAnimationFrame(() => {
+        resetEmbedScrollPosition()
+      })
+    })
+    setTimeout(resetEmbedScrollPosition, 0)
+    setTimeout(resetEmbedScrollPosition, 120)
+    setTimeout(resetEmbedScrollPosition, 400)
+    setTimeout(resetEmbedScrollPosition, 900)
+  }
+
   function stripRecoPrefix(id) {
     if (typeof id !== 'string') return id
     return id.startsWith('reco-') ? id.slice(5) : id
@@ -178,6 +224,7 @@
     el.play?.closest('.fixed')?.remove()
     el.play?.closest('.player-shell')?.remove()
     document.body.style.paddingBottom = '1.5rem'
+    scheduleEmbedScrollReset()
   }
 
   const audio = embedMode ? null : document.createElement('audio')
@@ -4426,6 +4473,7 @@
     state.homeCatalogReady = true
 
     state.list = [...state.tracks]
+    scheduleEmbedScrollReset()
     renderCurrentPage({ initial: true })
 
     schedulePlaybackPrefetch(state.list.length ? state.list : state.tracks)
