@@ -3397,7 +3397,6 @@
       entry?.artist?.coverUrl ||
       entry?.artist?.imageUrl ||
       entry?.artist?.pictureUrl ||
-      entry?.track?.coverUrl ||
       ''
     )
   }
@@ -3873,9 +3872,14 @@
 
     const recommendedReleaseTracks = getTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
     // Если мы ждем персоналку, не подставляем общие треки в источник, чтобы не было фликера
+    const recommendedFallbackTracks = getTracksFromRecommendationBlock(recommendationBlocks?.bestTracks)
     const releaseSource = recommendedReleaseTracks.length
       ? recommendedReleaseTracks
-      : (isWaitingForPersonal ? [] : (isTrendsMode ? trendingTracks : musicTracks))
+      : (isWaitingForPersonal
+          ? []
+          : (isTrendsMode
+              ? trendingTracks
+              : (recommendedFallbackTracks.length ? recommendedFallbackTracks : musicTracks)))
     
     const getTrackReleaseTs = (t) => {
       const candidates = [t?.releasedAt, t?.releaseDate, t?.createdAt, t?.album?.releasedAt]
