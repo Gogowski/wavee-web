@@ -246,6 +246,7 @@
   }
   const railAnimationState = new WeakMap()
   const homeRecommendationsInflight = new Map()
+  const homePersonalReleaseInflight = new Map()
   const HOME_DEFAULT_MODE = hasSessionToken() ? 'for-you' : 'trends'
   const HOME_RECOMMENDATIONS_LIMIT = 20
   const MY_WAVE_RECOMMENDATIONS_LIMIT = 40
@@ -2141,6 +2142,130 @@
     return request
   }
 
+  async function fetchArtistCatalog({ artistId = '', artistName = '' } = {}) {
+    const normalizedArtistId = extractCatalogArtistId(artistId)
+    const normalizedArtistName = normalizeArtistLookupName(artistName)
+    if (!normalizedArtistId && !normalizedArtistName) {
+      return null
+    }
+
+    const path = normalizedArtistId
+      ? `/catalog/artist?artistId=${encodeURIComponent(normalizedArtistId)}&limit=4`
+      : `/catalog/artist?name=${encodeURIComponent(artistName)}&limit=4`
+
+    return api(path, { auth: 'optional' }).catch(() => null)
+  }
+
+  async function fetchAlbumCatalogById(albumId = '') {
+    const normalizedAlbumId = String(albumId || '').trim()
+    if (!normalizedAlbumId) {
+      return null
+    }
+    return api(`/catalog/album?albumId=${encodeURIComponent(normalizedAlbumId)}&limit=4`, { auth: 'optional' }).catch(() => null)
+  }
+
+  async function hydrateMissingHomeNewReleases(payload, mode) {
+    if (mode !== 'for-you' || !payload?.blocks) {
+      return payload
+    }
+
+    const existing = getTracksFromRecommendationBlock(payload.blocks?.newReleases)
+    if (existing.length) {
+      return payload
+    }
+
+    const favoriteArtists = Array.isArray(payload.blocks?.favoriteArtists)
+      ? payload.blocks.favoriteArtists
+      : []
+    if (!favoriteArtists.length) {
+      return payload
+    }
+
+    const cacheKey = `${mode}:${favoriteArtists.map((entry) => entry?.artist?.id || entry?.artist?.name || '').join('|')}`
+    const pending = homePersonalReleaseInflight.get(cacheKey)
+    if (pending) {
+      return pending
+    }
+
+    const request = (async () => {
+      const catalogs = await Promise.all(
+        favoriteArtists
+          .slice(0, 8)
+          .map((entry) => fetchArtistCatalog({
+            artistId: entry?.artist?.id,
+            artistName: entry?.artist?.name,
+          })),
+      )
+
+      const releaseTracks = []
+      for (const catalog of catalogs) {
+        const newestRelease = catalog?.newestRelease || (Array.isArray(catalog?.albums) ? catalog.albums[0] : null)
+        if (!newestRelease?.id) {
+          continue
+        }
+
+        const albumCatalog = await fetchAlbumCatalogById(newestRelease.id)
+        const track = Array.isArray(albumCatalog?.tracks) ? albumCatalog.tracks[0] : null
+        if (!track?.id) {
+          continue
+        }
+
+        const releaseDate = newestRelease?.releaseDate || track?.releasedAt || track?.createdAt || null
+        releaseTracks.push({
+          ...track,
+          releasedAt: releaseDate,
+          createdAt: releaseDate,
+          album: track?.album
+            ? {
+                ...track.album,
+                releaseDate: releaseDate || track.album?.releaseDate || null,
+              }
+            : track?.album,
+        })
+      }
+
+      if (!releaseTracks.length) {
+        return payload
+      }
+
+      const seenArtists = new Set()
+      const entries = releaseTracks
+        .filter((track) => {
+          const artistKey = track?.artist?.id || track?.artist?.name
+          if (!artistKey || seenArtists.has(artistKey)) {
+            return false
+          }
+          seenArtists.add(artistKey)
+          return true
+        })
+        .sort((left, right) => {
+          const leftTs = new Date(left?.releasedAt || left?.createdAt || 0).getTime()
+          const rightTs = new Date(right?.releasedAt || right?.createdAt || 0).getTime()
+          return rightTs - leftTs
+        })
+        .slice(0, HOME_RECOMMENDATIONS_LIMIT)
+        .map((track, index) => ({
+          id: `reco-${track.id}`,
+          score: Number((2 - (index * 0.04)).toFixed(6)),
+          reason: 'favorite-artist-latest',
+          track,
+        }))
+
+      return {
+        ...payload,
+        blocks: {
+          ...payload.blocks,
+          newReleases: entries,
+        },
+      }
+    })().finally(() => {
+      homePersonalReleaseInflight.delete(cacheKey)
+    })
+
+    homePersonalReleaseInflight.set(cacheKey, request)
+    return request
+  }
+
   async function hydrateHomeArtistMonthlyListeners() {
     const rows = [...document.querySelectorAll('[data-artist-monthly]')]
     if (!rows.length) return
@@ -2588,11 +2713,12 @@
     const path = `/recommendations/home?limit=${HOME_RECOMMENDATIONS_LIMIT}&mode=${encodeURIComponent(mode)}`
 
     const request = api(path, { auth: authMode })
-      .then((payload) => {
+      .then(async (payload) => {
         if (payload?.blocks) {
-          const enriched = { ...payload, __cachedAt: Date.now() }
+          const hydratedPayload = await hydrateMissingHomeNewReleases(payload, mode).catch(() => payload)
+          const enriched = { ...hydratedPayload, __cachedAt: Date.now() }
           state.homeRecommendationsByMode[mode] = enriched
-          writeCachedHomeRecommendations(mode, tokenPresent, payload)
+          writeCachedHomeRecommendations(mode, tokenPresent, hydratedPayload)
           return enriched
         }
         return null
@@ -3891,10 +4017,10 @@
           ? []
           : (isTrendsMode
               ? trendingTracks
-              : (recommendedFallbackTracks.length ? recommendedFallbackTracks : musicTracks)))
+              : []))
     
     const getTrackReleaseTs = (t) => {
-      const candidates = [t?.releasedAt, t?.releaseDate, t?.createdAt, t?.album?.releasedAt]
+      const candidates = [t?.releasedAt, t?.releaseDate, t?.createdAt, t?.album?.releasedAt, t?.album?.releaseDate]
       for (const c of candidates) {
         if (!c) continue
         if (typeof c === 'number') return c > 1e12 ? c : c * 1000
@@ -3930,7 +4056,9 @@
       controlsAriaLabel: 'Навигация по новым релизам',
       controlsKeys: ['homeQuickAccessPrev', 'homeQuickAccessNext'],
       cards: withSkeleton(releaseCards, 'medium', 6),
-      emptyText: 'Релизы появятся после загрузки каталога.',
+      emptyText: isTrendsMode
+        ? 'Релизы появятся после загрузки каталога.'
+        : 'Персональные релизы появятся после построения рекомендаций.',
       visible: true,
     })
 
