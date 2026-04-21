@@ -2065,6 +2065,18 @@
     return 'Дата не указана'
   }
 
+  function resolveHomeReleaseLabel(track = {}) {
+    const directLabel = resolveTrackReleaseLabel(track)
+    if ((directLabel === 'Сегодня' || directLabel === 'Вчера') && track?.sourceType === 'catalog') {
+      const year = track?.album?.year || track?.year || track?.releaseYear || null
+      if (year) {
+        return String(year)
+      }
+      return 'Новый релиз'
+    }
+    return directLabel
+  }
+
   function resolveArtistMonthlyListeners(entry = {}) {
     const candidates = [
       entry?.artist?.lastMonthListeners,
@@ -3902,7 +3914,7 @@
       track,
       coverMarkup,
       title: track.title,
-      subtitle: `${track.artist?.name || 'Wavee'} • ${resolveTrackReleaseLabel(track)}`,
+      subtitle: `${track.artist?.name || 'Wavee'} • ${resolveHomeReleaseLabel(track)}`,
       badge: isTrendsMode ? 'TOP' : (index < 5 ? 'NEW' : ''),
       meta: isTrendsMode ? 'В чарте недели' : 'Свежий релиз',
       featured: false,
