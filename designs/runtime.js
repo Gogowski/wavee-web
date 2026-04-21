@@ -79,6 +79,24 @@
     return id.startsWith('reco-') ? id.slice(5) : id
   }
 
+  function getArtistNames(track, fallback = 'Wavee') {
+    const names = []
+    if (Array.isArray(track?.artists)) {
+      track.artists.forEach((artist) => {
+        const name = String(artist?.name ?? '').trim()
+        if (name) names.push(name)
+      })
+    }
+    const primaryName = String(track?.artist?.name ?? '').trim()
+    if (primaryName) names.push(primaryName)
+    const uniqueNames = [...new Set(names)]
+    return uniqueNames.length ? uniqueNames : [fallback]
+  }
+
+  function formatArtistNames(track, fallback = 'Wavee') {
+    return getArtistNames(track, fallback).join(', ')
+  }
+
   function notifyParent(type, payload) {
     if (typeof window !== 'undefined' && window.top && window.top !== window) {
       window.top.postMessage(
@@ -1754,7 +1772,7 @@
         return {
           id: track.id,
           title: genre ? `${titleCase(genre)} mix` : `${titleCase(track.artist?.name || 'Wave')} mix`,
-          subtitle: track.artist?.name || 'Wavee selection',
+          subtitle: formatArtistNames(track, 'Wavee selection'),
           seed: `${track.title}-${index}`,
           track,
         }
@@ -3763,7 +3781,7 @@
   } = {}) {
     if (!track?.id) return ''
     const cardTitle = title || track.title || 'Релиз'
-    const cardSubtitle = subtitle || track.artist?.name || 'Wavee'
+    const cardSubtitle = subtitle || formatArtistNames(track)
 
     return `
       <article class="home-album-card group${featured ? ' is-featured' : ''}" data-carousel-card data-action="play-track" data-track-id="${esc(track.id)}">
@@ -3792,7 +3810,7 @@
   } = {}) {
     if (!track?.id) return ''
     const cardTitle = title || track.title || 'Wavee'
-    const cardSubtitle = subtitle || track.artist?.name || 'Wavee'
+    const cardSubtitle = subtitle || formatArtistNames(track)
     const sizeClass = size === 'large' ? ' is-large' : (size === 'medium' ? ' is-medium' : '')
 
     return `
@@ -4040,7 +4058,7 @@
       track,
       coverMarkup,
       title: track.title,
-      subtitle: `${track.artist?.name || 'Wavee'} • ${resolveHomeReleaseLabel(track)}`,
+      subtitle: `${formatArtistNames(track)} • ${resolveHomeReleaseLabel(track)}`,
       badge: isTrendsMode ? 'TOP' : (index < 5 ? 'NEW' : ''),
       meta: isTrendsMode ? 'В чарте недели' : 'Свежий релиз',
       featured: false,
