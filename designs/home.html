@@ -1705,6 +1705,11 @@
         transform: translateY(-3px) scale(1.04);
       }
 
+      .home-carousel-track .home-artist-card:hover,
+      .home-carousel-track .home-artist-card:focus-within {
+        transform: none;
+      }
+
       .home-carousel-track [data-carousel-card]:active {
         transform: translateY(-1px) scale(0.985);
       }
@@ -2269,6 +2274,12 @@
       .group:focus-within .home-album-cover .home-lazy-cover {
         filter: blur(2.3px) brightness(0.62) saturate(0.9);
         transform: scale(1.045);
+      }
+
+      .home-artist-card:hover .home-artist-cover-shell .home-lazy-cover,
+      .home-artist-card:focus-within .home-artist-cover-shell .home-lazy-cover {
+        filter: brightness(0.7) saturate(0.92);
+        transform: scale(1.07);
       }
 
       #home-top-tracks-row .home-top-track-meta {
