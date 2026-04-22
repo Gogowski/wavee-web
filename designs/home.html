@@ -1700,13 +1700,14 @@
         will-change: transform;
       }
 
-      .home-carousel-track [data-carousel-card]:hover,
-      .home-carousel-track [data-carousel-card]:focus-within {
-        transform: translateY(-3px) scale(1.04);
-      }
-
       .home-carousel-track .home-artist-card:hover,
-      .home-carousel-track .home-artist-card:focus-within {
+      .home-carousel-track .home-artist-card:focus-within,
+      .home-carousel-track .home-playlist-card:hover,
+      .home-carousel-track .home-playlist-card:focus-within,
+      .home-carousel-track .home-small-card:hover,
+      .home-carousel-track .home-small-card:focus-within,
+      .home-carousel-track .home-album-card:hover,
+      .home-carousel-track .home-album-card:focus-within {
         transform: none;
       }
 
@@ -2280,6 +2281,27 @@
       .home-artist-card:focus-within .home-artist-cover-shell .home-lazy-cover {
         filter: brightness(0.7) saturate(0.92);
         transform: scale(1.07);
+      }
+
+      .home-playlist-cover::after,
+      .home-album-cover::after,
+      .home-small-media::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.24s ease;
+        background: radial-gradient(circle at center, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.34) 58%, rgba(0, 0, 0, 0.5) 100%);
+      }
+
+      .group:hover .home-playlist-cover::after,
+      .group:focus-within .home-playlist-cover::after,
+      .group:hover .home-album-cover::after,
+      .group:focus-within .home-album-cover::after,
+      .home-small-card:hover .home-small-media::before,
+      .home-small-card:focus-within .home-small-media::before {
+        opacity: 1;
       }
 
       #home-top-tracks-row .home-top-track-meta {
@@ -3361,3 +3383,8 @@
 </html>
 
 
+      .home-carousel-track .home-playlist-card:active,
+      .home-carousel-track .home-small-card:active,
+      .home-carousel-track .home-album-card:active {
+        transform: none;
+      }
