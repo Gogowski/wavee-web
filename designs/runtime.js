@@ -296,6 +296,7 @@
   const ARTIST_STATS_CACHE_TTL_MS = 15 * 60 * 1000
   const artistStatsCache = new Map()
   const artistStatsInflight = new Map()
+  let artistMonthlyHydrationTimer = 0
   const MONTHLY_LISTENERS_FORMATTER = new Intl.NumberFormat('ru-RU')
   const RELEASE_DATE_FORMATTER = new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit',
@@ -2299,6 +2300,27 @@
     }))
   }
 
+  function scheduleHydrateHomeArtistMonthlyListeners() {
+    if (artistMonthlyHydrationTimer) {
+      return
+    }
+
+    const trigger = () => {
+      artistMonthlyHydrationTimer = 0
+      void hydrateHomeArtistMonthlyListeners()
+    }
+
+    const cancel = runDeferred(trigger, 900)
+    artistMonthlyHydrationTimer = 1
+    return () => {
+      if (!artistMonthlyHydrationTimer) {
+        return
+      }
+      artistMonthlyHydrationTimer = 0
+      cancel?.()
+    }
+  }
+
   function normalizeGenreName(value) {
     return String(value || '')
       .trim()
@@ -4273,9 +4295,7 @@
     requestAnimationFrame(syncHomeTrackRailControls)
     wireHomeSectionRevealFx()
     if (modeSwitch) playHomeModeTransitionFx()
-    wireHomePlayRippleFx(document)
-    wireHomeLazyCoverFx(document)
-    void hydrateHomeArtistMonthlyListeners()
+    scheduleHydrateHomeArtistMonthlyListeners()
 
     if (el.hero) {
       const myWaveTracks = getMyWaveTracks()
@@ -4611,13 +4631,13 @@
       renderCurrentPage({ initial: true })
     }
 
-    let catalogFeed = await api('/catalog/feed?limit=40', { auth: 'optional', timeoutMs: 1_800 }).catch(() => ({ items: [] }))
+    let [catalogFeed, tracks] = await Promise.all([
+      api('/catalog/feed?limit=40', { auth: 'optional', timeoutMs: 1_800 }).catch(() => ({ items: [] })),
+      api('/tracks?query=&limit=40&offset=0', { auth: 'optional', timeoutMs: 4_500 }).catch(() => ({ items: [] })),
+    ])
     if (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0) {
       catalogFeed = await publicApi('/catalog/feed?limit=40', { timeoutMs: 1_800 }).catch(() => ({ items: [] }))
     }
-    let tracks = (Array.isArray(catalogFeed.items) && catalogFeed.items.length)
-      ? { items: [] }
-      : await api('/tracks?query=&limit=40&offset=0', { auth: 'optional', timeoutMs: 4_500 }).catch(() => ({ items: [] }))
     if ((!Array.isArray(tracks?.items) || tracks.items.length === 0) && (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0)) {
       tracks = await publicApi('/tracks?query=&limit=40&offset=0', { timeoutMs: 4_500 }).catch(() => ({ items: [] }))
     }
