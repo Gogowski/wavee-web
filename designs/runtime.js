@@ -4001,11 +4001,11 @@
     const musicTracks = categories.music.length ? categories.music : baseTracks
     let isLoadingContent = !state.homeCatalogReady && !baseTracks.length
 
-    const withSkeleton = (cards, variant = 'medium', count = 6) => (
+    const withSkeleton = (cards, variant = 'medium', count = 6, forceLoading = false) => (
       forceDisconnectedPlaceholders
         ? buildDisconnectedCards(variant, count)
         : (
-            cards.length ? cards : (isLoadingContent ? buildSkeletonCards(variant, count) : [])
+            cards.length ? cards : ((isLoadingContent || forceLoading) ? buildSkeletonCards(variant, count) : [])
           )
     )
 
@@ -4021,6 +4021,8 @@
     const recommendationBlocks = getHomeRecommendationBlocks(activeFilter)
     const hasRecommendationBlocks = Boolean(recommendationBlocks)
     const isWaitingForPersonal = isForYouMode && !hasRecommendationBlocks && hasSessionToken()
+    const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
+    const shouldShowPersonalSkeleton = isForYouMode && (isWaitingForPersonal || isRecommendationModeLoading)
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
       isLoadingContent = true
@@ -4095,7 +4097,7 @@
       controlsPrefix: 'home-quick-access',
       controlsAriaLabel: 'Навигация по новым релизам',
       controlsKeys: ['homeQuickAccessPrev', 'homeQuickAccessNext'],
-      cards: withSkeleton(releaseCards, 'medium', 6),
+      cards: withSkeleton(releaseCards, 'medium', 6, shouldShowPersonalSkeleton),
       emptyText: isTrendsMode
         ? 'Релизы появятся после загрузки каталога.'
         : 'Персональные релизы появятся после построения рекомендаций.',
@@ -4129,7 +4131,7 @@
       controlsPrefix: 'home-favorite-artists',
       controlsAriaLabel: 'Навигация по любимым исполнителям',
       controlsKeys: ['homeFavoriteArtistsPrev', 'homeFavoriteArtistsNext'],
-      cards: withSkeleton(favoriteArtistCards, 'artist', 8),
+      cards: withSkeleton(favoriteArtistCards, 'artist', 8, shouldShowPersonalSkeleton),
       emptyText: 'Любимые исполнители появятся после первых лайков.',
       visible: isForYouMode,
     })
@@ -4192,7 +4194,7 @@
       controlsPrefix: 'home-top-tracks',
       controlsAriaLabel: 'Навигация по лучшим трекам',
       controlsKeys: ['homeTopTracksPrev', 'homeTopTracksNext'],
-      cards: withSkeleton(topTrackCards, 'medium', 6),
+      cards: withSkeleton(topTrackCards, 'medium', 6, shouldShowPersonalSkeleton),
       emptyText: 'Треки появятся после загрузки музыки.',
       visible: true,
     })
@@ -4226,7 +4228,7 @@
       controlsPrefix: 'home-mixes',
       controlsAriaLabel: 'Навигация по подборкам и миксам',
       controlsKeys: ['homeMixesPrev', 'homeMixesNext'],
-      cards: withSkeleton(mixCards, 'medium', 5),
+      cards: withSkeleton(mixCards, 'medium', 5, shouldShowPersonalSkeleton),
       emptyText: 'Персональные миксы подгружаются.',
       visible: isForYouMode,
     })
@@ -4631,6 +4633,14 @@
       renderCurrentPage({ initial: true })
     }
 
+    const primaryMode = hasSession
+      ? (HOME_DEFAULT_MODE === 'trends' ? 'trends' : 'for-you')
+      : 'trends'
+    const secondaryMode = hasSession
+      ? (primaryMode === 'for-you' ? 'trends' : 'for-you')
+      : null
+    const primaryRecommendationsRequest = fetchHomeRecommendationsMode(primaryMode)
+
     let [catalogFeed, tracks] = await Promise.all([
       api('/catalog/feed?limit=40', { auth: 'optional', timeoutMs: 1_800 }).catch(() => ({ items: [] })),
       api('/tracks?query=&limit=40&offset=0', { auth: 'optional', timeoutMs: 4_500 }).catch(() => ({ items: [] })),
@@ -4667,12 +4677,9 @@
     }
 
     if (hasSession) {
-      const primaryMode = HOME_DEFAULT_MODE === 'trends' ? 'trends' : 'for-you'
-      const secondaryMode = primaryMode === 'for-you' ? 'trends' : 'for-you'
-
       void Promise.all([
         refreshPersonalization({ includePlaylists: true, rerender: false, force: true }),
-        fetchHomeRecommendationsMode(primaryMode),
+        primaryRecommendationsRequest,
       ]).then(() => {
         renderCurrentPage({ initial: false })
         syncLikes()
@@ -4684,7 +4691,7 @@
         renderCurrentPage({ initial: false })
       })
     } else {
-      void fetchHomeRecommendationsMode('trends').then(() => {
+      void primaryRecommendationsRequest.then(() => {
         state.homeCatalogReady = true
         if (page === 'home') renderHome()
       }).catch(() => {
