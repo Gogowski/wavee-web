@@ -3144,16 +3144,23 @@
         }
       }
 
-      /* Home filter switch: copied from glass input style */
+      /* Home filter switch: oversized premium segmented control */
       #home-filter-chips.home-filter-chips {
         display: inline-flex !important;
         align-items: stretch;
         gap: 0;
-        padding: 4px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 5px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.03) !important;
-        backdrop-filter: blur(20px);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 100%),
+          rgba(10, 11, 16, 0.82) !important;
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        box-shadow:
+          0 18px 40px rgba(0, 0, 0, 0.28),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05),
+          inset 0 -1px 0 rgba(255, 255, 255, 0.03);
       }
 
       #home-filter-chips .home-filter-chip {
@@ -3161,69 +3168,89 @@
         align-items: center;
         justify-content: center;
         gap: 0;
-        min-height: 40px;
-        padding: 0 16px;
+        min-height: 52px;
+        min-width: 136px;
+        padding: 0 24px;
         border: 1px solid transparent !important;
         border-radius: 100px;
         background: transparent !important;
-        color: rgba(255, 255, 255, 0.45) !important;
+        color: rgba(255, 255, 255, 0.44) !important;
         font-family: 'Etude Noire', var(--wavee-display-font), sans-serif;
-        font-size: 0.95rem;
-        font-weight: 600;
-        letter-spacing: 0.01em;
+        font-size: 1.08rem;
+        font-weight: 700;
+        letter-spacing: 0.015em;
         text-transform: none;
         text-shadow: none;
         box-shadow: none !important;
         transform: none !important;
         animation: none !important;
-        transition: none;
+        transition:
+          color 0.28s ease,
+          background 0.28s ease,
+          border-color 0.28s ease,
+          box-shadow 0.28s ease,
+          transform 0.22s ease;
       }
 
       #home-filter-chips .home-filter-chip:hover {
         color: rgba(255, 255, 255, 0.78) !important;
-        background: rgba(255, 255, 255, 0.045) !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.025) 100%) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
         box-shadow:
           inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-          0 0 8px rgba(146, 169, 225, 0.14) !important;
-        transform: none !important;
+          0 0 16px rgba(146, 169, 225, 0.08) !important;
+        transform: translateY(-1px) !important;
         animation: none !important;
       }
 
       #home-filter-chips .home-filter-chip:active {
-        background: transparent !important;
+        transform: translateY(0) scale(0.988) !important;
       }
 
       #home-filter-chips .home-filter-chip.is-active {
-        border-color: transparent !important;
-        background: linear-gradient(135deg, #bfd0ff 0%, #92A9E1 72%) !important;
-        color: #111214 !important;
+        border-color: rgba(255, 255, 255, 0.24) !important;
+        background:
+          radial-gradient(circle at 24% 24%, rgba(255, 255, 255, 0.48) 0%, rgba(255, 255, 255, 0) 34%),
+          linear-gradient(135deg, #dbe5ff 0%, #aec2f5 42%, #8da4df 100%) !important;
+        color: #0f1420 !important;
         font-weight: 800;
         box-shadow:
-          0 10px 20px rgba(146, 169, 225, 0.35),
-          inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
-        text-shadow: none;
+          0 14px 28px rgba(124, 149, 212, 0.34),
+          0 0 0 1px rgba(255, 255, 255, 0.14),
+          inset 0 1px 0 rgba(255, 255, 255, 0.58),
+          inset 0 -8px 16px rgba(82, 103, 153, 0.12),
+          inset 0 -14px 22px rgba(132, 158, 226, 0.12) !important;
+        transform: translateY(-1px) !important;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.18);
       }
 
-      #home-filter-chips[data-swipe-fx] .home-filter-chip.is-active {
-        position: relative;
-        overflow: hidden;
-      }
-
-      #home-filter-chips[data-swipe-fx='right'] .home-filter-chip.is-active::after,
-      #home-filter-chips[data-swipe-fx='left'] .home-filter-chip.is-active::after {
+      #home-filter-chips .home-filter-chip.is-active::before {
         content: '';
         position: absolute;
-        inset: 0;
+        inset: 1px;
+        border-radius: inherit;
         pointer-events: none;
-        background: linear-gradient(100deg, transparent 24%, rgba(255, 255, 255, 0.42) 50%, transparent 76%);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 48%);
+        opacity: 0.9;
+      }
+
+      #home-filter-chips .home-filter-chip.is-active:hover {
+        background:
+          radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.56) 0%, rgba(255, 255, 255, 0) 34%),
+          linear-gradient(135deg, #e4ecff 0%, #b8cbf7 42%, #95ace5 100%) !important;
+        box-shadow:
+          0 18px 36px rgba(124, 149, 212, 0.4),
+          0 0 0 1px rgba(255, 255, 255, 0.16),
+          inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+          inset 0 -8px 16px rgba(82, 103, 153, 0.14) !important;
       }
 
       #home-filter-chips[data-swipe-fx='right'] .home-filter-chip.is-active::after {
-        animation: home-filter-swipe-right 0.38s ease-out 1;
+        animation: home-filter-swipe-right 0.48s ease-out 1;
       }
 
       #home-filter-chips[data-swipe-fx='left'] .home-filter-chip.is-active::after {
-        animation: home-filter-swipe-left 0.38s ease-out 1;
+        animation: home-filter-swipe-left 0.48s ease-out 1;
       }
 
       #home-filter-chips .home-filter-chip-label {
@@ -3231,15 +3258,18 @@
         align-items: center;
         justify-content: center;
         min-height: 100%;
-        line-height: 1.08;
+        line-height: 1;
         font-family: 'Etude Noire', var(--wavee-display-font), sans-serif;
+        position: relative;
+        z-index: 1;
       }
 
       #home-filter-chips .home-filter-chip:focus-visible {
         outline: none !important;
-        background: rgba(255, 255, 255, 0.06) !important;
-        border-color: #92A9E1 !important;
-        box-shadow: 0 0 15px rgba(146, 169, 225, 0.2) !important;
+        border-color: rgba(178, 198, 247, 0.72) !important;
+        box-shadow:
+          0 0 0 2px rgba(146, 169, 225, 0.18),
+          0 0 20px rgba(146, 169, 225, 0.16) !important;
       }
 
       @keyframes home-filter-swipe-right {
@@ -3273,13 +3303,15 @@
       @media (max-width: 767px) {
         #home-filter-chips.home-filter-chips {
           width: 100%;
-          gap: 5px;
+          gap: 4px;
         }
 
         #home-filter-chips .home-filter-chip {
-          min-height: 38px;
-          padding: 0 10px;
-          font-size: 0.88rem;
+          min-width: 0;
+          min-height: 48px;
+          flex: 1 1 0;
+          padding: 0 14px;
+          font-size: 0.94rem;
         }
       }
     </style>
