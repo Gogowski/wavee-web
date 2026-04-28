@@ -3144,123 +3144,76 @@
         }
       }
 
-      /* Home filter switch: oversized premium segmented control */
+      /* Home filter switch: oversized premium segmented control REDESIGN */
       #home-filter-chips.home-filter-chips {
         display: inline-flex !important;
         align-items: stretch;
-        gap: 0;
-        padding: 4px;
-        border: 0;
-        border-radius: 999px;
-        background: rgba(32, 34, 40, 0.94) !important;
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        box-shadow: none;
+        gap: 6px;
+        padding: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 100px;
+        background: rgba(18, 19, 21, 0.45) !important;
+        backdrop-filter: blur(20px) saturate(120%);
+        -webkit-backdrop-filter: blur(20px) saturate(120%);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
       }
 
       #home-filter-chips .home-filter-chip {
         display: inline-flex !important;
         align-items: center;
         justify-content: center;
-        gap: 0;
-        min-height: 52px;
-        min-width: 136px;
-        padding: 0 24px;
+        min-height: 48px;
+        min-width: 140px;
+        padding: 0 28px;
         border: 0 !important;
         border-radius: 100px;
         background: transparent !important;
-        color: rgba(255, 255, 255, 0.52) !important;
-        font-family: 'Etude Noire', var(--wavee-display-font), sans-serif;
-        font-size: 1.08rem;
+        color: rgba(255, 255, 255, 0.45) !important;
+        font-family: var(--wavee-display-font), 'Etude Noire', sans-serif;
+        font-size: 0.95rem;
         font-weight: 700;
-        letter-spacing: 0.015em;
+        letter-spacing: 0.01em;
         text-transform: none;
-        text-shadow: none;
-        box-shadow: none !important;
-        transform: none !important;
-        animation: none !important;
-        transition:
-          color 0.28s ease,
-          background 0.28s ease,
-          transform 0.22s ease;
+        transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        cursor: pointer;
       }
 
       #home-filter-chips .home-filter-chip:hover {
-        color: rgba(255, 255, 255, 0.84) !important;
+        color: #ffffff !important;
         background: rgba(255, 255, 255, 0.05) !important;
-        transform: none !important;
-        animation: none !important;
       }
 
       #home-filter-chips .home-filter-chip:active {
-        transform: scale(0.988) !important;
+        transform: scale(0.97);
       }
 
       #home-filter-chips .home-filter-chip.is-active {
-        border: 0 !important;
-        background: rgba(255, 255, 255, 0.12) !important;
-        color: #ffffff !important;
-        font-weight: 800;
-        box-shadow: none !important;
-        transform: none !important;
-        text-shadow: none;
+        background: #92A9E1 !important; /* var(--wavee-accent) hardcoded as fallback */
+        background: var(--wavee-accent, #92A9E1) !important;
+        color: #111 !important;
+        font-weight: 850;
+        box-shadow: 
+          0 10px 25px rgba(146, 169, 225, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
       }
 
       #home-filter-chips .home-filter-chip.is-active:hover {
-        background: rgba(255, 255, 255, 0.14) !important;
-      }
-
-      #home-filter-chips[data-swipe-fx='right'] .home-filter-chip.is-active::after {
-        animation: home-filter-swipe-right 0.48s ease-out 1;
-      }
-
-      #home-filter-chips[data-swipe-fx='left'] .home-filter-chip.is-active::after {
-        animation: home-filter-swipe-left 0.48s ease-out 1;
+        background: #a7bbf0 !important;
+        box-shadow: 0 12px 30px rgba(146, 169, 225, 0.5) !important;
       }
 
       #home-filter-chips .home-filter-chip-label {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 100%;
         line-height: 1;
-        font-family: 'Etude Noire', var(--wavee-display-font), sans-serif;
         position: relative;
         z-index: 1;
       }
 
       #home-filter-chips .home-filter-chip:focus-visible {
         outline: none !important;
-        background: rgba(255, 255, 255, 0.08) !important;
-        box-shadow: none !important;
-      }
-
-      @keyframes home-filter-swipe-right {
-        0% {
-          transform: translateX(-110%);
-          opacity: 0;
-        }
-        35% {
-          opacity: 0.85;
-        }
-        100% {
-          transform: translateX(110%);
-          opacity: 0;
-        }
-      }
-
-      @keyframes home-filter-swipe-left {
-        0% {
-          transform: translateX(110%);
-          opacity: 0;
-        }
-        35% {
-          opacity: 0.85;
-        }
-        100% {
-          transform: translateX(-110%);
-          opacity: 0;
-        }
+        box-shadow: 0 0 0 3px rgba(146, 169, 225, 0.3) !important;
       }
 
       @media (max-width: 767px) {
@@ -3271,10 +3224,10 @@
 
         #home-filter-chips .home-filter-chip {
           min-width: 0;
-          min-height: 48px;
+          min-height: 46px;
           flex: 1 1 0;
-          padding: 0 14px;
-          font-size: 0.94rem;
+          padding: 0 12px;
+          font-size: 0.9rem;
         }
       }
     </style>
