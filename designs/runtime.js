@@ -10,6 +10,10 @@
   const TRACKS_CACHE_STALE_TTL_MS = 24 * 60 * 60 * 1000
   const HOME_RECO_CACHE_TTL_MS = 3 * 60 * 1000
   const HOME_RECO_STALE_TTL_MS = 30 * 60 * 1000
+  const API_GET_CACHE_DEFAULT_TTL_MS = 20 * 1000
+  const HOME_PERSONALIZATION_REFRESH_TTL_MS = 45 * 1000
+  const HOME_PLAYBACK_PREFETCH_LIMIT = 2
+  const HOME_ARTIST_MONTHLY_HYDRATION_LIMIT = 4
   const HOME_FORCE_DISCONNECTED_PLACEHOLDERS = false
   const page = document.body?.dataset?.waveePage || ''
   const ACTIVE_RUNTIME_PAGES = new Set(['home', 'my-wave'])
@@ -265,6 +269,8 @@
   const railAnimationState = new WeakMap()
   const homeRecommendationsInflight = new Map()
   const homePersonalReleaseInflight = new Map()
+  const runtimeGetCache = new Map()
+  const runtimeGetInflight = new Map()
   const HOME_DEFAULT_MODE = hasSessionToken() ? 'for-you' : 'trends'
   const HOME_RECOMMENDATIONS_LIMIT = 20
   const MY_WAVE_RECOMMENDATIONS_LIMIT = 40
@@ -2289,7 +2295,7 @@
     const rows = [...document.querySelectorAll('[data-artist-monthly]')]
     if (!rows.length) return
 
-    await Promise.all(rows.map(async (row) => {
+    await Promise.all(rows.slice(0, HOME_ARTIST_MONTHLY_HYDRATION_LIMIT).map(async (row) => {
       const artistId = row.getAttribute('data-artist-id') || ''
       const artistName = row.getAttribute('data-artist-name') || ''
       const artist = await fetchArtistStats({ artistId, artistName })
@@ -2478,6 +2484,59 @@
     return hydrated
   }
 
+  function resolveRuntimeGetCacheTtl(path = '') {
+    const normalized = String(path || '')
+    if (normalized.startsWith('/catalog/artist?') || normalized.startsWith('/catalog/album?')) {
+      return 10 * 60 * 1000
+    }
+    if (normalized.startsWith('/catalog/feed')) {
+      return 2 * 60 * 1000
+    }
+    if (normalized.startsWith('/tracks?')) {
+      return 2 * 60 * 1000
+    }
+    if (normalized.startsWith('/recommendations/home')) {
+      return 30 * 1000
+    }
+    if (normalized.startsWith('/recommendations/my-wave')) {
+      return 20 * 1000
+    }
+    if (normalized.startsWith('/library/likes') || normalized.startsWith('/library/dislikes')) {
+      return 20 * 1000
+    }
+    if (normalized.includes('/playback-source')) {
+      return 10 * 60 * 1000
+    }
+    return API_GET_CACHE_DEFAULT_TTL_MS
+  }
+
+  function getRuntimeRequestScope() {
+    return hasSessionToken() ? getUserCacheScope() : 'guest'
+  }
+
+  function getRuntimeGetCacheKey(path = '', authMode = 'none') {
+    return `${getRuntimeRequestScope()}:${authMode}:${String(path || '')}`
+  }
+
+  function readRuntimeGetCache(path = '', authMode = 'none') {
+    const key = getRuntimeGetCacheKey(path, authMode)
+    const cached = runtimeGetCache.get(key)
+    if (!cached) return null
+    if (cached.expiresAt <= Date.now()) {
+      runtimeGetCache.delete(key)
+      return null
+    }
+    return cached.value
+  }
+
+  function writeRuntimeGetCache(path = '', authMode = 'none', value) {
+    const key = getRuntimeGetCacheKey(path, authMode)
+    runtimeGetCache.set(key, {
+      value,
+      expiresAt: Date.now() + resolveRuntimeGetCacheTtl(path),
+    })
+  }
+
   async function refreshToken() {
     const rt = localStorage.getItem(REFRESH) || ''
     if (!rt) return ''
@@ -2497,6 +2556,20 @@
   }
 
   async function publicApi(path, { method = 'GET', body, signal, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
+    const normalizedMethod = String(method || 'GET').toUpperCase()
+    const cacheable = normalizedMethod === 'GET' && !body && !signal
+    if (cacheable) {
+      const cached = readRuntimeGetCache(path, 'public')
+      if (cached !== null) {
+        return cached
+      }
+      const inflightKey = `public:${getRuntimeGetCacheKey(path, 'public')}`
+      const pending = runtimeGetInflight.get(inflightKey)
+      if (pending) {
+        return pending
+      }
+    }
+
     const headers = { 'Content-Type': 'application/json' }
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -2509,33 +2582,64 @@
       }
     }
 
-    let r
-    try {
-      r = await fetch(`${apiBase}${path}`, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
-      })
-    } catch (error) {
-      if (error?.name === 'AbortError') {
-        throw Object.assign(new Error(`Request timeout after ${timeoutMs}ms`), { status: 504 })
+    const run = async () => {
+      let r
+      try {
+        r = await fetch(`${apiBase}${path}`, {
+          method,
+          headers,
+          body: body ? JSON.stringify(body) : undefined,
+          signal: controller.signal,
+        })
+      } catch (error) {
+        if (error?.name === 'AbortError') {
+          throw Object.assign(new Error(`Request timeout after ${timeoutMs}ms`), { status: 504 })
+        }
+        throw error
+      } finally {
+        clearTimeout(timer)
+        if (signal) {
+          signal.removeEventListener('abort', abortFromParent)
+        }
       }
-      throw error
-    } finally {
-      clearTimeout(timer)
-      if (signal) {
-        signal.removeEventListener('abort', abortFromParent)
+
+      if (r.status === 204) return null
+      const p = await r.json().catch(() => ({}))
+      if (!r.ok) throw Object.assign(new Error(p.error || `HTTP ${r.status}`), { status: r.status })
+      if (cacheable) {
+        writeRuntimeGetCache(path, 'public', p)
       }
+      return p
     }
 
-    if (r.status === 204) return null
-    const p = await r.json().catch(() => ({}))
-    if (!r.ok) throw Object.assign(new Error(p.error || `HTTP ${r.status}`), { status: r.status })
-    return p
+    if (!cacheable) {
+      return run()
+    }
+
+    const inflightKey = `public:${getRuntimeGetCacheKey(path, 'public')}`
+    const request = run().finally(() => {
+      runtimeGetInflight.delete(inflightKey)
+    })
+    runtimeGetInflight.set(inflightKey, request)
+    return request
   }
 
   async function api(path, { method = 'GET', body, auth = 'none', retry = true, signal, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
+    const normalizedMethod = String(method || 'GET').toUpperCase()
+    const authMode = auth === 'required' ? 'required' : (auth === 'optional' ? 'optional' : 'none')
+    const cacheable = normalizedMethod === 'GET' && !body && !signal && !retry
+    if (cacheable) {
+      const cached = readRuntimeGetCache(path, authMode)
+      if (cached !== null) {
+        return cached
+      }
+      const inflightKey = `${authMode}:${getRuntimeGetCacheKey(path, authMode)}`
+      const pending = runtimeGetInflight.get(inflightKey)
+      if (pending) {
+        return pending
+      }
+    }
+
     let token = (auth === 'required' || auth === 'optional') ? (localStorage.getItem(TOKEN) || '') : ''
     if ((auth === 'required' || auth === 'optional') && !token && retry) {
       token = await refreshToken()
@@ -2554,37 +2658,53 @@
       }
     }
 
-    let r
-    try {
-      r = await fetch(`${apiBase}${path}`, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
-      })
-    } catch (error) {
-      if (error?.name === 'AbortError') {
-        throw Object.assign(new Error(`Request timeout after ${timeoutMs}ms`), { status: 504 })
+    const run = async () => {
+      let r
+      try {
+        r = await fetch(`${apiBase}${path}`, {
+          method,
+          headers,
+          body: body ? JSON.stringify(body) : undefined,
+          signal: controller.signal,
+        })
+      } catch (error) {
+        if (error?.name === 'AbortError') {
+          throw Object.assign(new Error(`Request timeout after ${timeoutMs}ms`), { status: 504 })
+        }
+        throw error
+      } finally {
+        clearTimeout(timer)
+        if (signal) {
+          signal.removeEventListener('abort', abortFromParent)
+        }
       }
-      throw error
-    } finally {
-      clearTimeout(timer)
-      if (signal) {
-        signal.removeEventListener('abort', abortFromParent)
+
+      if (r.status === 204) return null
+      if (r.status === 401 && auth !== 'none' && retry) {
+        const t = await refreshToken()
+        if (t) return api(path, { method, body, auth, retry: false, signal, timeoutMs })
+        if (auth === 'optional') {
+          return api(path, { method, body, auth: 'none', retry: false, signal, timeoutMs })
+        }
       }
+      const p = await r.json().catch(() => ({}))
+      if (!r.ok) throw Object.assign(new Error(p.error || `HTTP ${r.status}`), { status: r.status })
+      if (cacheable) {
+        writeRuntimeGetCache(path, authMode, p)
+      }
+      return p
     }
 
-    if (r.status === 204) return null
-    if (r.status === 401 && auth !== 'none' && retry) {
-      const t = await refreshToken()
-      if (t) return api(path, { method, body, auth, retry: false, signal, timeoutMs })
-      if (auth === 'optional') {
-        return api(path, { method, body, auth: 'none', retry: false, signal, timeoutMs })
-      }
+    if (!cacheable) {
+      return run()
     }
-    const p = await r.json().catch(() => ({}))
-    if (!r.ok) throw Object.assign(new Error(p.error || `HTTP ${r.status}`), { status: r.status })
-    return p
+
+    const inflightKey = `${authMode}:${getRuntimeGetCacheKey(path, authMode)}`
+    const request = run().finally(() => {
+      runtimeGetInflight.delete(inflightKey)
+    })
+    runtimeGetInflight.set(inflightKey, request)
+    return request
   }
 
   function hasSessionToken() {
@@ -2850,7 +2970,7 @@
     if (!force && personalizationRefreshState.inflight) {
       return personalizationRefreshState.inflight
     }
-    if (!force && (now - personalizationRefreshState.lastAt) < 15_000) {
+    if (!force && (now - personalizationRefreshState.lastAt) < HOME_PERSONALIZATION_REFRESH_TTL_MS) {
       return null
     }
 
@@ -3076,7 +3196,7 @@
 
     const targets = dedupeTracks(Array.isArray(tracks) ? tracks : [])
       .filter((track) => track?.id && !hasDirectPlayback(track) && !playbackPrefetchState.seen.has(track.id))
-      .slice(0, 6)
+      .slice(0, HOME_PLAYBACK_PREFETCH_LIMIT)
 
     if (!targets.length) {
       return
@@ -4636,17 +4756,15 @@
     const primaryMode = hasSession
       ? (HOME_DEFAULT_MODE === 'trends' ? 'trends' : 'for-you')
       : 'trends'
-    const secondaryMode = hasSession
-      ? (primaryMode === 'for-you' ? 'trends' : 'for-you')
-      : null
     const primaryRecommendationsRequest = fetchHomeRecommendationsMode(primaryMode)
 
-    let [catalogFeed, tracks] = await Promise.all([
-      api('/catalog/feed?limit=40', { auth: 'optional', timeoutMs: 1_800 }).catch(() => ({ items: [] })),
-      api('/tracks?query=&limit=40&offset=0', { auth: 'optional', timeoutMs: 4_500 }).catch(() => ({ items: [] })),
-    ])
+    let catalogFeed = await api('/catalog/feed?limit=40', { auth: 'optional', timeoutMs: 1_800, retry: false }).catch(() => ({ items: [] }))
+    let tracks = { items: [] }
     if (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0) {
       catalogFeed = await publicApi('/catalog/feed?limit=40', { timeoutMs: 1_800 }).catch(() => ({ items: [] }))
+    }
+    if (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0) {
+      tracks = await api('/tracks?query=&limit=40&offset=0', { auth: 'optional', timeoutMs: 4_500, retry: false }).catch(() => ({ items: [] }))
     }
     if ((!Array.isArray(tracks?.items) || tracks.items.length === 0) && (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0)) {
       tracks = await publicApi('/tracks?query=&limit=40&offset=0', { timeoutMs: 4_500 }).catch(() => ({ items: [] }))
@@ -4678,14 +4796,11 @@
 
     if (hasSession) {
       void Promise.all([
-        refreshPersonalization({ includePlaylists: true, rerender: false, force: true }),
+        refreshPersonalization({ includePlaylists: false, rerender: false, force: true }),
         primaryRecommendationsRequest,
       ]).then(() => {
         renderCurrentPage({ initial: false })
         syncLikes()
-        void runDeferred(() => {
-          void fetchHomeRecommendationsMode(secondaryMode).catch(() => {})
-        }, 1800)
       }).catch(() => {
         state.homeCatalogReady = true
         renderCurrentPage({ initial: false })
@@ -4702,11 +4817,11 @@
 
     const handleVisibilityRefresh = () => {
       if (document.visibilityState === 'visible') {
-        void refreshPersonalization({ rerender: true, force: true })
+        void refreshPersonalization({ rerender: true, force: false })
       }
     }
     const handleFocusRefresh = () => {
-      void refreshPersonalization({ rerender: true, force: true })
+      void refreshPersonalization({ rerender: true, force: false })
     }
     window.addEventListener('focus', handleFocusRefresh)
     document.addEventListener('visibilitychange', handleVisibilityRefresh)
