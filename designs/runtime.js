@@ -4140,8 +4140,8 @@
     const isTrendsMode = activeFilter === 'trends'
     const recommendationBlocks = getHomeRecommendationBlocks(activeFilter)
     const hasRecommendationBlocks = Boolean(recommendationBlocks)
-    const isWaitingForPersonal = isForYouMode && !hasRecommendationBlocks && hasSessionToken()
     const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
+    const isWaitingForPersonal = isForYouMode && !hasRecommendationBlocks && hasSessionToken() && isRecommendationModeLoading
     const shouldShowPersonalSkeleton = isForYouMode && (isWaitingForPersonal || isRecommendationModeLoading)
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
