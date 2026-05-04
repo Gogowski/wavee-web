@@ -1,0 +1,1 @@
+import{j as e}from"./index-BK_BC9Os.js";import{L as n}from"./LoadingSpinner-C7EKrafH.js";function d({variant:r="empty",className:t="",children:o,style:i}){return r==="loading"?e.jsx(n,{className:t}):e.jsx("div",{className:`wavee-state-card${r?` is-${r}`:""}${t?` ${t}`:""}`,style:i,children:o})}export{d as S};
