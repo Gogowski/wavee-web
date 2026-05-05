@@ -2421,6 +2421,103 @@
         margin-bottom: 0;
       }
 
+      .home-wave-settings-toggle {
+        position: absolute;
+        right: max(18vw, calc(50% - 310px));
+        top: 24px;
+        z-index: 4;
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        background: rgba(18, 19, 21, 0.72);
+        color: rgba(255, 255, 255, 0.84);
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        cursor: pointer;
+        transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+      }
+
+      .home-wave-settings-toggle:hover,
+      .home-wave-settings-toggle:focus-visible,
+      .home-wave-settings-toggle[aria-expanded='true'] {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.1);
+        outline: 0;
+      }
+
+      .home-wave-settings-panel {
+        position: absolute;
+        right: max(12px, calc(50% - 430px));
+        top: 76px;
+        z-index: 6;
+        width: min(360px, calc(100vw - 32px));
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(12, 13, 16, 0.92);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        text-align: left;
+      }
+
+      .home-wave-settings-panel[hidden] {
+        display: none;
+      }
+
+      .home-wave-settings-title {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.9);
+        font-family: var(--wavee-heading-font);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .home-wave-settings-group {
+        display: grid;
+        gap: 8px;
+      }
+
+      .home-wave-settings-label {
+        color: rgba(255, 255, 255, 0.5);
+        font-family: var(--wavee-body-font);
+        font-size: 11px;
+      }
+
+      .home-wave-settings-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+      }
+
+      .home-wave-setting-chip {
+        min-height: 32px;
+        padding: 0 11px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .home-wave-setting-chip.is-accent,
+      .home-wave-setting-chip:hover,
+      .home-wave-setting-chip:focus-visible {
+        border-color: rgba(255, 255, 255, 0.34);
+        background: rgba(255, 255, 255, 0.14);
+        color: #ffffff;
+        outline: 0;
+      }
+
       body:not([data-wavee-embed='app']) .hero-logo-shell {
         min-height: 280px;
       }
@@ -2811,6 +2908,20 @@
 
         .hero-logo-shell {
           min-height: 220px;
+        }
+
+        .home-wave-settings-toggle {
+          right: 14px;
+          top: 8px;
+          width: 40px;
+          height: 40px;
+        }
+
+        .home-wave-settings-panel {
+          right: 0;
+          left: 0;
+          top: 58px;
+          margin: 0 auto;
         }
 
         .home-wave-trigger {
@@ -3258,6 +3369,45 @@
         <button id="home-hero-listen" type="button" class="home-wave-trigger" aria-label="Слушать мою волну" aria-pressed="false">
           <img id="home-wave-art-image" src="assets/animals/cat.png" alt="" class="home-wave-trigger-image" aria-hidden="true" loading="eager" decoding="async" fetchpriority="high" />
         </button>
+        <button id="home-wave-settings-toggle" type="button" class="home-wave-settings-toggle" aria-label="Настройки волны" aria-expanded="false" aria-controls="home-wave-settings-panel">⚙</button>
+        <div id="home-wave-settings-panel" class="home-wave-settings-panel" hidden>
+          <p class="home-wave-settings-title">Настройки волны</p>
+          <div class="home-wave-settings-group">
+            <span class="home-wave-settings-label">Цель</span>
+            <div class="home-wave-settings-options">
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="sleep">Сон</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="work">Работа</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="training">Тренировка</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="road">Дорога</button>
+            </div>
+          </div>
+          <div class="home-wave-settings-group">
+            <span class="home-wave-settings-label">Настроение</span>
+            <div class="home-wave-settings-options">
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="energetic">Бодрое</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="happy">Веселое</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="calm">Спокойное</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="sad">Грустное</button>
+            </div>
+          </div>
+          <div class="home-wave-settings-group">
+            <span class="home-wave-settings-label">Характер</span>
+            <div class="home-wave-settings-options">
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="favorite">Любимое</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="unfamiliar">Незнакомое</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="popular">Популярное</button>
+            </div>
+          </div>
+          <div class="home-wave-settings-group">
+            <span class="home-wave-settings-label">Язык</span>
+            <div class="home-wave-settings-options">
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="any">Любой</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="ru">Русский</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="foreign">Иностранный</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="instrumental">Без слов</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 

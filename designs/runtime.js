@@ -125,6 +125,7 @@
       character: 'favorite',
       mood: 'calm',
       activity: 'work',
+      language: null,
     },
     queue: [],
     idx: -1,
@@ -177,6 +178,8 @@
     shuf: $('wavee-player-shuffle'),
     rep: $('wavee-player-repeat'),
     hero: $('home-hero-listen'),
+    homeWaveSettingsToggle: $('home-wave-settings-toggle'),
+    homeWaveSettingsPanel: $('home-wave-settings-panel'),
     homeHeroTip: $('home-hero-tip'),
     homeWaveArt: $('home-wave-art'),
     homeWaveArtImage: $('home-wave-art-image'),
@@ -277,7 +280,8 @@
   const WAVE_SETTING_VALUES = {
     character: new Set(['favorite', 'unfamiliar', 'popular']),
     mood: new Set(['energetic', 'happy', 'calm', 'sad']),
-    activity: new Set(['sleep', 'wake', 'road', 'work', 'training']),
+    activity: new Set(['sleep', 'road', 'work', 'training']),
+    language: new Set(['any', 'ru', 'foreign', 'instrumental']),
   }
   const HOME_RAIL_REGISTRY = [
     { slot: 'home-quick-access', rowKey: 'homeQuickAccess', prevKey: 'homeQuickAccessPrev', nextKey: 'homeQuickAccessNext' },
@@ -2716,10 +2720,15 @@
       ...state.myWaveSettings,
       ...settings,
     }
+    const activity = next.activity === 'wake' ? 'work' : next.activity
+    const language = next.language === undefined || next.language === '' || next.language === 'any'
+      ? null
+      : next.language
     return {
       character: WAVE_SETTING_VALUES.character.has(next.character) ? next.character : 'favorite',
       mood: WAVE_SETTING_VALUES.mood.has(next.mood) ? next.mood : 'calm',
-      activity: WAVE_SETTING_VALUES.activity.has(next.activity) ? next.activity : 'work',
+      activity: WAVE_SETTING_VALUES.activity.has(activity) ? activity : 'work',
+      language: WAVE_SETTING_VALUES.language.has(language) ? language : null,
     }
   }
 
@@ -2730,6 +2739,7 @@
     params.set('character', normalized.character)
     params.set('mood', normalized.mood)
     params.set('activity', normalized.activity)
+    if (normalized.language) params.set('language', normalized.language)
     return params.toString()
   }
 
@@ -2835,8 +2845,9 @@
     if (!chips.length) return
     chips.forEach((chip) => {
       const key = chip.getAttribute('data-wave-setting')
-      const value = chip.getAttribute('data-wave-value')
-      const active = Boolean(key && value && state.myWaveSettings?.[key] === value)
+      const rawValue = chip.getAttribute('data-wave-value')
+      const value = rawValue === 'any' ? null : rawValue
+      const active = Boolean(key && (state.myWaveSettings?.[key] ?? null) === value)
       chip.classList.toggle('is-accent', active)
       chip.setAttribute('aria-pressed', active ? 'true' : 'false')
     })
@@ -4624,6 +4635,27 @@
         }
       }
     }
+    if (el.homeWaveSettingsToggle && el.homeWaveSettingsPanel) {
+      el.homeWaveSettingsToggle.onclick = (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        const expanded = el.homeWaveSettingsToggle.getAttribute('aria-expanded') === 'true'
+        el.homeWaveSettingsToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true')
+        el.homeWaveSettingsPanel.hidden = expanded
+      }
+      document.addEventListener('click', (event) => {
+        if (el.homeWaveSettingsPanel.hidden) return
+        if (el.homeWaveSettingsPanel.contains(event.target) || el.homeWaveSettingsToggle.contains(event.target)) return
+        el.homeWaveSettingsToggle.setAttribute('aria-expanded', 'false')
+        el.homeWaveSettingsPanel.hidden = true
+      })
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || el.homeWaveSettingsPanel.hidden) return
+        el.homeWaveSettingsToggle.setAttribute('aria-expanded', 'false')
+        el.homeWaveSettingsPanel.hidden = true
+        el.homeWaveSettingsToggle.focus()
+      })
+    }
     if (el.myWaveRefresh) el.myWaveRefresh.onclick = async () => {
       await loadMyWaveRecommendations({
         settings: state.myWaveSettings,
@@ -4641,9 +4673,10 @@
         }
 
         const key = button.getAttribute('data-wave-setting') || ''
-        const value = button.getAttribute('data-wave-value') || ''
+        const rawValue = button.getAttribute('data-wave-value') || ''
+        const value = rawValue === 'any' ? null : rawValue
         if (!(key in WAVE_SETTING_VALUES)) return
-        if (!WAVE_SETTING_VALUES[key].has(value)) return
+        if (!WAVE_SETTING_VALUES[key].has(rawValue)) return
         if (state.myWaveSettings[key] === value) return
 
         const nextSettings = normalizeWaveSettings({
