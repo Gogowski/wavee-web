@@ -2846,7 +2846,7 @@
     if (!(mode in state.homeRecommendationsByMode)) return null
 
     const tokenPresent = hasSessionToken()
-    if (mode === 'for-you' && !tokenPresent) {
+    if (!tokenPresent) {
       return null
     }
 
