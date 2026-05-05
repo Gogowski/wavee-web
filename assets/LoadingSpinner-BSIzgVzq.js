@@ -1,0 +1,1 @@
+import{j as e}from"./index-D4Kq0ioC.js";function r({className:a="",label:i="Загрузка"}){return e.jsx("div",{className:`wavee-loading-state${a?` ${a}`:""}`,role:"status","aria-live":"polite","aria-label":i,children:e.jsx("span",{className:"wavee-loading-spinner","aria-hidden":"true"})})}export{r as L};
