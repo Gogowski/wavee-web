@@ -278,9 +278,9 @@
   const HOME_RECOMMENDATIONS_LIMIT = 20
   const MY_WAVE_RECOMMENDATIONS_LIMIT = 40
   const WAVE_SETTING_VALUES = {
-    character: new Set(['favorite', 'unfamiliar', 'popular']),
-    mood: new Set(['energetic', 'happy', 'calm', 'sad']),
-    activity: new Set(['sleep', 'road', 'work', 'training']),
+    character: new Set(['any', 'favorite', 'unfamiliar', 'popular']),
+    mood: new Set(['any', 'energetic', 'happy', 'calm', 'sad']),
+    activity: new Set(['any', 'sleep', 'road', 'work', 'training']),
     language: new Set(['any', 'ru', 'foreign', 'instrumental']),
   }
   const HOME_RAIL_REGISTRY = [
@@ -2716,19 +2716,13 @@
   }
 
   function normalizeWaveSettings(settings = {}) {
-    const next = {
-      ...state.myWaveSettings,
-      ...settings,
-    }
-    const activity = next.activity === 'wake' ? 'work' : next.activity
-    const language = next.language === undefined || next.language === '' || next.language === 'any'
-      ? null
-      : next.language
+    const next = { ...state.myWaveSettings, ...settings }
+    const n = (val, set, def = null) => (val === null || val === undefined || val === '' || val === 'any' || set.has(val)) ? (val === 'any' || val === '' || val === undefined ? null : val) : def
     return {
-      character: WAVE_SETTING_VALUES.character.has(next.character) ? next.character : 'favorite',
-      mood: WAVE_SETTING_VALUES.mood.has(next.mood) ? next.mood : 'calm',
-      activity: WAVE_SETTING_VALUES.activity.has(activity) ? activity : 'work',
-      language: WAVE_SETTING_VALUES.language.has(language) ? language : null,
+      character: n(next.character, WAVE_SETTING_VALUES.character, 'favorite'),
+      mood: n(next.mood, WAVE_SETTING_VALUES.mood, 'calm'),
+      activity: n(next.activity, WAVE_SETTING_VALUES.activity, 'work'),
+      language: n(next.language, WAVE_SETTING_VALUES.language, null),
     }
   }
 
