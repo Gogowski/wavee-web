@@ -12,7 +12,7 @@
   const HOME_RECO_STALE_TTL_MS = 30 * 60 * 1000
   const API_GET_CACHE_DEFAULT_TTL_MS = 20 * 1000
   const HOME_PERSONALIZATION_REFRESH_TTL_MS = 45 * 1000
-  const HOME_PLAYBACK_PREFETCH_LIMIT = 2
+  const HOME_PLAYBACK_PREFETCH_LIMIT = 4
   const HOME_ARTIST_MONTHLY_HYDRATION_LIMIT = 4
   const HOME_FORCE_DISCONNECTED_PLACEHOLDERS = false
   const page = document.body?.dataset?.waveePage || ''
@@ -4758,15 +4758,19 @@
       : 'trends'
     const primaryRecommendationsRequest = fetchHomeRecommendationsMode(primaryMode)
 
-    let catalogFeed = await api('/catalog/feed?limit=40', { auth: 'optional', timeoutMs: 1_800, retry: false }).catch(() => ({ items: [] }))
+    let catalogFeed = hasSession
+      ? await api('/catalog/feed?limit=40', { auth: 'optional', timeoutMs: 1_800, retry: false }).catch(() => ({ items: [] }))
+      : await publicApi('/catalog/feed?limit=40', { timeoutMs: 1_800 }).catch(() => ({ items: [] }))
     let tracks = { items: [] }
-    if (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0) {
+    if (hasSession && (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0)) {
       catalogFeed = await publicApi('/catalog/feed?limit=40', { timeoutMs: 1_800 }).catch(() => ({ items: [] }))
     }
     if (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0) {
-      tracks = await api('/tracks?query=&limit=40&offset=0', { auth: 'optional', timeoutMs: 4_500, retry: false }).catch(() => ({ items: [] }))
+      tracks = hasSession
+        ? await api('/tracks?query=&limit=40&offset=0', { auth: 'optional', timeoutMs: 4_500, retry: false }).catch(() => ({ items: [] }))
+        : await publicApi('/tracks?query=&limit=40&offset=0', { timeoutMs: 4_500 }).catch(() => ({ items: [] }))
     }
-    if ((!Array.isArray(tracks?.items) || tracks.items.length === 0) && (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0)) {
+    if (hasSession && (!Array.isArray(tracks?.items) || tracks.items.length === 0) && (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0)) {
       tracks = await publicApi('/tracks?query=&limit=40&offset=0', { timeoutMs: 4_500 }).catch(() => ({ items: [] }))
     }
 

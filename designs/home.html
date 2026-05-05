@@ -4,12 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Wavee - Your Sonic Wave</title>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin />
+    <link rel="preload" href="../fonts/EtudeNoire-Regular.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="../fonts/EtudeNoire-Bold.ttf" as="font" type="font/ttf" crossorigin />
     <script src="https://cdn.tailwindcss.com/3.4.17" defer></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Tektur:wght@400..900&family=Manrope:wght@200..800&family=Commissioner:wght@100..900&family=JetBrains+Mono:wght@100..800&display=swap"
-      rel="stylesheet"
-    />
     <style>
+      @font-face {
+        font-family: 'Etude Noire';
+        src: url('../fonts/EtudeNoire-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'Etude Noire';
+        src: url('../fonts/EtudeNoire-Bold.ttf') format('truetype');
+        font-weight: 700 900;
+        font-style: normal;
+        font-display: swap;
+      }
+
       :root {
         --bg-dark: #111214;
         --glass-border: rgba(255, 255, 255, 0.1);
@@ -18,9 +33,9 @@
         --home-wave-primary: #f2f2f2;
         --home-wave-secondary: #bdbdbd;
         --home-wave-tertiary: #5f5f5f;
-        --wavee-display-font: 'Etude Noire', 'Tektur', sans-serif;
-        --wavee-heading-font: 'Etude Noire', 'Manrope', sans-serif;
-        --wavee-body-font: 'Commissioner', sans-serif;
+        --wavee-display-font: 'Etude Noire', system-ui, sans-serif;
+        --wavee-heading-font: 'Etude Noire', system-ui, sans-serif;
+        --wavee-body-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         --wavee-mono-font: 'JetBrains Mono', monospace;
         --text-main: #ffffff;
         --text-muted: rgba(255, 255, 255, 0.5);
