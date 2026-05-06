@@ -4636,18 +4636,45 @@
         const expanded = el.homeWaveSettingsToggle.getAttribute('aria-expanded') === 'true'
         el.homeWaveSettingsToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true')
         el.homeWaveSettingsPanel.hidden = expanded
+        
+        // Notify parent about modal state
+        if (window.parent !== window) {
+          window.parent.postMessage({
+            source: 'wavee-design-runtime',
+            type: 'wavee-modal-state',
+            payload: { open: !expanded }
+          }, '*')
+        }
       }
       document.addEventListener('click', (event) => {
         if (el.homeWaveSettingsPanel.hidden) return
         if (el.homeWaveSettingsPanel.contains(event.target) || el.homeWaveSettingsToggle.contains(event.target)) return
         el.homeWaveSettingsToggle.setAttribute('aria-expanded', 'false')
         el.homeWaveSettingsPanel.hidden = true
+        
+        // Notify parent about modal close
+        if (window.parent !== window) {
+          window.parent.postMessage({
+            source: 'wavee-design-runtime',
+            type: 'wavee-modal-state',
+            payload: { open: false }
+          }, '*')
+        }
       })
       document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape' || el.homeWaveSettingsPanel.hidden) return
         el.homeWaveSettingsToggle.setAttribute('aria-expanded', 'false')
         el.homeWaveSettingsPanel.hidden = true
         el.homeWaveSettingsToggle.focus()
+        
+        // Notify parent about modal close
+        if (window.parent !== window) {
+          window.parent.postMessage({
+            source: 'wavee-design-runtime',
+            type: 'wavee-modal-state',
+            payload: { open: false }
+          }, '*')
+        }
       })
     }
     if (el.myWaveRefresh) el.myWaveRefresh.onclick = async () => {
