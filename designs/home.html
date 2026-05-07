@@ -2457,19 +2457,23 @@
 
       .home-wave-settings-panel {
         position: absolute;
-        right: max(16px, calc(50% - 420px));
-        top: 24px;
+        left: 50%;
+        top: 84px;
+        transform: translateX(-50%);
         z-index: 1000;
-        width: min(340px, calc(100vw - 32px));
-        display: grid;
-        gap: 14px;
-        padding: 18px;
-        border-radius: 18px;
+        width: min(1000px, calc(100vw - 32px));
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 24px;
+        padding: 20px;
+        border-radius: 24px;
         border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(12, 13, 16, 0.92);
+        background: rgba(12, 13, 16, 0.94);
         box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
+        backdrop-filter: blur(28px);
+        -webkit-backdrop-filter: blur(28px);
         text-align: left;
       }
 
@@ -2478,48 +2482,82 @@
       }
 
       .home-wave-settings-title {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.9);
-        font-family: var(--wavee-heading-font);
-        font-size: 13px;
-        font-weight: 800;
+        display: none;
       }
 
       .home-wave-settings-group {
         display: grid;
         gap: 8px;
+        flex: 0 1 auto;
       }
 
       .home-wave-settings-label {
-        color: rgba(255, 255, 255, 0.5);
-        font-family: var(--wavee-body-font);
-        font-size: 11px;
+        color: rgba(255, 255, 255, 0.4);
+        font-family: var(--wavee-heading-font);
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
 
       .home-wave-settings-options {
         display: flex;
-        flex-wrap: wrap;
-        gap: 7px;
+        flex-wrap: nowrap;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+
+      .home-wave-settings-options::-webkit-scrollbar {
+        height: 0;
       }
 
       .home-wave-setting-chip {
-        min-height: 32px;
-        padding: 0 11px;
+        white-space: nowrap;
+        min-height: 34px;
+        padding: 0 14px;
         border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(255, 255, 255, 0.05);
-        color: rgba(255, 255, 255, 0.72);
-        font-size: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 11px;
+        font-weight: 600;
         cursor: pointer;
+        transition: all 0.2s ease;
       }
 
       .home-wave-setting-chip.is-accent,
       .home-wave-setting-chip:hover,
       .home-wave-setting-chip:focus-visible {
-        border-color: rgba(255, 255, 255, 0.34);
-        background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.12);
         color: #ffffff;
         outline: 0;
+      }
+
+      .home-wave-setting-chip.is-active {
+        background: var(--wavee-accent, #92A9E1) !important;
+        color: #111 !important;
+        border-color: transparent !important;
+        box-shadow: 0 8px 16px rgba(146, 169, 225, 0.3);
+      }
+
+      @media (max-width: 767px) {
+        .home-wave-settings-toggle {
+          right: 14px;
+          top: 8px;
+        }
+
+        .home-wave-settings-panel {
+          top: 64px;
+          flex-direction: column;
+          gap: 16px;
+          padding: 16px;
+        }
+        
+        .home-wave-settings-options {
+          flex-wrap: wrap;
+        }
       }
 
       body:not([data-wavee-embed='app']) .hero-logo-shell {
