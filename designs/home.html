@@ -3411,9 +3411,10 @@
         <button id="home-hero-listen" type="button" class="home-wave-trigger" aria-label="Слушать мою волну" aria-pressed="false">
           <img id="home-wave-art-image" src="assets/animals/cat.png" alt="" class="home-wave-trigger-image" aria-hidden="true" loading="eager" decoding="async" fetchpriority="high" />
         </button>
-        <button id="home-wave-settings-toggle" type="button" class="home-wave-settings-toggle" aria-label="Настройки волны" aria-expanded="false" aria-controls="home-wave-settings-panel">⚙</button>
-        <div id="home-wave-settings-panel" class="home-wave-settings-panel" hidden>
-          <p class="home-wave-settings-title">Настройки волны</p>
+        <button id="home-wave-settings-toggle" type="button" class="home-wave-settings-toggle" aria-label="Настройки волны временно недоступны" title="Настройки волны временно недоступны" disabled style="opacity: 0.5; cursor: not-allowed;">⚙</button>
+        <div id="home-wave-settings-panel" class="home-wave-settings-panel" hidden data-status="temporarily-disabled">
+          <p class="home-wave-settings-title" style="display: block; color: #ffadad; font-size: 11px; margin-bottom: 0;">Функционал временно отключен</p>
+          <!-- Settings content preserved but hidden -->
           <div class="home-wave-settings-group">
             <span class="home-wave-settings-label">Цель</span>
             <div class="home-wave-settings-options">
