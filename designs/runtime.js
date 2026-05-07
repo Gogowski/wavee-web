@@ -4426,7 +4426,8 @@
 
     if (el.hero) {
       const myWaveTracks = getMyWaveTracks()
-      const canStart = myWaveTracks.length > 0 || baseTracks.length > 0
+      const hasSession = hasSessionToken()
+      const canStart = hasSession || myWaveTracks.length > 0
       const hasPersonalWave = myWaveTracks.length > 0
 
       el.hero.disabled = !canStart
@@ -4610,22 +4611,36 @@
     if (!embedMode && el.prog) el.prog.onclick = (e) => { const r = el.prog.getBoundingClientRect(); if (r.width > 0) seek(((e.clientX - r.left) / r.width) * state.d) }
     if (!embedMode && el.vol) el.vol.onclick = (e) => { const bar = el.vol.querySelector('div'); if (!bar || !audio) return; const r = bar.getBoundingClientRect(); if (r.width > 0) { state.v = Math.round(clamp((e.clientX - r.left) / r.width, 0, 1) * 100); audio.volume = state.v / 100; yt.player?.setVolume?.(state.v); syncPlayer() } }
     if (el.hero) {
-      const triggerHero = () => {
-        const waveTracks = getMyWaveTracks()
-        const playbackList = waveTracks.length ? waveTracks : dedupeTracks(state.tracks)
+      const triggerHero = async () => {
+        let playbackList = getMyWaveTracks()
+
+        if (!playbackList.length && hasSessionToken()) {
+          el.hero.disabled = true
+          await loadMyWaveRecommendations({
+            settings: state.myWaveSettings,
+            persistSettings: false,
+            rerender: true,
+          })
+          playbackList = getMyWaveTracks()
+        }
+
         const leadTrack = playbackList[0]
-        if (!leadTrack) return
+        if (!leadTrack) {
+          el.hero.disabled = !hasSessionToken()
+          return
+        }
+
         setHomeWaveActive(true)
-        play(leadTrack, 'home-wave-trigger', { list: playbackList })
+        await play(leadTrack, 'my-wave', { list: playbackList })
       }
       el.hero.onclick = (event) => {
         event.preventDefault?.()
-        triggerHero()
+        void triggerHero()
       }
       el.hero.onkeydown = (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
-          triggerHero()
+          void triggerHero()
         }
       }
     }
