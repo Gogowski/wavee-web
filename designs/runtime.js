@@ -4637,6 +4637,8 @@
         el.homeWaveSettingsToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true')
         el.homeWaveSettingsPanel.hidden = expanded
         
+        document.body.classList.toggle('is-modal-open', !expanded)
+        
         // Notify parent about modal state
         if (window.parent !== window) {
           window.parent.postMessage({
@@ -4652,6 +4654,8 @@
         el.homeWaveSettingsToggle.setAttribute('aria-expanded', 'false')
         el.homeWaveSettingsPanel.hidden = true
         
+        document.body.classList.remove('is-modal-open')
+        
         // Notify parent about modal close
         if (window.parent !== window) {
           window.parent.postMessage({
@@ -4666,6 +4670,8 @@
         el.homeWaveSettingsToggle.setAttribute('aria-expanded', 'false')
         el.homeWaveSettingsPanel.hidden = true
         el.homeWaveSettingsToggle.focus()
+        
+        document.body.classList.remove('is-modal-open')
         
         // Notify parent about modal close
         if (window.parent !== window) {
