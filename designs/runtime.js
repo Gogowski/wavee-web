@@ -2874,7 +2874,7 @@
     }
 
     state.homeRecommendationsLoadingByMode[mode] = true
-    const authMode = tokenPresent ? 'optional' : 'none'
+    const authMode = tokenPresent ? 'required' : 'none'
     const path = `/recommendations/home?limit=${HOME_RECOMMENDATIONS_LIMIT}&mode=${encodeURIComponent(mode)}`
 
     const request = api(path, { auth: authMode })
