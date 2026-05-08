@@ -2861,17 +2861,19 @@
         -webkit-backdrop-filter: blur(20px);
         z-index: 5;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        min-width: 260px;
       }
 
       .home-listen-button {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 12px;
         background: #92A9E1;
         color: #000;
         border: 0;
         border-radius: 999px;
-        padding: 12px 36px;
+        padding: 12px 32px;
         font-family: 'Etude Noire', sans-serif;
         font-weight: 700;
         font-size: 15px;
@@ -2879,6 +2881,7 @@
         text-transform: uppercase;
         cursor: pointer;
         transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background 0.2s ease;
+        flex: 1.2;
       }
 
       .home-listen-button:hover {
@@ -2899,7 +2902,7 @@
         background: transparent;
         color: #fff;
         border: 0;
-        padding: 0 36px;
+        padding: 0 24px;
         font-family: 'Etude Noire', sans-serif;
         font-weight: 700;
         font-size: 15px;
@@ -2924,8 +2927,8 @@
       .home-wave-controls .home-wave-settings-toggle {
         position: static;
         inset: auto;
-        width: auto;
-        height: auto;
+        width: 54px;
+        height: 48px;
         background: transparent;
         border: none;
         box-shadow: none;
@@ -2933,25 +2936,35 @@
         -webkit-backdrop-filter: none;
         margin: 0;
         display: inline-flex;
-        color: #fff;
-        opacity: 0.8;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.7);
+        opacity: 1;
+        flex-shrink: 0;
+      }
+
+      .home-wave-controls .home-wave-settings-toggle svg {
+        width: 20px;
+        height: 20px;
       }
 
       .home-wave-controls .home-wave-settings-toggle:hover:not(:disabled) {
-        transform: scale(1.02);
-        background: transparent;
-        opacity: 1;
+        transform: scale(1.1);
+        color: #ffffff;
       }
 
       @media (max-width: 767px) {
+        .home-wave-controls {
+          min-width: 220px;
+        }
         .home-listen-button {
           padding: 10px 24px;
           font-size: 13px;
         }
         .home-wave-settings-button,
         .home-wave-controls .home-wave-settings-toggle {
-          padding: 0 24px;
-          font-size: 13px;
+          width: 44px;
+          height: 40px;
         }
       }
 
@@ -3525,7 +3538,7 @@
             <span>Слушать</span>
           </button>
           <button id="home-wave-settings-toggle" type="button" class="home-wave-settings-toggle" aria-label="Настройки волны временно недоступны" title="Настройки волны временно недоступны" disabled>
-            Волна
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           </button>
         </div>
 
