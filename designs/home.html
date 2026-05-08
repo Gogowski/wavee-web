@@ -2850,6 +2850,7 @@
 
       /* Wave Controls Styles */
       .home-wave-controls {
+        position: relative;
         display: inline-flex;
         align-items: stretch;
         background: rgba(18, 19, 21, 0.45);
@@ -2953,11 +2954,14 @@
       }
 
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
         background: rgba(0, 0, 0, 0.01) !important; /* fix for transparent hit area bug */
         padding: 0;
         gap: 0;
-        width: 100%;
-        flex: 1;
+        flex: none;
       }
 
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button::after {
