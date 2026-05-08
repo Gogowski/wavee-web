@@ -4631,6 +4631,15 @@
     if (!embedMode && el.vol) el.vol.onclick = (e) => { const bar = el.vol.querySelector('div'); if (!bar || !audio) return; const r = bar.getBoundingClientRect(); if (r.width > 0) { state.v = Math.round(clamp((e.clientX - r.left) / r.width, 0, 1) * 100); audio.volume = state.v / 100; yt.player?.setVolume?.(state.v); syncPlayer() } }
     if (el.hero) {
       const triggerHero = async () => {
+        if (state.playing && state.ctx?.type === 'my-wave') {
+          pause()
+          return
+        }
+        if (state.track && state.ctx?.type === 'my-wave' && !state.playing) {
+          resume()
+          return
+        }
+
         let playbackList = getMyWaveTracks()
 
         if (!playbackList.length && hasSessionToken()) {
