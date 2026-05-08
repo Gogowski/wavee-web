@@ -276,7 +276,7 @@
   const runtimeGetInflight = new Map()
   const HOME_DEFAULT_MODE = hasSessionToken() ? 'for-you' : 'trends'
   const HOME_RECOMMENDATIONS_LIMIT = 20
-  const MY_WAVE_RECOMMENDATIONS_LIMIT = 250
+  const MY_WAVE_RECOMMENDATIONS_LIMIT = 80
   const WAVE_SETTING_VALUES = {
     character: new Set(['any', 'favorite', 'unfamiliar', 'popular']),
     mood: new Set(['any', 'energetic', 'happy', 'calm', 'sad']),
@@ -2522,6 +2522,22 @@
     return `${getRuntimeRequestScope()}:${authMode}:${String(path || '')}`
   }
 
+  function createEmptyHomeRecommendations(mode = HOME_DEFAULT_MODE) {
+    return {
+      mode,
+      generatedAt: new Date().toISOString(),
+      blocks: {
+        newReleases: [],
+        favoriteArtists: [],
+        popularArtists: [],
+        bestTracks: [],
+        mixes: [],
+        genresAndMoods: [],
+      },
+      source: 'empty-fallback',
+    }
+  }
+
   function readRuntimeGetCache(path = '', authMode = 'none') {
     const key = getRuntimeGetCacheKey(path, authMode)
     const cached = runtimeGetCache.get(key)
@@ -2894,7 +2910,9 @@
           state.homeRecommendationsByMode[mode] = fallback
           return fallback
         }
-        return null
+        const empty = { ...createEmptyHomeRecommendations(mode), __cachedAt: Date.now() }
+        state.homeRecommendationsByMode[mode] = empty
+        return empty
       })
       .finally(() => {
         state.homeRecommendationsLoadingByMode[mode] = false
@@ -4147,7 +4165,7 @@
     const recommendationBlocks = getHomeRecommendationBlocks(activeFilter)
     const hasRecommendationBlocks = Boolean(recommendationBlocks)
     const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
-    const isWaitingForPersonal = requiresPersonalBlocks && (!hasRecommendationBlocks || isRecommendationModeLoading)
+    const isWaitingForPersonal = requiresPersonalBlocks && isRecommendationModeLoading
     const shouldShowPersonalSkeleton = isForYouMode && (isWaitingForPersonal || isRecommendationModeLoading)
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
