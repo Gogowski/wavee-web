@@ -27,7 +27,7 @@
     return q || localStorage.getItem('wavee_api_base') || API_DEFAULT
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
-  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v6_${apiBase}`
+  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v7_${apiBase}`
   const COVER_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMDNhOWYiLz48dGV4dCB4PSI1MCUiIHk9IjUzJSIgZmlsbD0iI2YxZjVmOSIgc3R5bGU9ImZvbnQ6IGJvbGQgNDJweCBtb25vc3BhY2U7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imao8L3RleHQ+PC9zdmc+'
 
   document.body.dataset.waveeEmbed = embedMode ? 'app' : 'standalone'
@@ -4143,10 +4143,11 @@
     const activeFilter = activeMode || el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE
     const isForYouMode = activeFilter === 'for-you'
     const isTrendsMode = activeFilter === 'trends'
+    const requiresPersonalBlocks = isForYouMode && hasSessionToken()
     const recommendationBlocks = getHomeRecommendationBlocks(activeFilter)
     const hasRecommendationBlocks = Boolean(recommendationBlocks)
     const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
-    const isWaitingForPersonal = isForYouMode && !hasRecommendationBlocks && hasSessionToken() && isRecommendationModeLoading
+    const isWaitingForPersonal = requiresPersonalBlocks && (!hasRecommendationBlocks || isRecommendationModeLoading)
     const shouldShowPersonalSkeleton = isForYouMode && (isWaitingForPersonal || isRecommendationModeLoading)
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
@@ -4238,7 +4239,7 @@
               .map((item) => ({ artist: item?.artist, track: item?.track }))
               .filter((item) => item?.artist?.id || item?.artist?.name)
               .slice(0, 20)
-            : (isWaitingForPersonal ? [] : getArtistEntries(musicTracks).slice(0, 20))
+            : (requiresPersonalBlocks ? [] : getArtistEntries(musicTracks).slice(0, 20))
         )
       : []
     const favoriteArtistCards = favoriteArtists.map((entry, index) => ArtistCard({
@@ -4298,7 +4299,7 @@
     const recommendedBestTracks = getTracksFromRecommendationBlock(recommendationBlocks?.bestTracks)
     const topTracksSource = recommendedBestTracks.length
       ? recommendedBestTracks
-      : (isWaitingForPersonal ? [] : (isTrendsMode ? trendingTracks : musicTracks))
+      : (requiresPersonalBlocks ? [] : (isTrendsMode ? trendingTracks : musicTracks))
     const topTracks = topTracksSource.slice(0, 20)
     const topTrackCards = topTracks.map((track, index) => PlaylistCard({
       track,
@@ -4330,7 +4331,7 @@
             ? recommendationBlocks.mixes
               .filter((entry) => entry?.track?.id)
               .slice(0, 20)
-            : (isWaitingForPersonal ? [] : getMixEntries().filter((entry) => entry?.track?.id).slice(0, 20))
+            : (requiresPersonalBlocks ? [] : getMixEntries().filter((entry) => entry?.track?.id).slice(0, 20))
         )
       : []
     const mixKickers = ['Для тебя', 'Топ дня', 'Рекомендуем', 'В ротации']
@@ -4391,7 +4392,7 @@
 
     const genresAndMoodsEntries = Array.isArray(recommendationBlocks?.genresAndMoods)
       ? recommendationBlocks.genresAndMoods
-      : getGenreMoodBuckets(musicTracks)
+      : (requiresPersonalBlocks ? [] : getGenreMoodBuckets(musicTracks))
     const extraCards = genresAndMoodsEntries.slice(0, 20).map((entry, index) => SmallCard({
       track: entry.track,
       coverMarkup,
