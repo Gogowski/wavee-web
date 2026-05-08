@@ -2851,17 +2851,19 @@
       /* Wave Controls Styles */
       .home-wave-controls {
         display: inline-flex;
-        align-items: center;
+        align-items: stretch;
         background: rgba(18, 19, 21, 0.45);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 999px;
-        padding: 4px;
+        padding: 0;
         margin-top: -10px;
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         z-index: 5;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        min-width: 260px;
+        min-width: 280px;
+        height: 54px;
+        overflow: hidden;
       }
 
       .home-listen-button {
@@ -2872,25 +2874,24 @@
         background: #92A9E1;
         color: #000;
         border: 0;
-        border-radius: 999px;
-        padding: 12px 32px;
+        border-radius: 0;
+        padding: 0 40px;
         font-family: 'Etude Noire', sans-serif;
         font-weight: 700;
         font-size: 15px;
         letter-spacing: 0.05em;
         text-transform: uppercase;
         cursor: pointer;
-        transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background 0.2s ease;
-        flex: 1.2;
+        transition: background 0.2s ease;
+        flex: 1.5;
       }
 
       .home-listen-button:hover {
         background: #a5b9eb;
-        transform: scale(1.02);
       }
 
       .home-listen-button:active {
-        transform: scale(0.97);
+        background: #8198d1;
       }
 
       .home-listen-button svg {
@@ -2910,12 +2911,11 @@
         text-transform: uppercase;
         cursor: pointer;
         opacity: 0.8;
-        transition: opacity 0.2s ease, transform 0.2s ease;
+        transition: opacity 0.2s ease;
       }
 
       .home-wave-settings-button:hover:not(:disabled) {
         opacity: 1;
-        transform: scale(1.02);
       }
       
       .home-wave-settings-button:disabled {
@@ -2927,8 +2927,8 @@
       .home-wave-controls .home-wave-settings-toggle {
         position: static;
         inset: auto;
-        width: 54px;
-        height: 48px;
+        width: 64px;
+        height: 100%;
         background: transparent;
         border: none;
         box-shadow: none;
@@ -2938,9 +2938,10 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: rgba(255, 255, 255, 0.7);
+        color: rgba(255, 255, 255, 0.6);
         opacity: 1;
         flex-shrink: 0;
+        transition: background 0.2s ease, color 0.2s ease;
       }
 
       .home-wave-controls .home-wave-settings-toggle svg {
@@ -2949,22 +2950,22 @@
       }
 
       .home-wave-controls .home-wave-settings-toggle:hover:not(:disabled) {
-        transform: scale(1.1);
+        background: rgba(255, 255, 255, 0.08);
         color: #ffffff;
       }
 
       @media (max-width: 767px) {
         .home-wave-controls {
           min-width: 220px;
+          height: 46px;
         }
         .home-listen-button {
-          padding: 10px 24px;
+          padding: 0 24px;
           font-size: 13px;
         }
         .home-wave-settings-button,
         .home-wave-controls .home-wave-settings-toggle {
-          width: 44px;
-          height: 40px;
+          width: 50px;
         }
       }
 
