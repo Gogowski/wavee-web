@@ -276,7 +276,7 @@
   const runtimeGetInflight = new Map()
   const HOME_DEFAULT_MODE = hasSessionToken() ? 'for-you' : 'trends'
   const HOME_RECOMMENDATIONS_LIMIT = 20
-  const MY_WAVE_RECOMMENDATIONS_LIMIT = 40
+  const MY_WAVE_RECOMMENDATIONS_LIMIT = 250
   const WAVE_SETTING_VALUES = {
     character: new Set(['any', 'favorite', 'unfamiliar', 'popular']),
     mood: new Set(['any', 'energetic', 'happy', 'calm', 'sad']),
