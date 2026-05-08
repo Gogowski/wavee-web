@@ -2867,13 +2867,17 @@
         height: 52px;
         overflow: hidden;
         transition: 
-          max-width 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
-          min-width 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
-          height 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+          max-width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), 
+          min-width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), 
+          height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
           background 0.4s ease,
           border-color 0.4s ease,
           box-shadow 0.4s ease,
-          backdrop-filter 0.4s ease;
+          backdrop-filter 0.4s ease,
+          transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+          opacity 0.4s ease;
+        transform: scale(1);
+        opacity: 1;
       }
 
       .home-listen-button {
@@ -2893,7 +2897,7 @@
         letter-spacing: 0.05em;
         text-transform: uppercase;
         cursor: pointer;
-        transition: background 0.3s ease, filter 0.3s ease, padding 0.4s ease, gap 0.4s ease;
+        transition: background 0.3s ease, filter 0.3s ease, padding 0.5s ease, gap 0.5s ease;
         flex: 1.5;
         height: 100%;
         overflow: hidden;
@@ -2920,7 +2924,7 @@
         opacity: 1;
         white-space: nowrap;
         overflow: hidden;
-        transition: max-width 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
+        transition: max-width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
       }
 
       .home-listen-button:hover {
@@ -2951,6 +2955,8 @@
         box-shadow: none;
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
+        transform: scale(0.95);
+        opacity: 0.85;
       }
 
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button {
