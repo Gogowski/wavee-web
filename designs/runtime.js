@@ -27,7 +27,7 @@
     return q || localStorage.getItem('wavee_api_base') || API_DEFAULT
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
-  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v3_${apiBase}`
+  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v4_${apiBase}`
   const COVER_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMDNhOWYiLz48dGV4dCB4PSI1MCUiIHk9IjUzJSIgZmlsbD0iI2YxZjVmOSIgc3R5bGU9ImZvbnQ6IGJvbGQgNDJweCBtb25vc3BhY2U7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imao8L3RleHQ+PC9zdmc+'
 
   document.body.dataset.waveeEmbed = embedMode ? 'app' : 'standalone'
