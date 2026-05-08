@@ -2945,7 +2945,7 @@
         max-width: 130px;
         min-width: 130px;
         height: 36px; /* larger hit area */
-        background: transparent;
+        background: rgba(0, 0, 0, 0.01); /* fix for transparent hit area bug */
         border-color: transparent;
         box-shadow: none;
         backdrop-filter: none;
@@ -2953,9 +2953,11 @@
       }
 
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button {
-        background: transparent !important;
+        background: rgba(0, 0, 0, 0.01) !important; /* fix for transparent hit area bug */
         padding: 0;
         gap: 0;
+        width: 100%;
+        flex: 1;
       }
 
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button::after {
