@@ -3136,6 +3136,8 @@
     const index = Math.max(playbackList.findIndex((item) => item.id === track?.id), 0)
 
     state.track = track
+    state.ctx = ctx
+    setHomeWaveActive(ctx === 'my-wave')
     state.queue = playbackList
     state.idx = index
     state.playing = true
@@ -3267,6 +3269,7 @@
     }
 
     state.ctx = ctx
+    setHomeWaveActive(ctx === 'my-wave')
     setCurrent(playbackTrack)
     beginPlaybackSession(playbackTrack, ctx)
     state.t = 0
@@ -3315,7 +3318,10 @@
   }
 
   function pause() {
-    if (embedMode) return
+    if (embedMode) {
+      notifyParent('wavee-pause')
+      return
+    }
     if (!state.track) return
     if (state.track.sourceType === 'youtube') yt.player?.pauseVideo?.()
     else audio?.pause()
@@ -3324,7 +3330,10 @@
   }
 
   function resume() {
-    if (embedMode) return
+    if (embedMode) {
+      notifyParent('wavee-resume')
+      return
+    }
     if (!state.track) return
     if (state.track.sourceType === 'youtube' && !yt.player) {
       play(state.track, 'resume')
