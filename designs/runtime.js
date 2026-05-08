@@ -150,6 +150,7 @@
       trends: {},
     },
     playbackSession: null,
+    ctx: null,
   }
   const personalizationRefreshState = {
     inflight: null,
@@ -3265,6 +3266,7 @@
       endPlaybackSession({ completed: false, contextType: 'switch-track' })
     }
 
+    state.ctx = ctx
     setCurrent(playbackTrack)
     beginPlaybackSession(playbackTrack, ctx)
     state.t = 0
@@ -4631,11 +4633,11 @@
     if (!embedMode && el.vol) el.vol.onclick = (e) => { const bar = el.vol.querySelector('div'); if (!bar || !audio) return; const r = bar.getBoundingClientRect(); if (r.width > 0) { state.v = Math.round(clamp((e.clientX - r.left) / r.width, 0, 1) * 100); audio.volume = state.v / 100; yt.player?.setVolume?.(state.v); syncPlayer() } }
     if (el.hero) {
       const triggerHero = async () => {
-        if (state.playing && state.ctx?.type === 'my-wave') {
+        if (state.playing && state.ctx === 'my-wave') {
           pause()
           return
         }
-        if (state.track && state.ctx?.type === 'my-wave' && !state.playing) {
+        if (state.track && state.ctx === 'my-wave' && !state.playing) {
           resume()
           return
         }
