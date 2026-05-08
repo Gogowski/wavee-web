@@ -2876,6 +2876,7 @@
       }
 
       .home-listen-button {
+        position: relative;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -2891,10 +2892,25 @@
         letter-spacing: 0.05em;
         text-transform: uppercase;
         cursor: pointer;
-        transition: background 0.2s ease, opacity 0.3s ease, filter 0.3s ease, padding 0.4s ease, gap 0.4s ease;
+        transition: background 0.3s ease, filter 0.3s ease, padding 0.4s ease, gap 0.4s ease;
         flex: 1.5;
         height: 100%;
         overflow: hidden;
+      }
+
+      .home-listen-button::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 6px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 999px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease, background 0.3s ease;
       }
 
       .home-listen-button span {
@@ -2928,8 +2944,8 @@
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls {
         max-width: 130px;
         min-width: 130px;
-        height: 6px;
-        background: rgba(255, 255, 255, 0.04);
+        height: 36px; /* larger hit area */
+        background: transparent;
         border-color: transparent;
         box-shadow: none;
         backdrop-filter: none;
@@ -2937,7 +2953,17 @@
       }
 
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button {
-        opacity: 0;
+        background: transparent !important;
+        padding: 0;
+        gap: 0;
+      }
+
+      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button::after {
+        opacity: 1;
+      }
+
+      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button:hover::after {
+        background: rgba(255, 255, 255, 0.15);
       }
 
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button span {
@@ -3022,7 +3048,7 @@
         #home-hero-listen[aria-pressed="true"] + .home-wave-controls {
           max-width: 100px;
           min-width: 100px;
-          height: 8px;
+          height: 36px;
         }
         .home-listen-button {
           padding: 0 24px;
