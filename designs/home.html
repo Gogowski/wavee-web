@@ -2848,6 +2848,113 @@
           border-color 0.25s ease;
       }
 
+      /* Wave Controls Styles */
+      .home-wave-controls {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(18, 19, 21, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        padding: 4px;
+        margin-top: -10px;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        z-index: 5;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+
+      .home-listen-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: #92A9E1;
+        color: #000;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 36px;
+        font-family: 'Etude Noire', sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background 0.2s ease;
+      }
+
+      .home-listen-button:hover {
+        background: #a5b9eb;
+        transform: scale(1.02);
+      }
+
+      .home-listen-button:active {
+        transform: scale(0.97);
+      }
+
+      .home-listen-button svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .home-wave-settings-button {
+        background: transparent;
+        color: #fff;
+        border: 0;
+        padding: 0 36px;
+        font-family: 'Etude Noire', sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .home-wave-settings-button:hover:not(:disabled) {
+        opacity: 1;
+        transform: scale(1.02);
+      }
+      
+      .home-wave-settings-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.35;
+      }
+
+      /* Override for existing settings toggle when placed inside controls */
+      .home-wave-controls .home-wave-settings-toggle {
+        position: static;
+        inset: auto;
+        width: auto;
+        height: auto;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        margin: 0;
+        display: inline-flex;
+        color: #fff;
+        opacity: 0.8;
+      }
+
+      .home-wave-controls .home-wave-settings-toggle:hover:not(:disabled) {
+        transform: scale(1.02);
+        background: transparent;
+        opacity: 1;
+      }
+
+      @media (max-width: 767px) {
+        .home-listen-button {
+          padding: 10px 24px;
+          font-size: 13px;
+        }
+        .home-wave-settings-button,
+        .home-wave-controls .home-wave-settings-toggle {
+          padding: 0 24px;
+          font-size: 13px;
+        }
+      }
+
       @media (max-width: 1023px) {
         nav {
           width: calc(100% - 24px) !important;
@@ -3407,11 +3514,21 @@
 
 
     <section class="hero-shell relative z-10 flex flex-col items-center justify-center overflow-visible pb-14 pt-32 text-center">
-      <div class="hero-logo-shell w-full flex justify-center items-center">
+      <div class="hero-logo-shell w-full flex flex-col justify-center items-center">
         <button id="home-hero-listen" type="button" class="home-wave-trigger" aria-label="Слушать мою волну" aria-pressed="false">
           <img id="home-wave-art-image" src="assets/animals/cat.png" alt="" class="home-wave-trigger-image" aria-hidden="true" loading="eager" decoding="async" fetchpriority="high" />
         </button>
-        <button id="home-wave-settings-toggle" type="button" class="home-wave-settings-toggle" aria-label="Настройки волны временно недоступны" title="Настройки волны временно недоступны" disabled style="opacity: 0.5; cursor: not-allowed;">⚙</button>
+
+        <div class="home-wave-controls">
+          <button type="button" class="home-listen-button" onclick="document.getElementById('home-hero-listen').click()">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <span>Слушать</span>
+          </button>
+          <button id="home-wave-settings-toggle" type="button" class="home-wave-settings-toggle" aria-label="Настройки волны временно недоступны" title="Настройки волны временно недоступны" disabled>
+            Волна
+          </button>
+        </div>
+
         <div id="home-wave-settings-panel" class="home-wave-settings-panel" hidden data-status="temporarily-disabled">
           <p class="home-wave-settings-title" style="display: block; color: #ffadad; font-size: 11px; margin-bottom: 0;">Функционал временно отключен</p>
           <!-- Settings content preserved but hidden -->
