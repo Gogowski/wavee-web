@@ -2856,7 +2856,7 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 999px;
         padding: 0;
-        margin-top: -10px;
+        margin-top: -28px;
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         z-index: 5;
@@ -2865,7 +2865,7 @@
         max-width: 280px;
         height: 52px;
         overflow: hidden;
-        transition: max-width 0.4s cubic-bezier(0.25, 1, 0.5, 1), min-width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        transition: max-width 0.4s cubic-bezier(0.25, 1, 0.5, 1), min-width 0.4s cubic-bezier(0.25, 1, 0.5, 1), height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
       }
 
       .home-listen-button {
@@ -2919,19 +2919,20 @@
 
       /* Active State for the Listen Button when Wave is playing */
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls {
-        max-width: 52px;
-        min-width: 52px;
+        max-width: 90px;
+        min-width: 90px;
+        height: 16px;
       }
 
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button {
         filter: grayscale(100%);
-        opacity: 0.2;
+        opacity: 0.1;
         padding: 0;
         gap: 0;
       }
 
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button:hover {
-        opacity: 0.45;
+        opacity: 0.25;
       }
 
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button span {
@@ -2939,12 +2940,9 @@
         opacity: 0;
       }
 
-      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button .home-icon-play {
-        display: none;
-      }
-
+      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button .home-icon-play,
       #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button .home-icon-pause {
-        display: inline-block;
+        display: none;
       }
 
       .home-wave-settings-button {
@@ -3017,8 +3015,9 @@
           padding: 0;
         }
         #home-hero-listen[aria-pressed="true"] + .home-wave-controls {
-          max-width: 44px;
-          min-width: 44px;
+          max-width: 80px;
+          min-width: 80px;
+          height: 14px;
         }
         .home-listen-button {
           padding: 0 24px;
