@@ -376,6 +376,26 @@
     return value
   }
 
+  function getWheelDelta(event) {
+    if (Number.isFinite(event.deltaX) || Number.isFinite(event.deltaY)) {
+      return {
+        x: normalizeWheelDelta(event, event.deltaX || 0),
+        y: normalizeWheelDelta(event, event.deltaY || 0),
+      }
+    }
+
+    const legacyDetail = Number.isFinite(event.detail) ? event.detail : 0
+    const legacyDelta = event.type === 'MozMousePixelScroll'
+      ? legacyDetail
+      : legacyDetail * 40
+    const isHorizontal = event.axis === event.HORIZONTAL_AXIS
+
+    return {
+      x: isHorizontal ? legacyDelta : 0,
+      y: isHorizontal ? 0 : legacyDelta,
+    }
+  }
+
   function animateWheelScroll(target, axis, delta, options = {}) {
     if (!target || Math.abs(delta) < 0.5) return false
     const limit = getScrollAxisTargetLimit(target, axis)
@@ -439,10 +459,9 @@
   }
 
   function installSmoothWheelScrolling() {
-    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
-    if (prefersReducedMotion) return
     if (document.documentElement) {
       document.documentElement.style.scrollBehavior = 'auto'
+      document.documentElement.dataset.waveeSmoothWheel = 'on'
     }
 
     const onWheel = (event) => {
@@ -452,8 +471,7 @@
 
       const nestedTarget = source?.closest(SMOOTH_WHEEL_SCROLL_SELECTOR)
       if (nestedTarget instanceof HTMLElement) {
-        const normalizedDeltaX = normalizeWheelDelta(event, event.deltaX)
-        const normalizedDeltaY = normalizeWheelDelta(event, event.deltaY)
+        const { x: normalizedDeltaX, y: normalizedDeltaY } = getWheelDelta(event)
         const absX = Math.abs(normalizedDeltaX)
         const absY = Math.abs(normalizedDeltaY)
         const delta = (absX > absY ? normalizedDeltaX : normalizedDeltaY) * 0.9
@@ -466,7 +484,7 @@
 
       const pageTarget = document.scrollingElement || document.documentElement || document.body
       if (!pageTarget) return
-      const deltaY = normalizeWheelDelta(event, event.deltaY) * 0.82
+      const deltaY = getWheelDelta(event).y * 0.82
       if (!canScrollAxis(pageTarget, 'y', deltaY)) return
 
       event.preventDefault()
@@ -475,6 +493,10 @@
 
     window.addEventListener('wheel', onWheel, { passive: false, capture: true })
     document.addEventListener('wheel', onWheel, { passive: false, capture: true })
+    window.addEventListener('DOMMouseScroll', onWheel, { passive: false, capture: true })
+    document.addEventListener('DOMMouseScroll', onWheel, { passive: false, capture: true })
+    window.addEventListener('MozMousePixelScroll', onWheel, { passive: false, capture: true })
+    document.addEventListener('MozMousePixelScroll', onWheel, { passive: false, capture: true })
   }
 
   installSmoothWheelScrolling()
