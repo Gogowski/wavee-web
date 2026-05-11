@@ -429,6 +429,9 @@
   function installSmoothWheelScrolling() {
     const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
     if (prefersReducedMotion) return
+    if (document.documentElement) {
+      document.documentElement.style.scrollBehavior = 'auto'
+    }
 
     const onWheel = (event) => {
       if (event.defaultPrevented || event.ctrlKey || event.metaKey) return
