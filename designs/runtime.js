@@ -364,6 +364,18 @@
     return Math.max(0, target.scrollHeight - target.clientHeight)
   }
 
+  function normalizeWheelDelta(event, value) {
+    if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+      return value * 40
+    }
+
+    if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      return value * window.innerHeight
+    }
+
+    return value
+  }
+
   function animateWheelScroll(target, axis, delta, options = {}) {
     if (!target || Math.abs(delta) < 0.5) return false
     const limit = getScrollAxisTargetLimit(target, axis)
@@ -440,9 +452,11 @@
 
       const nestedTarget = source?.closest(SMOOTH_WHEEL_SCROLL_SELECTOR)
       if (nestedTarget instanceof HTMLElement) {
-        const absX = Math.abs(event.deltaX)
-        const absY = Math.abs(event.deltaY)
-        const delta = (absX > absY ? event.deltaX : event.deltaY) * 0.9
+        const normalizedDeltaX = normalizeWheelDelta(event, event.deltaX)
+        const normalizedDeltaY = normalizeWheelDelta(event, event.deltaY)
+        const absX = Math.abs(normalizedDeltaX)
+        const absY = Math.abs(normalizedDeltaY)
+        const delta = (absX > absY ? normalizedDeltaX : normalizedDeltaY) * 0.9
         if (canScrollAxis(nestedTarget, 'x', delta)) {
           event.preventDefault()
           animateWheelScroll(nestedTarget, 'x', delta)
@@ -452,7 +466,7 @@
 
       const pageTarget = document.scrollingElement || document.documentElement || document.body
       if (!pageTarget) return
-      const deltaY = event.deltaY * 0.82
+      const deltaY = normalizeWheelDelta(event, event.deltaY) * 0.82
       if (!canScrollAxis(pageTarget, 'y', deltaY)) return
 
       event.preventDefault()
