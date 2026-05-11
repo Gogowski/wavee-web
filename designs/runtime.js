@@ -271,6 +271,7 @@
     timer: null,
   }
   const railAnimationState = new WeakMap()
+  const wheelScrollAnimationState = new WeakMap()
   const homeRecommendationsInflight = new Map()
   const homePersonalReleaseInflight = new Map()
   const runtimeGetCache = new Map()
@@ -336,6 +337,129 @@
       ? 4 * value * value * value
       : 1 - (((-2 * value) + 2) ** 3) / 2
   )
+  const easeOutCubic = (value) => 1 - ((1 - value) ** 3)
+  const SMOOTH_WHEEL_SCROLL_SELECTOR = [
+    '.home-carousel-track',
+    '.my-wave-stream-row',
+    '.home-quick-strip',
+    '.home-wave-settings-options',
+  ].join(',')
+
+  function getScrollAxisTargetPosition(target, axis) {
+    return axis === 'x' ? target.scrollLeft : target.scrollTop
+  }
+
+  function setScrollAxisTargetPosition(target, axis, value) {
+    if (axis === 'x') {
+      target.scrollLeft = value
+      return
+    }
+    target.scrollTop = value
+  }
+
+  function getScrollAxisTargetLimit(target, axis) {
+    if (axis === 'x') {
+      return Math.max(0, target.scrollWidth - target.clientWidth)
+    }
+    return Math.max(0, target.scrollHeight - target.clientHeight)
+  }
+
+  function animateWheelScroll(target, axis, delta, options = {}) {
+    if (!target || Math.abs(delta) < 0.5) return false
+    const limit = getScrollAxisTargetLimit(target, axis)
+    if (limit <= 1) return false
+
+    const current = getScrollAxisTargetPosition(target, axis)
+    const activeState = wheelScrollAnimationState.get(target)
+    const fromTarget = activeState?.axis === axis && Number.isFinite(activeState.target)
+      ? activeState.target
+      : current
+    const targetValue = clamp(fromTarget + delta, 0, limit)
+
+    if (Math.abs(targetValue - current) < 0.5) return false
+
+    if (activeState?.frame) {
+      cancelAnimationFrame(activeState.frame)
+    }
+
+    const distance = Math.abs(targetValue - current)
+    const duration = options.duration ?? clamp(280 + (distance * 0.2), 300, 620)
+    const tween = {
+      axis,
+      target: targetValue,
+      frame: 0,
+      start: current,
+      startedAt: performance.now(),
+      duration,
+    }
+
+    const tick = (now) => {
+      const progress = clamp((now - tween.startedAt) / tween.duration, 0, 1)
+      setScrollAxisTargetPosition(
+        target,
+        axis,
+        tween.start + ((tween.target - tween.start) * easeOutCubic(progress)),
+      )
+
+      if (progress < 1) {
+        tween.frame = requestAnimationFrame(tick)
+        wheelScrollAnimationState.set(target, tween)
+        return
+      }
+
+      setScrollAxisTargetPosition(target, axis, tween.target)
+      wheelScrollAnimationState.delete(target)
+    }
+
+    tween.frame = requestAnimationFrame(tick)
+    wheelScrollAnimationState.set(target, tween)
+    return true
+  }
+
+  function canScrollAxis(target, axis, delta) {
+    if (!target || Math.abs(delta) < 0.5) return false
+    const limit = getScrollAxisTargetLimit(target, axis)
+    if (limit <= 1) return false
+    const current = getScrollAxisTargetPosition(target, axis)
+    if (delta < 0 && current <= 0) return false
+    if (delta > 0 && current >= limit - 1) return false
+    return true
+  }
+
+  function installSmoothWheelScrolling() {
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+    if (prefersReducedMotion) return
+
+    const onWheel = (event) => {
+      if (event.defaultPrevented || event.ctrlKey || event.metaKey) return
+      const source = event.target instanceof Element ? event.target : null
+      if (source?.closest('input, textarea, select, [contenteditable="true"], [data-wavee-native-scroll]')) return
+
+      const nestedTarget = source?.closest(SMOOTH_WHEEL_SCROLL_SELECTOR)
+      if (nestedTarget instanceof HTMLElement) {
+        const absX = Math.abs(event.deltaX)
+        const absY = Math.abs(event.deltaY)
+        const delta = (absX > absY ? event.deltaX : event.deltaY) * 0.9
+        if (canScrollAxis(nestedTarget, 'x', delta)) {
+          event.preventDefault()
+          animateWheelScroll(nestedTarget, 'x', delta)
+          return
+        }
+      }
+
+      const pageTarget = document.scrollingElement || document.documentElement || document.body
+      if (!pageTarget) return
+      const deltaY = event.deltaY * 0.82
+      if (!canScrollAxis(pageTarget, 'y', deltaY)) return
+
+      event.preventDefault()
+      animateWheelScroll(pageTarget, 'y', deltaY, { duration: 660 })
+    }
+
+    document.addEventListener('wheel', onWheel, { passive: false, capture: true })
+  }
+
+  installSmoothWheelScrolling()
   const CYRILLIC_RE = /[Ð-Ð¯Ð°-ÑÐÑ‘]/
   const GENERIC_MOOD_GENRES = ['indie', 'lofi', 'chill', 'electropop', 'alternative', 'dream', 'ambient', 'pop', 'rock']
   const MY_WAVE_ACCENTS = [
