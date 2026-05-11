@@ -459,6 +459,7 @@
       animateWheelScroll(pageTarget, 'y', deltaY, { duration: 660 })
     }
 
+    window.addEventListener('wheel', onWheel, { passive: false, capture: true })
     document.addEventListener('wheel', onWheel, { passive: false, capture: true })
   }
 
