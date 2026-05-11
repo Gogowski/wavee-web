@@ -338,13 +338,6 @@
       : 1 - (((-2 * value) + 2) ** 3) / 2
   )
   const easeOutCubic = (value) => 1 - ((1 - value) ** 3)
-  const SMOOTH_WHEEL_SCROLL_SELECTOR = [
-    '.home-carousel-track',
-    '.my-wave-stream-row',
-    '.home-quick-strip',
-    '.home-wave-settings-options',
-  ].join(',')
-
   function getScrollAxisTargetPosition(target, axis) {
     return axis === 'x' ? target.scrollLeft : target.scrollTop
   }
@@ -468,19 +461,6 @@
       if (event.defaultPrevented || event.ctrlKey || event.metaKey) return
       const source = event.target instanceof Element ? event.target : null
       if (source?.closest('input, textarea, select, [contenteditable="true"], [data-wavee-native-scroll]')) return
-
-      const nestedTarget = source?.closest(SMOOTH_WHEEL_SCROLL_SELECTOR)
-      if (nestedTarget instanceof HTMLElement) {
-        const { x: normalizedDeltaX, y: normalizedDeltaY } = getWheelDelta(event)
-        const absX = Math.abs(normalizedDeltaX)
-        const absY = Math.abs(normalizedDeltaY)
-        const delta = (absX > absY ? normalizedDeltaX : normalizedDeltaY) * 0.9
-        if (canScrollAxis(nestedTarget, 'x', delta)) {
-          event.preventDefault()
-          animateWheelScroll(nestedTarget, 'x', delta)
-          return
-        }
-      }
 
       const pageTarget = document.scrollingElement || document.documentElement || document.body
       if (!pageTarget) return
