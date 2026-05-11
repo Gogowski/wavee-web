@@ -415,7 +415,7 @@
     }
 
     const distance = Math.abs(targetValue - current)
-    const duration = options.duration ?? clamp(280 + (distance * 0.2), 300, 620)
+    const duration = options.duration ?? clamp(230 + (distance * 0.15), 250, 500)
     const tween = {
       axis,
       target: targetValue,
@@ -488,7 +488,7 @@
       if (!canScrollAxis(pageTarget, 'y', deltaY)) return
 
       event.preventDefault()
-      animateWheelScroll(pageTarget, 'y', deltaY, { duration: 660 })
+      animateWheelScroll(pageTarget, 'y', deltaY, { duration: 520 })
     }
 
     window.addEventListener('wheel', onWheel, { passive: false, capture: true })
