@@ -2609,7 +2609,7 @@
 
   function writeCachedHomeRecommendations(mode, tokenPresent, data) {
     if (!data?.blocks) return
-    if (tokenPresent && mode === 'for-you' && !hasHomeRecommendationContent(data.blocks)) return
+    if (tokenPresent && mode === 'for-you' && !hasPersonalHomeRecommendationContent(data.blocks)) return
     try {
       const key = getHomeRecoCacheKey(mode, tokenPresent)
       localStorage.setItem(key, JSON.stringify({
@@ -3089,7 +3089,7 @@
 
       const needsRefresh = payload.snapshotStatus === 'stale'
         || payload.snapshotStatus === 'miss'
-        || (mode === 'for-you' && tokenPresent && !hasHomeRecommendationContent(payload.blocks))
+        || (mode === 'for-you' && tokenPresent && !hasPersonalHomeRecommendationContent(payload.blocks))
 
       if (!fromRefresh && needsRefresh) {
         void api(refreshPath, { auth: authMode, retry: false })
@@ -4433,7 +4433,9 @@
     const recommendedReleaseTracks = getTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
     const releaseSource = recommendedReleaseTracks.length
       ? recommendedReleaseTracks
-      : (canUseCatalogFallback ? trendingTracks : [])
+      : (isTrendsMode || !requiresPersonalBlocks
+          ? (canUseCatalogFallback ? trendingTracks : [])
+          : [])
     
     const getTrackReleaseTs = (t) => {
       const candidates = [t?.releasedAt, t?.releaseDate, t?.createdAt, t?.album?.releasedAt, t?.album?.releaseDate]
@@ -5049,6 +5051,19 @@
     }
     const artistSections = ['favoriteArtists', 'popularArtists']
     return artistSections.some((key) => (
+      Array.isArray(blocks[key])
+      && blocks[key].some((item) => item?.artist?.id || item?.artist?.name)
+    ))
+  }
+
+  function hasPersonalHomeRecommendationContent(blocks) {
+    if (!blocks || typeof blocks !== 'object') return false
+    const personalTrackSections = ['bestTracks', 'mixes', 'genresAndMoods']
+    if (personalTrackSections.some((key) => Array.isArray(blocks[key]) && blocks[key].some((item) => item?.track?.id))) {
+      return true
+    }
+    const personalArtistSections = ['favoriteArtists', 'popularArtists']
+    return personalArtistSections.some((key) => (
       Array.isArray(blocks[key])
       && blocks[key].some((item) => item?.artist?.id || item?.artist?.name)
     ))
