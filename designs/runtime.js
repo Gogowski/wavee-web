@@ -28,7 +28,7 @@
     return q || localStorage.getItem('wavee_api_base') || API_DEFAULT
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
-  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v8_${apiBase}`
+  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v9_${apiBase}`
   const PLAYBACK_SOURCE_CACHE_KEY = `wavee_playback_sources_v1_${apiBase}`
   const COVER_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMDNhOWYiLz48dGV4dCB4PSI1MCUiIHk9IjUzJSIgZmlsbD0iI2YxZjVmOSIgc3R5bGU9ImZvbnQ6IGJvbGQgNDJweCBtb25vc3BhY2U7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imao8L3RleHQ+PC9zdmc+'
 
@@ -2609,6 +2609,7 @@
 
   function writeCachedHomeRecommendations(mode, tokenPresent, data) {
     if (!data?.blocks) return
+    if (tokenPresent && mode === 'for-you' && !hasHomeRecommendationContent(data.blocks)) return
     try {
       const key = getHomeRecoCacheKey(mode, tokenPresent)
       localStorage.setItem(key, JSON.stringify({
@@ -3086,7 +3087,11 @@
       state.homeRecommendationsByMode[mode] = enriched
       writeCachedHomeRecommendations(mode, tokenPresent, hydratedPayload)
 
-      if (!fromRefresh && (payload.snapshotStatus === 'stale' || payload.snapshotStatus === 'miss')) {
+      const needsRefresh = payload.snapshotStatus === 'stale'
+        || payload.snapshotStatus === 'miss'
+        || (mode === 'for-you' && tokenPresent && !hasHomeRecommendationContent(payload.blocks))
+
+      if (!fromRefresh && needsRefresh) {
         void api(refreshPath, { auth: authMode, retry: false })
           .then((freshPayload) => applyHomeRecommendationsPayload(freshPayload, { fromRefresh: true }))
           .then(() => {
@@ -4396,7 +4401,8 @@
     const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
     const isWaitingForPersonal = requiresPersonalBlocks && isRecommendationModeLoading
     const canUseCatalogFallback = !forceDisconnectedPlaceholders && musicTracks.length > 0
-    const shouldShowPersonalSkeleton = isForYouMode && isWaitingForPersonal && !canUseCatalogFallback
+    const canUsePersonalFallback = !requiresPersonalBlocks && canUseCatalogFallback
+    const shouldShowPersonalSkeleton = isForYouMode && isWaitingForPersonal
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
       isLoadingContent = true
@@ -4484,7 +4490,7 @@
       ? (
           recommendedFavoriteArtists.length
             ? recommendedFavoriteArtists
-            : (canUseCatalogFallback ? getArtistEntries(musicTracks).slice(0, 20) : [])
+            : (canUsePersonalFallback ? getArtistEntries(musicTracks).slice(0, 20) : [])
         )
       : []
     const favoriteArtistCards = favoriteArtists.map((entry, index) => ArtistCard({
@@ -4547,7 +4553,9 @@
     const recommendedBestTracks = getTracksFromRecommendationBlock(recommendationBlocks?.bestTracks)
     const topTracksSource = recommendedBestTracks.length
       ? recommendedBestTracks
-      : (canUseCatalogFallback ? (isTrendsMode ? trendingTracks : musicTracks) : [])
+      : (isTrendsMode
+          ? (canUseCatalogFallback ? trendingTracks : [])
+          : (canUsePersonalFallback ? musicTracks : []))
     const topTracks = topTracksSource.slice(0, 20)
     const topTrackCards = topTracks.map((track, index) => PlaylistCard({
       track,
@@ -4582,7 +4590,7 @@
       ? (
           recommendedMixEntries.length
             ? recommendedMixEntries
-            : (canUseCatalogFallback ? getMixEntries().filter((entry) => entry?.track?.id).slice(0, 20) : [])
+            : (canUsePersonalFallback ? getMixEntries().filter((entry) => entry?.track?.id).slice(0, 20) : [])
         )
       : []
     const mixKickers = ['Для тебя', 'Топ дня', 'Рекомендуем', 'В ротации']
@@ -4646,7 +4654,9 @@
       : []
     const genresAndMoodsEntries = recommendedGenresAndMoods.length
       ? recommendedGenresAndMoods
-      : (canUseCatalogFallback ? getGenreMoodBuckets(musicTracks) : [])
+      : (isTrendsMode
+          ? (canUseCatalogFallback ? getGenreMoodBuckets(musicTracks) : [])
+          : (canUsePersonalFallback ? getGenreMoodBuckets(musicTracks) : []))
     const extraCards = genresAndMoodsEntries.slice(0, 20).map((entry, index) => SmallCard({
       track: entry.track,
       coverMarkup,
@@ -5029,6 +5039,19 @@
 
   function getHomeRecommendationBlocks(mode) {
     return state.homeRecommendationsByMode?.[mode]?.blocks || null
+  }
+
+  function hasHomeRecommendationContent(blocks) {
+    if (!blocks || typeof blocks !== 'object') return false
+    const trackSections = ['bestTracks', 'mixes', 'newReleases', 'genresAndMoods']
+    if (trackSections.some((key) => Array.isArray(blocks[key]) && blocks[key].some((item) => item?.track?.id))) {
+      return true
+    }
+    const artistSections = ['favoriteArtists', 'popularArtists']
+    return artistSections.some((key) => (
+      Array.isArray(blocks[key])
+      && blocks[key].some((item) => item?.artist?.id || item?.artist?.name)
+    ))
   }
 
   function getTracksFromRecommendationBlock(items) {
