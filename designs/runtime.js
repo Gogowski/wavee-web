@@ -4433,13 +4433,13 @@
     const recommendationBlocks = getHomeRecommendationBlocks(activeFilter)
     const hasRecommendationBlocks = Boolean(recommendationBlocks)
     const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
-    const isWaitingForPersonal = requiresPersonalBlocks && isRecommendationModeLoading
     const canUseCatalogFallback = !forceDisconnectedPlaceholders && musicTracks.length > 0
     const hasPersonalRecommendationContent = isForYouMode && hasPersonalHomeRecommendationContent(recommendationBlocks)
-    const shouldUseForYouEmergencyFallback = isForYouMode
-      && canUseCatalogFallback
+    const isWaitingForPersonal = requiresPersonalBlocks
       && !hasPersonalRecommendationContent
-    const canUsePersonalFallback = (!requiresPersonalBlocks || shouldUseForYouEmergencyFallback) && canUseCatalogFallback
+      && (isRecommendationModeLoading || !hasRecommendationBlocks)
+    const shouldUseForYouEmergencyFallback = false
+    const canUsePersonalFallback = !requiresPersonalBlocks && canUseCatalogFallback
     const shouldShowPersonalSkeleton = isForYouMode && isWaitingForPersonal && !shouldUseForYouEmergencyFallback
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
@@ -4736,7 +4736,7 @@
       controlsPrefix: 'home-extra',
       controlsAriaLabel: 'Навигация по жанрам и трендам',
       controlsKeys: ['homeExtraPrev', 'homeExtraNext'],
-      cards: withSkeleton(extraCards, 'small', 6),
+      cards: withSkeleton(extraCards, 'small', 6, shouldShowPersonalSkeleton),
       emptyText: 'Карточки появятся после обновления рекомендаций.',
       visible: true,
     })
