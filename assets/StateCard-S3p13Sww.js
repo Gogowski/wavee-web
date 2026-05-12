@@ -1,1 +1,0 @@
-import{j as e}from"./index-S22BNemv.js";import{L as n}from"./LoadingSpinner-BSENS6G_.js";function d({variant:r="empty",className:t="",children:o,style:i}){return r==="loading"?e.jsx(n,{className:t}):e.jsx("div",{className:`wavee-state-card${r?` is-${r}`:""}${t?` ${t}`:""}`,style:i,children:o})}export{d as S};

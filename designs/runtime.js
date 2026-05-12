@@ -138,6 +138,7 @@
     v: 80,
     shuffle: false,
     repeat: false,
+    authInvalid: false,
     homeCatalogReady: false,
     homeRecommendationsByMode: {
       'for-you': null,
@@ -2554,8 +2555,9 @@
       const payload = JSON.parse(raw)
       if (!payload || !Array.isArray(payload.items)) return []
       const age = Date.now() - Number(payload.at || 0)
-      if (age <= TRACKS_CACHE_TTL_MS) return payload.items
-      if (allowStale && age <= TRACKS_CACHE_STALE_TTL_MS) return payload.items
+      const items = normalizeTrackItems(payload.items)
+      if (age <= TRACKS_CACHE_TTL_MS) return items
+      if (allowStale && age <= TRACKS_CACHE_STALE_TTL_MS) return items
       return []
     } catch {
       return []
@@ -2564,10 +2566,17 @@
 
   function writeCachedTracks(items) {
     try {
-      localStorage.setItem(TRACKS_CACHE_KEY, JSON.stringify({ at: Date.now(), items }))
+      localStorage.setItem(TRACKS_CACHE_KEY, JSON.stringify({ at: Date.now(), items: normalizeTrackItems(items) }))
     } catch {
       // ignore cache write errors
     }
+  }
+
+  function normalizeTrackItems(items) {
+    if (!Array.isArray(items)) return []
+    return dedupeTracks(items
+      .map((item) => (item?.track?.id ? item.track : item))
+      .filter((track) => track?.id))
   }
 
   function getUserCacheScope() {
@@ -2725,6 +2734,18 @@
     }
   }
 
+  function clearAuthSession({ switchHomeToTrends = true } = {}) {
+    state.authInvalid = true
+    localStorage.removeItem(TOKEN)
+    localStorage.removeItem(REFRESH)
+    localStorage.removeItem('wavee_user')
+    state.homeRecommendationsByMode['for-you'] = null
+    state.homeRecommendationsLoadingByMode['for-you'] = false
+    if (switchHomeToTrends && page === 'home' && el.homeFilterChips) {
+      el.homeFilterChips.dataset.active = 'trends'
+    }
+  }
+
   function readRuntimeGetCache(path = '', authMode = 'none') {
     const key = getRuntimeGetCacheKey(path, authMode)
     const cached = runtimeGetCache.get(key)
@@ -2750,13 +2771,15 @@
     const r = await fetch(`${apiBase}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) })
     if (!r.ok) {
       if (r.status === 401) {
-        localStorage.removeItem(TOKEN)
-        localStorage.removeItem(REFRESH)
+        clearAuthSession()
       }
       return ''
     }
     const p = await r.json().catch(() => ({}))
-    if (p.accessToken) localStorage.setItem(TOKEN, p.accessToken)
+    if (p.accessToken) {
+      state.authInvalid = false
+      localStorage.setItem(TOKEN, p.accessToken)
+    }
     if (p.refreshToken) localStorage.setItem(REFRESH, p.refreshToken)
     if (p.user) localStorage.setItem('wavee_user', JSON.stringify(p.user))
     return p.accessToken || ''
@@ -2890,6 +2913,7 @@
       if (r.status === 401 && auth !== 'none' && retry) {
         const t = await refreshToken()
         if (t) return api(path, { method, body, auth, retry: false, signal, timeoutMs })
+        clearAuthSession()
         if (auth === 'optional') {
           return api(path, { method, body, auth: 'none', retry: false, signal, timeoutMs })
         }
@@ -2915,7 +2939,7 @@
   }
 
   function hasSessionToken() {
-    return Boolean(localStorage.getItem(TOKEN))
+    return !state.authInvalid && Boolean(localStorage.getItem(TOKEN))
   }
 
   function normalizeWaveSettings(settings = {}) {
@@ -3108,7 +3132,13 @@
       .then(async (payload) => {
         return applyHomeRecommendationsPayload(payload)
       })
-      .catch(() => {
+      .catch((error) => {
+        if (error?.status === 401) {
+          clearAuthSession()
+          if (mode === 'for-you') {
+            return fetchHomeRecommendationsMode('trends')
+          }
+        }
         const fallback = readCachedHomeRecommendations(mode, tokenPresent)
         if (fallback?.blocks) {
           state.homeRecommendationsByMode[mode] = fallback
@@ -4393,7 +4423,10 @@
       return `<img src="${esc(track.coverUrl)}" alt="${esc(altText)}" class="home-lazy-cover ${classes}" loading="${priority ? 'eager' : 'lazy'}" decoding="async"${priority ? ' fetchpriority="high"' : ''}>`
     }
 
-    const activeFilter = activeMode || el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE
+    let activeFilter = activeMode || el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE
+    if (activeFilter === 'for-you' && !hasSessionToken()) {
+      activeFilter = 'trends'
+    }
     const isForYouMode = activeFilter === 'for-you'
     const isTrendsMode = activeFilter === 'trends'
     const requiresPersonalBlocks = isForYouMode && hasSessionToken()
@@ -5151,9 +5184,9 @@
       tracks = await publicApi('/tracks?query=&limit=40&offset=0', { timeoutMs: 4_500 }).catch(() => ({ items: [] }))
     }
 
-    const nextTracks = Array.isArray(catalogFeed.items) && catalogFeed.items.length
-      ? catalogFeed.items
-      : (Array.isArray(tracks.items) ? tracks.items : [])
+    const catalogTracks = normalizeTrackItems(catalogFeed.items)
+    const searchTracks = normalizeTrackItems(tracks.items)
+    const nextTracks = catalogTracks.length ? catalogTracks : searchTracks
 
     if (nextTracks.length) {
       state.tracks = nextTracks
