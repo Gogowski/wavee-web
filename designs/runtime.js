@@ -8,11 +8,12 @@
   const REQUEST_TIMEOUT_MS = 8_000
   const TRACKS_CACHE_TTL_MS = 3 * 60 * 1000
   const TRACKS_CACHE_STALE_TTL_MS = 24 * 60 * 60 * 1000
-  const HOME_RECO_CACHE_TTL_MS = 3 * 60 * 1000
-  const HOME_RECO_STALE_TTL_MS = 30 * 60 * 1000
+  const HOME_RECO_CACHE_TTL_MS = 5 * 60 * 1000
+  const HOME_RECO_STALE_TTL_MS = 7 * 24 * 60 * 60 * 1000
   const API_GET_CACHE_DEFAULT_TTL_MS = 20 * 1000
   const HOME_PERSONALIZATION_REFRESH_TTL_MS = 45 * 1000
-  const HOME_PLAYBACK_PREFETCH_LIMIT = 4
+  const HOME_PLAYBACK_PREFETCH_LIMIT = 6
+  const PLAYBACK_SOURCE_CACHE_TTL_MS = 10 * 60 * 1000
   const HOME_ARTIST_MONTHLY_HYDRATION_LIMIT = 4
   const HOME_FORCE_DISCONNECTED_PLACEHOLDERS = false
   const page = document.body?.dataset?.waveePage || ''
@@ -28,6 +29,7 @@
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
   const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v8_${apiBase}`
+  const PLAYBACK_SOURCE_CACHE_KEY = `wavee_playback_sources_v1_${apiBase}`
   const COVER_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMDNhOWYiLz48dGV4dCB4PSI1MCUiIHk9IjUzJSIgZmlsbD0iI2YxZjVmOSIgc3R5bGU9ImZvbnQ6IGJvbGQgNDJweCBtb25vc3BhY2U7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imao8L3RleHQ+PC9zdmc+'
 
   document.body.dataset.waveeEmbed = embedMode ? 'app' : 'standalone'
@@ -2618,6 +2620,44 @@
     }
   }
 
+  function readPlaybackSourceCache() {
+    try {
+      const raw = localStorage.getItem(PLAYBACK_SOURCE_CACHE_KEY)
+      const parsed = raw ? JSON.parse(raw) : null
+      return parsed && typeof parsed === 'object' ? parsed : {}
+    } catch {
+      return {}
+    }
+  }
+
+  function readCachedPlaybackSource(trackId) {
+    const id = String(trackId ?? '').trim()
+    if (!id) return null
+    const cache = readPlaybackSourceCache()
+    const entry = cache[id]
+    if (!entry?.track || !entry.cachedAt) return null
+    if ((Date.now() - Number(entry.cachedAt)) > PLAYBACK_SOURCE_CACHE_TTL_MS) return null
+    return entry.track
+  }
+
+  function writeCachedPlaybackSource(track) {
+    if (!track?.id || !hasDirectPlayback(track)) return
+    try {
+      const cache = readPlaybackSourceCache()
+      cache[track.id] = {
+        cachedAt: Date.now(),
+        track,
+      }
+      const entries = Object.entries(cache)
+        .filter(([, entry]) => entry?.track && (Date.now() - Number(entry.cachedAt || 0)) <= PLAYBACK_SOURCE_CACHE_TTL_MS)
+        .sort((left, right) => Number(right[1].cachedAt || 0) - Number(left[1].cachedAt || 0))
+        .slice(0, 80)
+      localStorage.setItem(PLAYBACK_SOURCE_CACHE_KEY, JSON.stringify(Object.fromEntries(entries)))
+    } catch {
+      // ignore cache write errors
+    }
+  }
+
   function hydrateHomeRecommendationsFromCache() {
     const tokenPresent = hasSessionToken()
     const modes = tokenPresent ? ['for-you', 'trends'] : ['trends']
@@ -3037,17 +3077,30 @@
     state.homeRecommendationsLoadingByMode[mode] = true
     const authMode = tokenPresent ? 'required' : 'none'
     const path = `/recommendations/home?limit=${HOME_RECOMMENDATIONS_LIMIT}&mode=${encodeURIComponent(mode)}`
+    const refreshPath = `${path}&refresh=1`
+
+    const applyHomeRecommendationsPayload = async (payload, { fromRefresh = false } = {}) => {
+      if (!payload?.blocks) return null
+      const hydratedPayload = await hydrateMissingHomeNewReleases(payload, mode).catch(() => payload)
+      const enriched = { ...hydratedPayload, __cachedAt: Date.now() }
+      state.homeRecommendationsByMode[mode] = enriched
+      writeCachedHomeRecommendations(mode, tokenPresent, hydratedPayload)
+
+      if (!fromRefresh && (payload.snapshotStatus === 'stale' || payload.snapshotStatus === 'miss')) {
+        void api(refreshPath, { auth: authMode, retry: false })
+          .then((freshPayload) => applyHomeRecommendationsPayload(freshPayload, { fromRefresh: true }))
+          .then(() => {
+            if (page === 'home') renderHome()
+          })
+          .catch(() => null)
+      }
+
+      return enriched
+    }
 
     const request = api(path, { auth: authMode })
       .then(async (payload) => {
-        if (payload?.blocks) {
-          const hydratedPayload = await hydrateMissingHomeNewReleases(payload, mode).catch(() => payload)
-          const enriched = { ...hydratedPayload, __cachedAt: Date.now() }
-          state.homeRecommendationsByMode[mode] = enriched
-          writeCachedHomeRecommendations(mode, tokenPresent, hydratedPayload)
-          return enriched
-        }
-        return null
+        return applyHomeRecommendationsPayload(payload)
       })
       .catch(() => {
         const fallback = readCachedHomeRecommendations(mode, tokenPresent)
@@ -3331,6 +3384,7 @@
 
   function applyResolvedTrack(resolved) {
     if (!resolved?.id) return
+    writeCachedPlaybackSource(resolved)
     const patch = (item) => (item.id === resolved.id ? { ...item, ...resolved } : item)
     state.tracks = state.tracks.map(patch)
     state.list = state.list.map(patch)
@@ -3347,7 +3401,16 @@
     }
 
     playbackPrefetchState.seen.add(track.id)
-    const resolved = await api(`/tracks/${encodeURIComponent(track.id)}/playback-source`, { auth: 'optional' }).catch(() => null)
+    const cached = readCachedPlaybackSource(track.id)
+    if (cached?.id && hasDirectPlayback(cached)) {
+      applyResolvedTrack(cached)
+      return
+    }
+
+    const resolved = await api(`/tracks/${encodeURIComponent(track.id)}/playback-source`, {
+      auth: 'optional',
+      retry: false,
+    }).catch(() => null)
     if (!resolved?.id || !hasDirectPlayback(resolved)) {
       return
     }
@@ -3377,9 +3440,9 @@
       targets.forEach((track, index) => {
         setTimeout(() => {
           void prefetchPlaybackTrack(track)
-        }, index * 180)
+        }, index * 120)
       })
-    }, 240)
+    }, 120)
   }
 
   async function play(track, ctx = 'manual', options = {}) {
@@ -3393,7 +3456,13 @@
 
     let playbackTrack = track
     if (!(track.sourceType === 'youtube' && track.sourceId)) {
-      const resolved = await api(`/tracks/${encodeURIComponent(track.id)}/playback-source`, { auth: 'optional' }).catch(() => null)
+      const cached = readCachedPlaybackSource(track.id)
+      const resolved = cached?.id
+        ? cached
+        : await api(`/tracks/${encodeURIComponent(track.id)}/playback-source`, {
+            auth: 'optional',
+            retry: false,
+          }).catch(() => null)
       if (resolved?.sourceType === 'youtube' && resolved?.sourceId) {
         playbackTrack = resolved
         applyResolvedTrack(resolved)
@@ -4028,7 +4097,7 @@
         <div class="home-artist-media">
           <div class="home-artist-cover-shell">
             ${artistAvatarUrl
-              ? `<img src="${esc(artistAvatarUrl)}" alt="${esc(artistName)}" class="home-lazy-cover" loading="lazy">`
+              ? `<img src="${esc(artistAvatarUrl)}" alt="${esc(artistName)}" class="home-lazy-cover" loading="lazy" decoding="async">`
               : `<div class="home-artist-cover-fallback">${esc(getArtistInitials(artistName))}</div>`}
           </div>
           ${cardBadgeMarkup()}
@@ -4298,6 +4367,7 @@
     const categories = splitHomeTracksByKind(baseTracks)
     const musicTracks = categories.music.length ? categories.music : baseTracks
     let isLoadingContent = !state.homeCatalogReady && !baseTracks.length
+    let priorityImageBudget = 6
 
     const withSkeleton = (cards, variant = 'medium', count = 6, forceLoading = false) => (
       forceDisconnectedPlaceholders
@@ -4307,11 +4377,15 @@
           )
     )
 
-    const coverMarkup = (track, altText, classes = 'h-full w-full object-cover') => (
-      track?.coverUrl
-        ? `<img src="${esc(track.coverUrl)}" alt="${esc(altText)}" class="home-lazy-cover ${classes}" loading="lazy">`
-        : '<div class="flex h-full w-full items-center justify-center bg-[#2d303a] text-3xl text-white/60">♪</div>'
-    )
+    const coverMarkup = (track, altText, classes = 'h-full w-full object-cover') => {
+      if (!track?.coverUrl) {
+        return '<div class="flex h-full w-full items-center justify-center bg-[#2d303a] text-3xl text-white/60">♪</div>'
+      }
+
+      const priority = priorityImageBudget > 0
+      priorityImageBudget -= 1
+      return `<img src="${esc(track.coverUrl)}" alt="${esc(altText)}" class="home-lazy-cover ${classes}" loading="${priority ? 'eager' : 'lazy'}" decoding="async"${priority ? ' fetchpriority="high"' : ''}>`
+    }
 
     const activeFilter = activeMode || el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE
     const isForYouMode = activeFilter === 'for-you'
@@ -5016,17 +5090,16 @@
       : 'trends'
     const primaryRecommendationsRequest = fetchHomeRecommendationsMode(primaryMode)
 
-    let catalogFeed = hasSession
-      ? await api('/catalog/feed?limit=40', { auth: 'optional', timeoutMs: 1_800, retry: false }).catch(() => ({ items: [] }))
-      : await publicApi('/catalog/feed?limit=40', { timeoutMs: 1_800 }).catch(() => ({ items: [] }))
-    let tracks = { items: [] }
+    const catalogFeedRequest = hasSession
+      ? api('/catalog/feed?limit=40', { auth: 'optional', timeoutMs: 1_800, retry: false }).catch(() => ({ items: [] }))
+      : publicApi('/catalog/feed?limit=40', { timeoutMs: 1_800 }).catch(() => ({ items: [] }))
+    const tracksRequest = hasSession
+      ? api('/tracks?query=&limit=40&offset=0', { auth: 'optional', timeoutMs: 4_500, retry: false }).catch(() => ({ items: [] }))
+      : publicApi('/tracks?query=&limit=40&offset=0', { timeoutMs: 4_500 }).catch(() => ({ items: [] }))
+
+    let [catalogFeed, tracks] = await Promise.all([catalogFeedRequest, tracksRequest])
     if (hasSession && (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0)) {
       catalogFeed = await publicApi('/catalog/feed?limit=40', { timeoutMs: 1_800 }).catch(() => ({ items: [] }))
-    }
-    if (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0) {
-      tracks = hasSession
-        ? await api('/tracks?query=&limit=40&offset=0', { auth: 'optional', timeoutMs: 4_500, retry: false }).catch(() => ({ items: [] }))
-        : await publicApi('/tracks?query=&limit=40&offset=0', { timeoutMs: 4_500 }).catch(() => ({ items: [] }))
     }
     if (hasSession && (!Array.isArray(tracks?.items) || tracks.items.length === 0) && (!Array.isArray(catalogFeed?.items) || catalogFeed.items.length === 0)) {
       tracks = await publicApi('/tracks?query=&limit=40&offset=0', { timeoutMs: 4_500 }).catch(() => ({ items: [] }))
