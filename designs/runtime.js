@@ -28,7 +28,7 @@
     return q || localStorage.getItem('wavee_api_base') || API_DEFAULT
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
-  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v9_${apiBase}`
+  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v10_${apiBase}`
   const PLAYBACK_SOURCE_CACHE_KEY = `wavee_playback_sources_v1_${apiBase}`
   const COVER_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMDNhOWYiLz48dGV4dCB4PSI1MCUiIHk9IjUzJSIgZmlsbD0iI2YxZjVmOSIgc3R5bGU9ImZvbnQ6IGJvbGQgNDJweCBtb25vc3BhY2U7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imao8L3RleHQ+PC9zdmc+'
 
@@ -2595,6 +2595,7 @@
       const payload = JSON.parse(raw)
       if (!payload || typeof payload !== 'object') return null
       if (!payload.data || typeof payload.data !== 'object') return null
+      if (tokenPresent && mode === 'for-you' && !hasPersonalHomeRecommendationContent(payload.data.blocks)) return null
       const cachedAt = Number(payload.cachedAt || 0)
       if (!Number.isFinite(cachedAt) || cachedAt <= 0) return null
       if (Date.now() - cachedAt > HOME_RECO_STALE_TTL_MS) return null
