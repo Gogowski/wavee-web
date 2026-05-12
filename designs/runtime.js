@@ -4430,16 +4430,25 @@
     const isForYouMode = activeFilter === 'for-you'
     const isTrendsMode = activeFilter === 'trends'
     const requiresPersonalBlocks = isForYouMode && hasSessionToken()
+    const currentHomeRecommendations = state.homeRecommendationsByMode?.[activeFilter] || null
     const recommendationBlocks = getHomeRecommendationBlocks(activeFilter)
     const hasRecommendationBlocks = Boolean(recommendationBlocks)
+    const hasAnyRecommendationContent = hasHomeRecommendationContent(recommendationBlocks)
     const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
     const canUseCatalogFallback = !forceDisconnectedPlaceholders && musicTracks.length > 0
     const hasPersonalRecommendationContent = isForYouMode && hasPersonalHomeRecommendationContent(recommendationBlocks)
+    const hasConfirmedEmptyPersonalRecommendations = requiresPersonalBlocks
+      && !isRecommendationModeLoading
+      && Boolean(currentHomeRecommendations?.blocks)
+      && !hasAnyRecommendationContent
+    const shouldUseForYouEmergencyFallback = requiresPersonalBlocks
+      && hasConfirmedEmptyPersonalRecommendations
+      && canUseCatalogFallback
     const isWaitingForPersonal = requiresPersonalBlocks
       && !hasPersonalRecommendationContent
-      && (isRecommendationModeLoading || !hasRecommendationBlocks)
-    const shouldUseForYouEmergencyFallback = false
-    const canUsePersonalFallback = !requiresPersonalBlocks && canUseCatalogFallback
+      && !shouldUseForYouEmergencyFallback
+      && (isRecommendationModeLoading || !hasAnyRecommendationContent)
+    const canUsePersonalFallback = (!requiresPersonalBlocks || shouldUseForYouEmergencyFallback) && canUseCatalogFallback
     const shouldShowPersonalSkeleton = isForYouMode && isWaitingForPersonal && !shouldUseForYouEmergencyFallback
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
