@@ -4395,7 +4395,8 @@
     const hasRecommendationBlocks = Boolean(recommendationBlocks)
     const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
     const isWaitingForPersonal = requiresPersonalBlocks && isRecommendationModeLoading
-    const shouldShowPersonalSkeleton = isForYouMode && (isWaitingForPersonal || isRecommendationModeLoading)
+    const canUseCatalogFallback = !forceDisconnectedPlaceholders && musicTracks.length > 0
+    const shouldShowPersonalSkeleton = isForYouMode && isWaitingForPersonal && !canUseCatalogFallback
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
       isLoadingContent = true
@@ -4424,15 +4425,9 @@
       .slice(0, 20)
 
     const recommendedReleaseTracks = getTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
-    // Если мы ждем персоналку, не подставляем общие треки в источник, чтобы не было фликера
-    const recommendedFallbackTracks = getTracksFromRecommendationBlock(recommendationBlocks?.bestTracks)
     const releaseSource = recommendedReleaseTracks.length
       ? recommendedReleaseTracks
-      : (isWaitingForPersonal
-          ? []
-          : (isTrendsMode
-              ? trendingTracks
-              : []))
+      : (canUseCatalogFallback ? trendingTracks : [])
     
     const getTrackReleaseTs = (t) => {
       const candidates = [t?.releasedAt, t?.releaseDate, t?.createdAt, t?.album?.releasedAt, t?.album?.releaseDate]
@@ -4479,14 +4474,17 @@
 
     setSectionVisibility(el.homeNewReleasesSection, false)
 
+    const recommendedFavoriteArtists = Array.isArray(recommendationBlocks?.favoriteArtists)
+      ? recommendationBlocks.favoriteArtists
+        .map((item) => ({ artist: item?.artist, track: item?.track }))
+        .filter((item) => item?.artist?.id || item?.artist?.name)
+        .slice(0, 20)
+      : []
     const favoriteArtists = isForYouMode
       ? (
-          Array.isArray(recommendationBlocks?.favoriteArtists)
-            ? recommendationBlocks.favoriteArtists
-              .map((item) => ({ artist: item?.artist, track: item?.track }))
-              .filter((item) => item?.artist?.id || item?.artist?.name)
-              .slice(0, 20)
-            : (requiresPersonalBlocks ? [] : getArtistEntries(musicTracks).slice(0, 20))
+          recommendedFavoriteArtists.length
+            ? recommendedFavoriteArtists
+            : (canUseCatalogFallback ? getArtistEntries(musicTracks).slice(0, 20) : [])
         )
       : []
     const favoriteArtistCards = favoriteArtists.map((entry, index) => ArtistCard({
@@ -4509,18 +4507,21 @@
       visible: isForYouMode,
     })
 
-    const popularArtists = Array.isArray(recommendationBlocks?.popularArtists)
+    const recommendedPopularArtists = Array.isArray(recommendationBlocks?.popularArtists)
       ? recommendationBlocks.popularArtists
         .map((item) => ({ artist: item?.artist, track: item?.track }))
         .filter((item) => item?.artist?.id || item?.artist?.name)
         .slice(0, 20)
-      : (isWaitingForPersonal ? [] : [...getArtistEntries(musicTracks)]
+      : []
+    const popularArtists = recommendedPopularArtists.length
+      ? recommendedPopularArtists
+      : (canUseCatalogFallback ? [...getArtistEntries(musicTracks)]
         .sort((left, right) => {
           const leftScore = stablePercent(`${left.artist?.id || left.artist?.name}:popular-artist`, 20, 100)
           const rightScore = stablePercent(`${right.artist?.id || right.artist?.name}:popular-artist`, 20, 100)
           return rightScore - leftScore
         })
-        .slice(0, 20))
+        .slice(0, 20) : [])
     const popularArtistCards = popularArtists.map((entry, index) => ArtistCard({
       entry,
       badge: index < 5 ? 'TOP' : '',
@@ -4546,7 +4547,7 @@
     const recommendedBestTracks = getTracksFromRecommendationBlock(recommendationBlocks?.bestTracks)
     const topTracksSource = recommendedBestTracks.length
       ? recommendedBestTracks
-      : (requiresPersonalBlocks ? [] : (isTrendsMode ? trendingTracks : musicTracks))
+      : (canUseCatalogFallback ? (isTrendsMode ? trendingTracks : musicTracks) : [])
     const topTracks = topTracksSource.slice(0, 20)
     const topTrackCards = topTracks.map((track, index) => PlaylistCard({
       track,
@@ -4572,13 +4573,16 @@
       visible: true,
     })
 
+    const recommendedMixEntries = Array.isArray(recommendationBlocks?.mixes)
+      ? recommendationBlocks.mixes
+        .filter((entry) => entry?.track?.id)
+        .slice(0, 20)
+      : []
     const mixEntries = isForYouMode
       ? (
-          Array.isArray(recommendationBlocks?.mixes)
-            ? recommendationBlocks.mixes
-              .filter((entry) => entry?.track?.id)
-              .slice(0, 20)
-            : (requiresPersonalBlocks ? [] : getMixEntries().filter((entry) => entry?.track?.id).slice(0, 20))
+          recommendedMixEntries.length
+            ? recommendedMixEntries
+            : (canUseCatalogFallback ? getMixEntries().filter((entry) => entry?.track?.id).slice(0, 20) : [])
         )
       : []
     const mixKickers = ['Для тебя', 'Топ дня', 'Рекомендуем', 'В ротации']
@@ -4637,9 +4641,12 @@
       visible: isForYouMode && (podcastCards.length > 0 || isLoadingContent),
     })
 
-    const genresAndMoodsEntries = Array.isArray(recommendationBlocks?.genresAndMoods)
+    const recommendedGenresAndMoods = Array.isArray(recommendationBlocks?.genresAndMoods)
       ? recommendationBlocks.genresAndMoods
-      : (requiresPersonalBlocks ? [] : getGenreMoodBuckets(musicTracks))
+      : []
+    const genresAndMoodsEntries = recommendedGenresAndMoods.length
+      ? recommendedGenresAndMoods
+      : (canUseCatalogFallback ? getGenreMoodBuckets(musicTracks) : [])
     const extraCards = genresAndMoodsEntries.slice(0, 20).map((entry, index) => SmallCard({
       track: entry.track,
       coverMarkup,
