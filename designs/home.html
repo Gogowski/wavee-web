@@ -3761,7 +3761,12 @@
 
     <div class="home-embed-scroll-spacer" aria-hidden="true"></div>
 
-    <script src="runtime.js"></script>
+    <script>
+      {
+        const runtimeVersion = new URLSearchParams(location.search).get('v') || 'standalone'
+        document.write(`<script src="runtime.js?v=${encodeURIComponent(runtimeVersion)}"><\/script>`)
+      }
+    </script>
   </body>
 </html>
 
