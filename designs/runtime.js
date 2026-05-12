@@ -4435,8 +4435,12 @@
     const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
     const isWaitingForPersonal = requiresPersonalBlocks && isRecommendationModeLoading
     const canUseCatalogFallback = !forceDisconnectedPlaceholders && musicTracks.length > 0
-    const canUsePersonalFallback = !requiresPersonalBlocks && canUseCatalogFallback
-    const shouldShowPersonalSkeleton = isForYouMode && isWaitingForPersonal
+    const hasPersonalRecommendationContent = isForYouMode && hasPersonalHomeRecommendationContent(recommendationBlocks)
+    const shouldUseForYouEmergencyFallback = isForYouMode
+      && canUseCatalogFallback
+      && !hasPersonalRecommendationContent
+    const canUsePersonalFallback = (!requiresPersonalBlocks || shouldUseForYouEmergencyFallback) && canUseCatalogFallback
+    const shouldShowPersonalSkeleton = isForYouMode && isWaitingForPersonal && !shouldUseForYouEmergencyFallback
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
       isLoadingContent = true
@@ -4469,7 +4473,7 @@
       ? recommendedReleaseTracks
       : (isTrendsMode || !requiresPersonalBlocks
           ? (canUseCatalogFallback ? trendingTracks : [])
-          : [])
+          : (shouldUseForYouEmergencyFallback ? trendingTracks : []))
     
     const getTrackReleaseTs = (t) => {
       const candidates = [t?.releasedAt, t?.releaseDate, t?.createdAt, t?.album?.releasedAt, t?.album?.releaseDate]
@@ -4526,7 +4530,15 @@
       ? (
           recommendedFavoriteArtists.length
             ? recommendedFavoriteArtists
-            : (canUsePersonalFallback ? getArtistEntries(musicTracks).slice(0, 20) : [])
+            : (canUsePersonalFallback ? [...getArtistEntries(musicTracks)]
+              .sort((left, right) => {
+                const leftScore = stablePercent(`${left.artist?.id || left.artist?.name}:fallback-favorite`, 20, 100)
+                  + (state.likes.has(left.track?.id) ? 12 : 0)
+                const rightScore = stablePercent(`${right.artist?.id || right.artist?.name}:fallback-favorite`, 20, 100)
+                  + (state.likes.has(right.track?.id) ? 12 : 0)
+                return rightScore - leftScore
+              })
+              .slice(0, 20) : [])
         )
       : []
     const favoriteArtistCards = favoriteArtists.map((entry, index) => ArtistCard({
@@ -4591,7 +4603,7 @@
       ? recommendedBestTracks
       : (isTrendsMode
           ? (canUseCatalogFallback ? trendingTracks : [])
-          : (canUsePersonalFallback ? musicTracks : []))
+          : (canUsePersonalFallback ? trendingTracks : []))
     const topTracks = topTracksSource.slice(0, 20)
     const topTrackCards = topTracks.map((track, index) => PlaylistCard({
       track,
@@ -4626,7 +4638,18 @@
       ? (
           recommendedMixEntries.length
             ? recommendedMixEntries
-            : (canUsePersonalFallback ? getMixEntries().filter((entry) => entry?.track?.id).slice(0, 20) : [])
+            : (canUsePersonalFallback ? pickTracks(musicTracks, Math.min(musicTracks.length, 20), 6)
+              .filter((track) => track?.id)
+              .map((track, index) => {
+                const genre = track?.genres?.[0]
+                return {
+                  id: track.id,
+                  title: genre ? `${titleCase(genre)} mix` : `${titleCase(track.artist?.name || 'Wave')} mix`,
+                  subtitle: formatArtistNames(track, 'Wavee selection'),
+                  seed: `${track.id}:fallback-mix:${index}`,
+                  track,
+                }
+              }) : [])
         )
       : []
     const mixKickers = ['Для тебя', 'Топ дня', 'Рекомендуем', 'В ротации']
@@ -4692,7 +4715,7 @@
       ? recommendedGenresAndMoods
       : (isTrendsMode
           ? (canUseCatalogFallback ? getGenreMoodBuckets(musicTracks) : [])
-          : (canUsePersonalFallback ? getGenreMoodBuckets(musicTracks) : []))
+          : (canUsePersonalFallback ? getGenreMoodBuckets(pickTracks(musicTracks, Math.min(musicTracks.length, 30), 10)) : []))
     const extraCards = genresAndMoodsEntries.slice(0, 20).map((entry, index) => SmallCard({
       track: entry.track,
       coverMarkup,
