@@ -53,12 +53,15 @@
     try {
       if (document.documentElement) {
         document.documentElement.scrollTop = 0
+        document.documentElement.scrollLeft = 0
       }
       if (document.body) {
         document.body.scrollTop = 0
+        document.body.scrollLeft = 0
       }
       if (document.scrollingElement) {
         document.scrollingElement.scrollTop = 0
+        document.scrollingElement.scrollLeft = 0
       }
     } catch {
       // ignore
