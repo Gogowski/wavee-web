@@ -3081,7 +3081,7 @@
     if (!(mode in state.homeRecommendationsByMode)) return null
 
     const tokenPresent = hasSessionToken()
-    if (!tokenPresent) {
+    if (!tokenPresent && mode !== 'trends') {
       return null
     }
 
