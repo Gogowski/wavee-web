@@ -4450,11 +4450,13 @@
     const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
     const canUseCatalogFallback = !forceDisconnectedPlaceholders && musicTracks.length > 0
     const hasPersonalRecommendationContent = isForYouMode && hasPersonalHomeRecommendationContent(recommendationBlocks)
-    const shouldUseForYouEmergencyFallback = false
+    const shouldUseForYouEmergencyFallback = requiresPersonalBlocks
+      && !isRecommendationModeLoading
+      && !hasPersonalRecommendationContent
     const isWaitingForPersonal = requiresPersonalBlocks
       && !hasPersonalRecommendationContent
-      && (isRecommendationModeLoading || !hasAnyRecommendationContent || hasRecommendationBlocks)
-    const canUsePersonalFallback = !requiresPersonalBlocks && canUseCatalogFallback
+      && isRecommendationModeLoading
+    const canUsePersonalFallback = (!requiresPersonalBlocks || shouldUseForYouEmergencyFallback) && canUseCatalogFallback
     const shouldShowPersonalSkeleton = isForYouMode && isWaitingForPersonal
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
