@@ -20,11 +20,7 @@
       body {
         margin: 0;
         min-height: 100vh;
-        background:
-          radial-gradient(circle at 12% 10%, rgba(var(--wave-accent-rgb), 0.16) 0%, transparent 28%),
-          radial-gradient(circle at 84% 12%, rgba(146, 169, 225, 0.16) 0%, transparent 30%),
-          radial-gradient(circle at 50% -12%, rgba(255, 255, 255, 0.05) 0%, transparent 42%),
-          var(--bg-dark);
+        background: #07080a;
         background-attachment: fixed;
         color: #fff;
         font-family: var(--wavee-body-font);
@@ -33,28 +29,7 @@
       }
       body::before,
       body::after {
-        content: '';
-        position: fixed;
-        pointer-events: none;
-        z-index: 0;
-        border-radius: 999px;
-        filter: blur(120px);
-      }
-      body::before {
-        left: -12%;
-        top: 8%;
-        width: 36rem;
-        height: 36rem;
-        background: var(--wave-accent-muted);
-        opacity: 0.8;
-      }
-      body::after {
-        right: -10%;
-        top: -6%;
-        width: 28rem;
-        height: 28rem;
-        background: rgba(146, 169, 225, 0.12);
-        opacity: 0.7;
+        display: none;
       }
       .hide-scrollbar::-webkit-scrollbar {
         display: none;
@@ -140,18 +115,10 @@
         min-height: 30rem;
         padding: 2.2rem;
         border-radius: 2.25rem;
-        background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
-          radial-gradient(circle at 100% 0%, rgba(var(--wave-accent-rgb), 0.12), transparent 35%);
+        background: rgba(255, 255, 255, 0.02);
       }
       .my-wave-hero-panel::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background:
-          linear-gradient(120deg, rgba(146, 169, 225, 0.05), transparent 30%),
-          linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 35%);
+        display: none;
       }
       .my-wave-kicker {
         display: inline-flex;
@@ -284,9 +251,7 @@
         padding: 1.2rem 1.25rem;
         border-radius: 1.5rem;
         border: 1px solid rgba(255, 255, 255, 0.08);
-        background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
-          radial-gradient(circle at 0% 50%, rgba(var(--wave-accent-rgb), 0.16), transparent 34%);
+        background: rgba(255, 255, 255, 0.02);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
       }
@@ -337,33 +302,13 @@
         overflow: hidden;
         min-height: 30rem;
         border-radius: 2.25rem;
-        background:
-          radial-gradient(circle at 62% 34%, rgba(var(--wave-accent-rgb), 0.18), transparent 32%),
-          radial-gradient(circle at 30% 24%, rgba(146, 169, 225, 0.11), transparent 28%),
-          linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+        background: rgba(255, 255, 255, 0.015);
       }
       .my-wave-stage::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background:
-          linear-gradient(transparent 0, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-          linear-gradient(90deg, transparent 0, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-        background-size: 100% 4rem, 4rem 100%;
-        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.3), transparent 85%);
-        opacity: 0.18;
+        display: none;
       }
       .my-wave-stage::after {
-        content: '';
-        position: absolute;
-        inset: auto auto -22% 8%;
-        width: 72%;
-        height: 42%;
-        border-radius: 999px;
-        background: radial-gradient(circle, rgba(var(--wave-accent-rgb), 0.24), transparent 65%);
-        filter: blur(60px);
-        opacity: 0.9;
+        display: none;
       }
       .my-wave-stage-orbit {
         position: absolute;
