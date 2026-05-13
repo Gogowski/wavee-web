@@ -3078,84 +3078,95 @@
   }
 
   async function fetchHomeRecommendationsMode(mode) {
-    if (!(mode in state.homeRecommendationsByMode)) return null
-
     const tokenPresent = hasSessionToken()
-    if (!tokenPresent && mode !== 'trends') {
-      return null
+    const effectiveMode = tokenPresent ? mode : 'trends'
+    if (!(effectiveMode in state.homeRecommendationsByMode)) return null
+
+    if (!tokenPresent && mode !== effectiveMode && el.homeFilterChips) {
+      el.homeFilterChips.dataset.active = effectiveMode
     }
 
-    const current = state.homeRecommendationsByMode[mode]
+    const current = state.homeRecommendationsByMode[effectiveMode]
     const hasBlocks = current?.blocks && typeof current.blocks === 'object'
     const cachedAt = current?.__cachedAt || 0
     const isFresh = cachedAt > 0 && (Date.now() - cachedAt < 30 * 1000)
 
-    // Если данные "свежие" (до 30 сек) и есть блоки, возвращаем их
     if (hasBlocks && isFresh) {
       return current
     }
 
-    // Если данных нет в стейте, подгружаем из кэша localStorage
     if (!hasBlocks) {
-      const cached = readCachedHomeRecommendations(mode, tokenPresent)
+      const cached = readCachedHomeRecommendations(effectiveMode, tokenPresent)
       if (cached?.blocks) {
-        state.homeRecommendationsByMode[mode] = cached
+        state.homeRecommendationsByMode[effectiveMode] = cached
         if (page === 'home') renderHome()
       }
     }
 
-    const activeRequest = homeRecommendationsInflight.get(mode)
+    const activeRequest = homeRecommendationsInflight.get(effectiveMode)
     if (activeRequest) {
-      // Если у нас уже есть данные (пусть несвежие), не ждем новый запрос, а возвращаем текущие
-      if (hasBlocks || state.homeRecommendationsByMode[mode]?.blocks) {
-        return state.homeRecommendationsByMode[mode]
+      if (state.homeRecommendationsByMode[effectiveMode]?.blocks) {
+        return state.homeRecommendationsByMode[effectiveMode]
       }
       return activeRequest
     }
 
-    state.homeRecommendationsLoadingByMode[mode] = true
+    state.homeRecommendationsLoadingByMode[effectiveMode] = true
     const authMode = tokenPresent ? 'required' : 'none'
-    const path = `/recommendations/home?limit=${HOME_RECOMMENDATIONS_LIMIT}&mode=${encodeURIComponent(mode)}`
+    const path = `/recommendations/home?limit=${HOME_RECOMMENDATIONS_LIMIT}&mode=${encodeURIComponent(effectiveMode)}`
+    const refreshPath = `${path}&refresh=1`
+
+    const applyHomeRecommendationsPayload = async (payload, { fromRefresh = false } = {}) => {
+      if (!payload?.blocks) return null
+      const hydratedPayload = await hydrateMissingHomeNewReleases(payload, effectiveMode).catch(() => payload)
+      const enriched = { ...hydratedPayload, __cachedAt: Date.now() }
+      state.homeRecommendationsByMode[effectiveMode] = enriched
+      writeCachedHomeRecommendations(effectiveMode, tokenPresent, hydratedPayload)
+
+      const needsRefresh = payload.snapshotStatus === 'stale'
+        || payload.snapshotStatus === 'miss'
+        || (effectiveMode === 'for-you' && tokenPresent && !hasPersonalHomeRecommendationContent(payload.blocks))
+
+      if (!fromRefresh && needsRefresh) {
+        void api(refreshPath, { auth: authMode, retry: false })
+          .then((freshPayload) => applyHomeRecommendationsPayload(freshPayload, { fromRefresh: true }))
+          .then(() => {
+            if (page === 'home') renderHome()
+          })
+          .catch(() => null)
+      }
+
+      return enriched
+    }
 
     const request = api(path, { auth: authMode })
-      .then(async (payload) => {
-        if (payload?.blocks) {
-          const hydratedPayload = await hydrateMissingHomeNewReleases(payload, mode).catch(() => payload)
-          const enriched = { ...hydratedPayload, __cachedAt: Date.now() }
-          state.homeRecommendationsByMode[mode] = enriched
-          writeCachedHomeRecommendations(mode, tokenPresent, hydratedPayload)
-          return enriched
-        }
-        return null
-      })
+      .then((payload) => applyHomeRecommendationsPayload(payload))
       .catch((error) => {
         if (error?.status === 401) {
           clearAuthSession()
-          if (mode === 'for-you') {
+          if (effectiveMode === 'for-you') {
             return fetchHomeRecommendationsMode('trends')
           }
         }
-        const fallback = readCachedHomeRecommendations(mode, tokenPresent)
+        const fallback = readCachedHomeRecommendations(effectiveMode, tokenPresent)
         if (fallback?.blocks) {
-          state.homeRecommendationsByMode[mode] = fallback
+          state.homeRecommendationsByMode[effectiveMode] = fallback
           return fallback
         }
-        const empty = { ...createEmptyHomeRecommendations(mode), __cachedAt: Date.now() }
-        state.homeRecommendationsByMode[mode] = empty
+        const empty = { ...createEmptyHomeRecommendations(effectiveMode), __cachedAt: Date.now() }
+        state.homeRecommendationsByMode[effectiveMode] = empty
         return empty
       })
       .finally(() => {
-        state.homeRecommendationsLoadingByMode[mode] = false
-        homeRecommendationsInflight.delete(mode)
+        state.homeRecommendationsLoadingByMode[effectiveMode] = false
+        homeRecommendationsInflight.delete(effectiveMode)
         if (page === 'home') renderHome()
       })
 
-    homeRecommendationsInflight.set(mode, request)
+    homeRecommendationsInflight.set(effectiveMode, request)
 
-    // SWR Pattern: если у нас уже есть хоть какие-то блоки (из кэша или стейта),
-    // возвращаем их немедленно, пока запрос идет в фоне.
-    if (state.homeRecommendationsByMode[mode]?.blocks) {
-      return state.homeRecommendationsByMode[mode]
+    if (state.homeRecommendationsByMode[effectiveMode]?.blocks) {
+      return state.homeRecommendationsByMode[effectiveMode]
     }
 
     return request
