@@ -3095,7 +3095,7 @@
       return current
     }
 
-    // Если данные есть в стейте (но не очень свежие), подгружаем из кэша localStorage если там новее
+    // Если данных нет в стейте, подгружаем из кэша localStorage
     if (!hasBlocks) {
       const cached = readCachedHomeRecommendations(mode, tokenPresent)
       if (cached?.blocks) {
