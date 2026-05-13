@@ -1890,19 +1890,34 @@
     return (Array.isArray(items) ? items : []).filter((item) => item?.track?.id && !isTrackDisliked(item.track))
   }
 
+  const HOME_CHART_REASONS = new Set(['chart-best', 'chart-popular', 'recent-release', 'genre-mix'])
+
+  function isPersonalHomeRecommendationEntry(item) {
+    return Boolean(item?.track?.id) && !HOME_CHART_REASONS.has(String(item?.reason || ''))
+  }
+
+  function getPersonalTracksFromRecommendationBlock(items) {
+    return getTracksFromRecommendationBlock((Array.isArray(items) ? items : []).filter(isPersonalHomeRecommendationEntry))
+  }
+
   function getMyWaveTracks() {
     return filterDislikedTracks(state.myWave.map((item) => item?.track).filter((track) => track?.id))
   }
 
-  function getAllHomeRecommendationTracks() {
-    const buckets = Object.values(state.homeRecommendationsByMode || {})
-      .map((entry) => entry?.blocks || null)
-      .filter(Boolean)
+  function getAllHomeRecommendationTracks(mode = 'all') {
+    const sourceEntries = mode === 'all'
+      ? Object.values(state.homeRecommendationsByMode || {})
+      : [state.homeRecommendationsByMode?.[mode]]
+    const buckets = sourceEntries.map((entry) => entry?.blocks || null).filter(Boolean)
 
     const tracks = []
     for (const blocks of buckets) {
-      for (const items of Object.values(blocks)) {
-        tracks.push(...getTracksFromRecommendationBlock(items))
+      for (const [key, items] of Object.entries(blocks)) {
+        const shouldFilterCharts = mode === 'for-you'
+          && ['bestTracks', 'mixes', 'newReleases', 'genresAndMoods'].includes(key)
+        tracks.push(...(shouldFilterCharts
+          ? getPersonalTracksFromRecommendationBlock(items)
+          : getTracksFromRecommendationBlock(items)))
       }
     }
 
@@ -1952,11 +1967,19 @@
     return from + (scoreBySeed(seed) % span)
   }
 
-  function getHomeTrackPool() {
+  function getHomeTrackPool(mode = 'all') {
     const playlistTracks = state.playlists.flatMap((playlist) => (
       Array.isArray(playlist?.tracks) ? playlist.tracks : []
     ))
-    const recommendationTracks = getAllHomeRecommendationTracks()
+    const recommendationTracks = getAllHomeRecommendationTracks(mode)
+
+    if (mode === 'for-you') {
+      return dedupeTracks([
+        ...getMyWaveTracks(),
+        ...recommendationTracks,
+        ...playlistTracks,
+      ]).filter((track) => track?.id)
+    }
 
     return dedupeTracks([
       ...getMyWaveTracks(),
@@ -4428,8 +4451,15 @@
 
   function renderHome({ modeSwitch = false, activeMode = '' } = {}) {
     const forceDisconnectedPlaceholders = HOME_FORCE_DISCONNECTED_PLACEHOLDERS
-    const pool = forceDisconnectedPlaceholders ? [] : getHomeTrackPool()
-    const fallbackTracks = forceDisconnectedPlaceholders ? [] : dedupeTracks(state.tracks)
+    let activeFilter = activeMode || el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE
+    if (activeFilter === 'for-you' && !hasSessionToken()) {
+      activeFilter = 'trends'
+    }
+    const isForYouMode = activeFilter === 'for-you'
+    const isTrendsMode = activeFilter === 'trends'
+    const requiresPersonalBlocks = isForYouMode && hasSessionToken()
+    const pool = forceDisconnectedPlaceholders ? [] : getHomeTrackPool(activeFilter)
+    const fallbackTracks = (forceDisconnectedPlaceholders || isForYouMode) ? [] : dedupeTracks(state.tracks)
     const baseTracks = pool.length ? pool : fallbackTracks
     const categories = splitHomeTracksByKind(baseTracks)
     const musicTracks = categories.music.length ? categories.music : baseTracks
@@ -4454,13 +4484,6 @@
       return `<img src="${esc(track.coverUrl)}" alt="${esc(altText)}" class="home-lazy-cover ${classes}" loading="${priority ? 'eager' : 'lazy'}" decoding="async"${priority ? ' fetchpriority="high"' : ''}>`
     }
 
-    let activeFilter = activeMode || el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE
-    if (activeFilter === 'for-you' && !hasSessionToken()) {
-      activeFilter = 'trends'
-    }
-    const isForYouMode = activeFilter === 'for-you'
-    const isTrendsMode = activeFilter === 'trends'
-    const requiresPersonalBlocks = isForYouMode && hasSessionToken()
     const recommendationBlocks = getHomeRecommendationBlocks(activeFilter)
     const hasRecommendationBlocks = Boolean(recommendationBlocks)
     const hasAnyRecommendationContent = hasHomeRecommendationContent(recommendationBlocks)
@@ -4504,10 +4527,12 @@
       })
       .slice(0, 20)
 
-    const recommendedReleaseTracks = getTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
+    const recommendedReleaseTracks = isForYouMode
+      ? getPersonalTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
+      : getTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
     const releaseSource = recommendedReleaseTracks.length
       ? recommendedReleaseTracks
-      : (isTrendsMode || !requiresPersonalBlocks
+      : (isTrendsMode || !requiresPersonalBlocks || hasPersonalRuntimeTracks
           ? (canUseCatalogFallback ? trendingTracks : [])
           : (shouldUseForYouEmergencyFallback ? trendingTracks : []))
     
@@ -4634,7 +4659,9 @@
 
     setSectionVisibility(el.homeSubtitleSection, isForYouMode)
 
-    const recommendedBestTracks = getTracksFromRecommendationBlock(recommendationBlocks?.bestTracks)
+    const recommendedBestTracks = isForYouMode
+      ? getPersonalTracksFromRecommendationBlock(recommendationBlocks?.bestTracks)
+      : getTracksFromRecommendationBlock(recommendationBlocks?.bestTracks)
     const topTracksSource = recommendedBestTracks.length
       ? recommendedBestTracks
       : (isTrendsMode
@@ -4667,7 +4694,7 @@
 
     const recommendedMixEntries = Array.isArray(recommendationBlocks?.mixes)
       ? recommendationBlocks.mixes
-        .filter((entry) => entry?.track?.id)
+        .filter((entry) => entry?.track?.id && (!isForYouMode || isPersonalHomeRecommendationEntry(entry)))
         .slice(0, 20)
       : []
     const mixEntries = isForYouMode
@@ -4746,6 +4773,7 @@
 
     const recommendedGenresAndMoods = Array.isArray(recommendationBlocks?.genresAndMoods)
       ? recommendationBlocks.genresAndMoods
+        .filter((entry) => !isForYouMode || !entry?.track?.id || isPersonalHomeRecommendationEntry(entry))
       : []
     const genresAndMoodsEntries = recommendedGenresAndMoods.length
       ? recommendedGenresAndMoods
@@ -5154,9 +5182,8 @@
     if (Array.isArray(blocks.favoriteArtists) && blocks.favoriteArtists.some((item) => item?.artist?.id || item?.artist?.name)) {
       return true
     }
-    const chartReasons = new Set(['chart-best', 'chart-popular', 'recent-release', 'genre-mix'])
     return Array.isArray(blocks.bestTracks)
-      && blocks.bestTracks.some((item) => item?.track?.id && !chartReasons.has(String(item?.reason || '')))
+      && blocks.bestTracks.some(isPersonalHomeRecommendationEntry)
   }
 
   function getTracksFromRecommendationBlock(items) {
