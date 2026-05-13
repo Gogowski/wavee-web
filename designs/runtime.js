@@ -28,7 +28,7 @@
     return q || localStorage.getItem('wavee_api_base') || API_DEFAULT
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
-  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v10_${apiBase}`
+  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v11_${apiBase}`
   const PLAYBACK_SOURCE_CACHE_KEY = `wavee_playback_sources_v1_${apiBase}`
   const COVER_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMDNhOWYiLz48dGV4dCB4PSI1MCUiIHk9IjUzJSIgZmlsbD0iI2YxZjVmOSIgc3R5bGU9ImZvbnQ6IGJvbGQgNDJweCBtb25vc3BhY2U7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imao8L3RleHQ+PC9zdmc+'
 
@@ -3118,6 +3118,23 @@
 
     const applyHomeRecommendationsPayload = async (payload, { fromRefresh = false } = {}) => {
       if (!payload?.blocks) return null
+      if (
+        effectiveMode === 'for-you'
+        && tokenPresent
+        && !hasPersonalHomeRecommendationContent(payload.blocks)
+      ) {
+        if (!fromRefresh) {
+          void api(refreshPath, { auth: authMode, retry: false })
+            .then((freshPayload) => applyHomeRecommendationsPayload(freshPayload, { fromRefresh: true }))
+            .then(() => {
+              if (page === 'home') renderHome()
+            })
+            .catch(() => null)
+        }
+        return state.homeRecommendationsByMode[effectiveMode]?.blocks
+          ? state.homeRecommendationsByMode[effectiveMode]
+          : null
+      }
       const hydratedPayload = await hydrateMissingHomeNewReleases(payload, effectiveMode).catch(() => payload)
       const enriched = { ...hydratedPayload, __cachedAt: Date.now() }
       state.homeRecommendationsByMode[effectiveMode] = enriched
@@ -5132,15 +5149,12 @@
 
   function hasPersonalHomeRecommendationContent(blocks) {
     if (!blocks || typeof blocks !== 'object') return false
-    const personalTrackSections = ['bestTracks', 'mixes', 'genresAndMoods']
-    if (personalTrackSections.some((key) => Array.isArray(blocks[key]) && blocks[key].some((item) => item?.track?.id))) {
+    if (Array.isArray(blocks.favoriteArtists) && blocks.favoriteArtists.some((item) => item?.artist?.id || item?.artist?.name)) {
       return true
     }
-    const personalArtistSections = ['favoriteArtists', 'popularArtists']
-    return personalArtistSections.some((key) => (
-      Array.isArray(blocks[key])
-      && blocks[key].some((item) => item?.artist?.id || item?.artist?.name)
-    ))
+    const chartReasons = new Set(['chart-best', 'chart-popular', 'recent-release', 'genre-mix'])
+    return Array.isArray(blocks.bestTracks)
+      && blocks.bestTracks.some((item) => item?.track?.id && !chartReasons.has(String(item?.reason || '')))
   }
 
   function getTracksFromRecommendationBlock(items) {
