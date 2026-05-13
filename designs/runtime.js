@@ -29,6 +29,7 @@
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
   const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v11_${apiBase}`
+  const MY_WAVE_CACHE_KEY_PREFIX = `wavee_my_wave_v1_${apiBase}`
   const PLAYBACK_SOURCE_CACHE_KEY = `wavee_playback_sources_v1_${apiBase}`
   const COVER_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMDNhOWYiLz48dGV4dCB4PSI1MCUiIHk9IjUzJSIgZmlsbD0iI2YxZjVmOSIgc3R5bGU9ImZvbnQ6IGJvbGQgNDJweCBtb25vc3BhY2U7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imao8L3RleHQ+PC9zdmc+'
 
@@ -2622,6 +2623,10 @@
     return `${HOME_RECO_CACHE_KEY_PREFIX}:${scope}:${mode}`
   }
 
+  function getMyWaveCacheKey() {
+    return `${MY_WAVE_CACHE_KEY_PREFIX}:${getUserCacheScope()}`
+  }
+
   function readCachedHomeRecommendations(mode, tokenPresent) {
     try {
       const key = getHomeRecoCacheKey(mode, tokenPresent)
@@ -2651,6 +2656,39 @@
       localStorage.setItem(key, JSON.stringify({
         cachedAt: Date.now(),
         data,
+      }))
+    } catch {
+      // ignore cache write errors
+    }
+  }
+
+  function readCachedMyWaveRecommendations() {
+    try {
+      const raw = localStorage.getItem(getMyWaveCacheKey())
+      if (!raw) return null
+      const payload = JSON.parse(raw)
+      if (!payload || typeof payload !== 'object') return null
+      if (!Array.isArray(payload.items) || !payload.items.length) return null
+      const cachedAt = Number(payload.cachedAt || 0)
+      if (!Number.isFinite(cachedAt) || cachedAt <= 0) return null
+      if (Date.now() - cachedAt > HOME_RECO_STALE_TTL_MS) return null
+      return {
+        items: payload.items,
+        settings: payload.settings || null,
+        __cachedAt: cachedAt,
+      }
+    } catch {
+      return null
+    }
+  }
+
+  function writeCachedMyWaveRecommendations(payload) {
+    if (!Array.isArray(payload?.items) || !payload.items.length) return
+    try {
+      localStorage.setItem(getMyWaveCacheKey(), JSON.stringify({
+        cachedAt: Date.now(),
+        items: payload.items,
+        settings: payload.settings || state.myWaveSettings,
       }))
     } catch {
       // ignore cache write errors
@@ -2708,6 +2746,17 @@
     })
 
     return hydrated
+  }
+
+  function hydrateMyWaveRecommendationsFromCache() {
+    if (!hasSessionToken()) return false
+    const cached = readCachedMyWaveRecommendations()
+    if (!cached?.items?.length) return false
+    state.myWave = filterDislikedWaveItems(cached.items)
+    if (cached.settings) {
+      state.myWaveSettings = normalizeWaveSettings(cached.settings)
+    }
+    return state.myWave.length > 0
   }
 
   function resolveRuntimeGetCacheTtl(path = '') {
@@ -3193,6 +3242,10 @@
           state.homeRecommendationsByMode[effectiveMode] = fallback
           return fallback
         }
+        const existing = state.homeRecommendationsByMode[effectiveMode]
+        if (existing?.blocks) {
+          return existing
+        }
         const empty = { ...createEmptyHomeRecommendations(effectiveMode), __cachedAt: Date.now() }
         state.homeRecommendationsByMode[effectiveMode] = empty
         return empty
@@ -3239,7 +3292,7 @@
       api(`/recommendations/my-wave?${query}`, {
         auth: 'required',
       }).catch(() => null),
-      api('/library/dislikes', { auth: 'required' }).catch(() => ({ items: [] })),
+      api('/library/dislikes', { auth: 'required' }).catch(() => null),
     ])
 
     if (requestVersion !== myWaveLoadRequestVersion) {
@@ -3252,8 +3305,15 @@
       state.myWaveSettings = nextSettings
     }
 
-    state.dislikes = new Set(Array.isArray(dislikes?.items) ? dislikes.items.map((id) => stripRecoPrefix(id)).filter(Boolean) : [])
-    state.myWave = filterDislikedWaveItems(Array.isArray(payload?.items) ? payload.items : [])
+    if (Array.isArray(dislikes?.items)) {
+      state.dislikes = new Set(dislikes.items.map((id) => stripRecoPrefix(id)).filter(Boolean))
+    }
+    if (Array.isArray(payload?.items)) {
+      state.myWave = filterDislikedWaveItems(payload.items)
+      if (state.myWave.length) {
+        writeCachedMyWaveRecommendations({ ...payload, items: state.myWave })
+      }
+    }
     syncMyWaveSettingChips()
 
     if (rerender) {
@@ -3287,24 +3347,33 @@
 
     const request = (async () => {
       const requests = [
-        api('/library/likes', { auth: 'required' }).catch(() => ({ items: [] })),
-        api('/library/dislikes', { auth: 'required' }).catch(() => ({ items: [] })),
-        api(`/recommendations/my-wave?${buildMyWaveQuery(state.myWaveSettings, MY_WAVE_RECOMMENDATIONS_LIMIT)}`, { auth: 'required' }).catch(() => ({ items: [] })),
+        api('/library/likes', { auth: 'required' }).catch(() => null),
+        api('/library/dislikes', { auth: 'required' }).catch(() => null),
+        api(`/recommendations/my-wave?${buildMyWaveQuery(state.myWaveSettings, MY_WAVE_RECOMMENDATIONS_LIMIT)}`, { auth: 'required' }).catch(() => null),
       ]
 
       if (includePlaylists) {
-        requests.push(api('/playlists', { auth: 'required' }).catch(() => ({ items: [] })))
+        requests.push(api('/playlists', { auth: 'required' }).catch(() => null))
       }
 
       const [likes, dislikes, wave, playlists] = await Promise.all(requests)
-      state.likes = new Set((likes?.items || []).map((track) => stripRecoPrefix(track?.id)).filter(Boolean))
-      state.dislikes = new Set((dislikes?.items || []).map((id) => stripRecoPrefix(id)).filter(Boolean))
-      state.myWave = filterDislikedWaveItems(Array.isArray(wave?.items) ? wave.items : [])
+      if (Array.isArray(likes?.items)) {
+        state.likes = new Set(likes.items.map((track) => stripRecoPrefix(track?.id)).filter(Boolean))
+      }
+      if (Array.isArray(dislikes?.items)) {
+        state.dislikes = new Set(dislikes.items.map((id) => stripRecoPrefix(id)).filter(Boolean))
+      }
+      if (Array.isArray(wave?.items)) {
+        state.myWave = filterDislikedWaveItems(wave.items)
+        if (state.myWave.length) {
+          writeCachedMyWaveRecommendations({ ...wave, items: state.myWave })
+        }
+      }
       if (wave?.settings) {
         state.myWaveSettings = normalizeWaveSettings(wave.settings)
       }
-      if (includePlaylists) {
-        state.playlists = playlists?.items || []
+      if (includePlaylists && Array.isArray(playlists?.items)) {
+        state.playlists = playlists.items
       }
       personalizationRefreshState.lastAt = Date.now()
       syncMyWaveSettingChips()
@@ -5221,6 +5290,7 @@
     const hasSession = Boolean(localStorage.getItem(TOKEN))
     const cachedTracks = readCachedTracks()
     const hydratedReco = hydrateHomeRecommendationsFromCache()
+    const hydratedWave = hasSession ? hydrateMyWaveRecommendationsFromCache() : false
     syncMyWaveSettingChips()
 
     const renderCurrentPage = ({ initial = false } = {}) => {
@@ -5239,7 +5309,7 @@
         syncPlayer()
       }
     }
-    if (!cachedTracks.length) {
+    if (!cachedTracks.length || hydratedWave) {
       renderCurrentPage({ initial: true })
     }
 
