@@ -58,10 +58,7 @@
         width: 100%;
         max-width: 100%;
         position: relative;
-        background:
-          radial-gradient(circle at 50% -12%, rgba(255, 255, 255, 0.08) 0%, transparent 30%),
-          radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.04) 0%, transparent 22%),
-          linear-gradient(180deg, #111214 0%, #08090a 48%, #040404 100%);
+        background: #07080a;
         background-attachment: fixed;
         color: var(--text-main);
         font-family: var(--wavee-body-font);
@@ -124,27 +121,7 @@
 
       body::before,
       body::after {
-        content: '';
-        position: fixed;
-        z-index: 0;
-        pointer-events: none;
-        filter: blur(90px);
-      }
-
-      body::before {
-        top: 8vh;
-        left: -8vw;
-        width: 22rem;
-        height: 22rem;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 72%);
-      }
-
-      body::after {
-        right: -6vw;
-        bottom: 10vh;
-        width: 18rem;
-        height: 18rem;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 70%);
+        display: none;
       }
 
       .home-visualizer-shell {
@@ -440,19 +417,7 @@
       }
 
       .home-genres-section::before {
-        content: '';
-        position: absolute;
-        z-index: 0;
-        left: -4rem;
-        right: -4rem;
-        top: 2.4rem;
-        height: 24rem;
-        pointer-events: none;
-        background:
-          radial-gradient(circle at 12% 30%, rgba(255, 255, 255, 0.12) 0%, transparent 42%),
-          radial-gradient(circle at 84% 18%, rgba(255, 255, 255, 0.08) 0%, transparent 46%);
-        filter: blur(48px);
-        opacity: 0.52;
+        display: none;
       }
 
       .home-genres-head {
