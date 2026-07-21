@@ -1891,6 +1891,22 @@
     return (Array.isArray(items) ? items : []).filter((item) => item?.track?.id && !isTrackDisliked(item.track))
   }
 
+  function optimizedCoverUrl(source, size = 400) {
+    const rawUrl = String(source || '').trim()
+    if (!rawUrl) return ''
+    try {
+      const url = new URL(rawUrl, window.location.origin)
+      if (!/(^|\.)avatars(?:\.mds)?\.yandex\.(?:net|ru)$/i.test(url.hostname)) return rawUrl
+      if (!/\/\d+x\d+\/?$/.test(url.pathname)) return rawUrl
+      const steps = [100, 200, 300, 400, 600, 800, 1000]
+      const target = steps.find((step) => step >= size) || 1000
+      url.pathname = url.pathname.replace(/\/\d+x\d+\/?$/, `/${target}x${target}`)
+      return url.toString()
+    } catch {
+      return rawUrl
+    }
+  }
+
   const HOME_CHART_REASONS = new Set(['chart-best', 'chart-popular', 'recent-release', 'genre-mix'])
 
   function isPersonalHomeRecommendationEntry(item) {
@@ -3422,7 +3438,7 @@
     state.track = track
     if (el.title) el.title.textContent = track?.title || 'Untitled'
     if (el.artist) el.artist.textContent = track?.artist?.name || 'Unknown Artist'
-    if (el.cover) el.cover.src = track?.coverUrl || COVER_PLACEHOLDER
+    if (el.cover) el.cover.src = optimizedCoverUrl(track?.coverUrl, 200) || COVER_PLACEHOLDER
   }
 
   function findTrack(id) {
@@ -4256,7 +4272,7 @@
         <div class="home-artist-media">
           <div class="home-artist-cover-shell">
             ${artistAvatarUrl
-              ? `<img src="${esc(artistAvatarUrl)}" alt="${esc(artistName)}" class="home-lazy-cover" loading="lazy" decoding="async">`
+              ? `<img src="${esc(optimizedCoverUrl(artistAvatarUrl, 300))}" alt="" aria-label="${esc(artistName)}" class="home-lazy-cover" loading="lazy" decoding="async">`
               : `<div class="home-artist-cover-fallback">${esc(getArtistInitials(artistName))}</div>`}
           </div>
           ${cardBadgeMarkup()}
@@ -4550,7 +4566,7 @@
 
       const priority = priorityImageBudget > 0
       priorityImageBudget -= 1
-      return `<img src="${esc(track.coverUrl)}" alt="${esc(altText)}" class="home-lazy-cover ${classes}" loading="${priority ? 'eager' : 'lazy'}" decoding="async"${priority ? ' fetchpriority="high"' : ''}>`
+      return `<img src="${esc(optimizedCoverUrl(track.coverUrl, 400))}" alt="" aria-label="${esc(altText)}" class="home-lazy-cover ${classes}" loading="${priority ? 'eager' : 'lazy'}" decoding="async"${priority ? ' fetchpriority="high"' : ''}>`
     }
 
     const recommendationBlocks = getHomeRecommendationBlocks(activeFilter)
@@ -4981,7 +4997,7 @@
           <div class="my-wave-stream-frame">
             <div class="my-wave-stream-cover">
               ${track.coverUrl
-                ? `<img src="${esc(track.coverUrl)}" alt="${esc(track.title)}" loading="lazy">`
+                ? `<img src="${esc(optimizedCoverUrl(track.coverUrl, 400))}" alt="" loading="lazy" decoding="async">`
                 : '<div class="flex h-full w-full items-center justify-center bg-white/10 text-3xl text-white/60">â™ª</div>'}
             </div>
             ${index === 0 ? '<div class="my-wave-stream-badge">Ð’Ñ…Ð¾Ð´ Ð² Ð¿Ð¾Ñ‚Ð¾Ðº</div>' : ''}
@@ -5010,7 +5026,7 @@
           <article class="my-wave-secondary-card group" data-action="play-track" data-track-id="${esc(track.id)}">
             <div class="my-wave-secondary-media">
               ${track.coverUrl
-                ? `<img src="${esc(track.coverUrl)}" alt="${esc(track.title)}" loading="lazy">`
+                ? `<img src="${esc(optimizedCoverUrl(track.coverUrl, 300))}" alt="" loading="lazy" decoding="async">`
                 : '<div class="flex h-full w-full items-center justify-center bg-white/10 text-2xl text-white/60">â™ª</div>'}
               <div class="my-wave-secondary-overlay">
                 <button data-action="play-track" data-track-id="${esc(track.id)}" class="my-wave-play-badge" aria-label="Ð˜Ð³Ñ€Ð°Ñ‚ÑŒ ${esc(track.title)}">
@@ -5030,7 +5046,7 @@
           <article class="my-wave-secondary-card group" data-action="play-track" data-track-id="${esc(mix.track?.id || '')}">
             <div class="my-wave-secondary-media">
               ${mix.track?.coverUrl
-                ? `<img src="${esc(mix.track.coverUrl)}" alt="${esc(mix.title)}" loading="lazy">`
+                ? `<img src="${esc(optimizedCoverUrl(mix.track.coverUrl, 300))}" alt="" loading="lazy" decoding="async">`
                 : '<div class="flex h-full w-full items-center justify-center bg-white/10 text-2xl text-white/60">â™ª</div>'}
               <div class="my-wave-secondary-overlay">
                 <button data-action="play-track" data-track-id="${esc(mix.track?.id || '')}" class="my-wave-play-badge" aria-label="Ð˜Ð³Ñ€Ð°Ñ‚ÑŒ ${esc(mix.title)}">
