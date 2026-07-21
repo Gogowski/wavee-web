@@ -1200,9 +1200,12 @@
       targetHighs: 0.05,
       signalPresence: 0,
       targetSignalPresence: 0,
-      volume: 0.8,
-      targetBands: Array.from({ length: 20 }, () => 0.075),
-      bands: Array.from({ length: 20 }, () => 0.075),
+      onset: 0,
+      targetOnset: 0,
+      drop: 0,
+      targetDrop: 0,
+      targetBands: Array.from({ length: 24 }, () => 0.075),
+      bands: Array.from({ length: 24 }, () => 0.075),
       colors: colorDefaults.map(hexToRgb),
       targetColors: colorDefaults.map(hexToRgb),
       isPlaying: false,
@@ -1227,6 +1230,9 @@
       rafId: 0,
       lastTs: 0,
       lastRenderAt: 0,
+      particles: [],
+      lastDropSpawnAt: 0,
+      reducedMotion: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
     }
     const HOME_MASCOT_RETURN_DELAY_MS = 3000
 
@@ -1465,6 +1471,97 @@
       return glyphs[index]
     }
 
+    const noise = (seed) => {
+      const value = Math.sin(seed * 12.9898) * 43758.5453
+      return value - Math.floor(value)
+    }
+
+    const drawPixelWave = (timestamp, delta, transitionMultiplier) => {
+      const width = visualizer.width
+      const height = visualizer.height
+      const bass = clamp01(visualizer.bass)
+      const mids = clamp01(visualizer.mids)
+      const highs = clamp01(visualizer.highs)
+      const activity = clamp01(visualizer.activity)
+      const drop = clamp01(visualizer.drop)
+      const onset = clamp01(visualizer.onset)
+      const centerY = visualizer.glowPad + (visualizer.visibleHeight * 0.45)
+      const pitch = visualizer.qualityTier === 0 ? 6 : (visualizer.qualityTier === 1 ? 7 : 8)
+      const pixelSize = Math.max(2, Math.round(pitch * 0.43))
+      const columns = Math.ceil(width / pitch) + 1
+      const maxRows = Math.ceil(height / pitch)
+      const halfAmplitude = height * (0.05 + (bass * 0.24) + (activity * 0.08) + (drop * 0.12)) * transitionMultiplier
+      const halfThickness = Math.max(pitch * 2.2, height * (0.045 + (activity * 0.08) + (bass * 0.1) + (drop * 0.12)) * transitionMultiplier)
+      const [leadBase, contrastBase, accentBase] = visualizer.colors
+
+      context.clearRect(0, 0, width, height)
+      context.imageSmoothingEnabled = false
+
+      for (let column = 0; column < columns; column += 1) {
+        const t = column / Math.max(1, columns - 1)
+        const edge = Math.pow(Math.sin(t * Math.PI), 0.72)
+        const exactBand = Math.abs(t - 0.5) * 2 * (visualizer.bands.length - 1)
+        const lower = Math.floor(exactBand)
+        const upper = Math.min(visualizer.bands.length - 1, lower + 1)
+        const band = lerp(visualizer.bands[lower] || 0, visualizer.bands[upper] || 0, exactBand - lower)
+        const ripple = Math.sin((t * Math.PI * 4.2) + (visualizer.phase * 3.4))
+          * halfAmplitude * (0.14 + (band * 0.32))
+        const coreY = centerY + ripple + Math.sin((t * Math.PI * 2) - visualizer.phase) * halfAmplitude * 0.1
+        const localThickness = halfThickness * (0.54 + (edge * 0.46)) * (0.72 + (band * 0.58))
+        const fieldThickness = localThickness + (drop * height * 0.1)
+        const startRow = Math.max(0, Math.floor((coreY - fieldThickness) / pitch))
+        const endRow = Math.min(maxRows, Math.ceil((coreY + fieldThickness) / pitch))
+
+        for (let row = startRow; row <= endRow; row += 1) {
+          const y = row * pitch
+          const distance = Math.abs(y - coreY) / Math.max(1, localThickness)
+          const fieldDistance = Math.abs(y - coreY) / Math.max(1, fieldThickness)
+          const coreDensity = distance <= 1 ? Math.pow(1 - distance, 0.42) : 0
+          const fieldDensity = drop > 0.08 && fieldDistance <= 1
+            ? Math.pow(1 - fieldDistance, 1.8) * drop * 0.72
+            : 0
+          const density = Math.max(coreDensity * (0.48 + (band * 0.52)), fieldDensity)
+          if (density < 0.07 || noise((column * 19.17) + (row * 7.13) + (visualizer.phase * 0.15)) > density) continue
+
+          const colorMix = clamp(t * 0.72 + mids * 0.2 + (row / Math.max(1, maxRows)) * 0.08, 0, 1)
+          const baseColor = mixRgb(leadBase, contrastBase, colorMix)
+          const accent = mixRgb(baseColor, accentBase, clamp((highs * 0.34) + (drop * 0.46) + (onset * 0.14), 0, 0.72))
+          context.fillStyle = rgba(accent, clamp((0.2 + (density * 0.78) + (onset * 0.08)) * transitionMultiplier, 0, 1))
+          context.fillRect(Math.round(column * pitch), Math.round(y), pixelSize, pixelSize)
+        }
+      }
+
+      if (!visualizer.reducedMotion && drop > 0.72 && timestamp - visualizer.lastDropSpawnAt > 260) {
+        visualizer.lastDropSpawnAt = timestamp
+        const particleCount = visualizer.qualityTier === 0 ? 24 : 56
+        for (let index = 0; index < particleCount; index += 1) {
+          const angle = (noise(timestamp + index * 4.7) - 0.5) * Math.PI * 1.45
+          const speed = 42 + noise(timestamp + index * 9.2) * 155
+          visualizer.particles.push({
+            x: width * (0.18 + noise(index + timestamp) * 0.64),
+            y: centerY + (noise(index * 3.1) - 0.5) * halfThickness,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 0.55 + noise(index * 5.2) * 0.32,
+            age: 0,
+            color: index % 2 ? accentBase : contrastBase,
+          })
+        }
+      }
+
+      visualizer.particles = visualizer.particles.filter((particle) => {
+        particle.age += delta
+        if (particle.age >= particle.life) return false
+        particle.x += particle.vx * delta
+        particle.y += particle.vy * delta
+        particle.vy += 12 * delta
+        const alpha = (1 - (particle.age / particle.life)) * (0.38 + drop * 0.28)
+        context.fillStyle = rgba(particle.color, alpha * transitionMultiplier)
+        context.fillRect(Math.round(particle.x / pitch) * pitch, Math.round(particle.y / pitch) * pitch, pixelSize, pixelSize)
+        return true
+      })
+    }
+
     let drawTimeoutId = 0
     const scheduleDraw = (delay = 0) => {
       if (delay > 0) {
@@ -1518,22 +1615,18 @@
       const nextState = typeof next.state === 'string'
         ? next.state
         : (next.isPlaying ? 'playing' : (next.trackId ? 'paused' : 'idle'))
-      const volumeLevel = clamp(Number(next.volume ?? 0.8), 0, 1)
-      const volumeFactor = volumeLevel <= 0.001
-        ? 0
-        : (0.34 + Math.pow(volumeLevel, 0.72) * 0.66)
-
-      visualizer.targetBands = visualizer.targetBands.map((_, index) => clamp01(Number(incomingBands[index] ?? 0.06) * volumeFactor))
-      visualizer.targetEnergy = clamp(Number(next.energy ?? 0.08) * volumeFactor, 0, 1)
-      visualizer.targetActivity = clamp01(Number(next.activity ?? next.energy ?? 0.08) * volumeFactor)
-      visualizer.targetLoudness = clamp01(Number(next.loudness ?? next.energy ?? 0.08) * volumeFactor)
-      visualizer.targetBass = clamp01(Number(next.bass ?? legacyBass ?? 0.08) * volumeFactor)
-      visualizer.targetMids = clamp01(Number(next.mids ?? legacyMids ?? 0.07) * volumeFactor)
-      visualizer.targetHighs = clamp01(Number(next.highs ?? legacyHighs ?? 0.05) * volumeFactor)
-      visualizer.targetSignalPresence = clamp01(Number(next.signalPresence ?? legacyPresence ?? 0) * volumeFactor)
+      visualizer.targetBands = visualizer.targetBands.map((_, index) => clamp01(Number(incomingBands[index] ?? 0.06)))
+      visualizer.targetEnergy = clamp(Number(next.energy ?? 0.08), 0, 1)
+      visualizer.targetActivity = clamp01(Number(next.activity ?? next.energy ?? 0.08))
+      visualizer.targetLoudness = clamp01(Number(next.loudness ?? next.energy ?? 0.08))
+      visualizer.targetBass = clamp01(Number(next.bass ?? legacyBass ?? 0.08))
+      visualizer.targetMids = clamp01(Number(next.mids ?? legacyMids ?? 0.07))
+      visualizer.targetHighs = clamp01(Number(next.highs ?? legacyHighs ?? 0.05))
+      visualizer.targetSignalPresence = clamp01(Number(next.signalPresence ?? legacyPresence ?? 0))
+      visualizer.targetOnset = clamp01(Number(next.onset ?? 0))
+      visualizer.targetDrop = clamp01(Number(next.drop ?? 0))
       visualizer.state = nextState
       visualizer.hasSignal = Boolean(next.hasSignal ?? visualizer.targetSignalPresence > 0.08)
-      visualizer.volume = volumeLevel
       const hasTrack = Boolean(next.trackId)
       syncHomePlaybackVisibility({
         hasTrack,
@@ -1585,13 +1678,15 @@
       visualizer.bass = smoothValueByDelta(visualizer.bass, visualizer.targetBass, delta, signalRise, signalFall * 0.8)
       visualizer.mids = smoothValueByDelta(visualizer.mids, visualizer.targetMids, delta, signalRise * 0.9, signalFall * 0.9)
       visualizer.highs = smoothValueByDelta(visualizer.highs, visualizer.targetHighs, delta, signalRise * 0.9, signalFall * 0.9)
+      visualizer.onset = smoothValueByDelta(visualizer.onset, visualizer.targetOnset, delta, 26, 8)
+      visualizer.drop = smoothValueByDelta(visualizer.drop, visualizer.targetDrop, delta, 30, 3.8)
       
       const targetPresence = visualizer.hasSignal ? visualizer.targetSignalPresence : Math.min(visualizer.targetSignalPresence, 0.05)
       visualizer.signalPresence = smoothValueByDelta(visualizer.signalPresence, targetPresence, delta, signalRise, signalFall * 0.8)
 
       const motionActivity = clamp01((visualizer.activity * 0.5) + (visualizer.loudness * 0.3) + (visualizer.signalPresence * 0.2))
       const motionGate = clamp01((visualizer.signalPresence * 1.5) + (visualizer.loudness * 0.3))
-      const motionFactor = lerp(0.01, 0.3, motionActivity) * stateMotion
+      const motionFactor = lerp(0.01, 0.75, motionActivity) * stateMotion
       
       visualizer.phase += delta * motionFactor
       visualizer.hueDrift += delta * lerp(0.002, 0.02, motionActivity)
@@ -1603,6 +1698,13 @@
       for (let index = 0; index < visualizer.colors.length; index += 1) {
         visualizer.colors[index] = mixRgb(visualizer.colors[index], visualizer.targetColors[index], colorLerpAmount)
       }
+
+      const pixelIsPlaying = visualizer.state === 'playing'
+      const pixelTargetScale = pixelIsPlaying ? 1 : 0.05
+      visualizer.transitionScale = smoothValueByDelta(visualizer.transitionScale, pixelTargetScale, delta, 4.8, 3.2)
+      drawPixelWave(timestamp, delta, 0.02 + visualizer.transitionScale * 0.98)
+      scheduleDraw()
+      return
 
       context.clearRect(0, 0, visualizer.width, visualizer.height)
 

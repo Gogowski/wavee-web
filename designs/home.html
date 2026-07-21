@@ -150,6 +150,8 @@
         width: 100%;
         height: calc(100% + 384px);
         opacity: 0;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
         transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         -webkit-mask-image: linear-gradient(
           to bottom,
@@ -173,6 +175,12 @@
       
       .home-visualizer-canvas.active {
         opacity: 1;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .home-visualizer-canvas {
+          transition-duration: 120ms;
+        }
       }
 
       .hide-scrollbar::-webkit-scrollbar {
