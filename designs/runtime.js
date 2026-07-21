@@ -1504,9 +1504,9 @@
         const lower = Math.floor(exactBand)
         const upper = Math.min(visualizer.bands.length - 1, lower + 1)
         const band = lerp(visualizer.bands[lower] || 0, visualizer.bands[upper] || 0, exactBand - lower)
-        const ripple = Math.sin((t * Math.PI * 4.2) + (visualizer.phase * 3.4))
-          * halfAmplitude * (0.14 + (band * 0.32))
-        const coreY = centerY + ripple + Math.sin((t * Math.PI * 2) - visualizer.phase) * halfAmplitude * 0.1
+        const ripple = Math.sin((t * Math.PI * 3.2) + (visualizer.phase * 0.72))
+          * halfAmplitude * (0.08 + (band * 0.2))
+        const coreY = centerY + ripple + Math.sin((t * Math.PI * 2) - (visualizer.phase * 0.3)) * halfAmplitude * 0.045
         const localThickness = halfThickness * (0.54 + (edge * 0.46)) * (0.72 + (band * 0.58))
         const fieldThickness = localThickness + (drop * height * 0.1)
         const startRow = Math.max(0, Math.floor((coreY - fieldThickness) / pitch))
@@ -1521,7 +1521,7 @@
             ? Math.pow(1 - fieldDistance, 1.8) * drop * 0.72
             : 0
           const density = Math.max(coreDensity * (0.48 + (band * 0.52)), fieldDensity)
-          if (density < 0.07 || noise((column * 19.17) + (row * 7.13) + (visualizer.phase * 0.15)) > density) continue
+          if (density < 0.07 || noise((column * 19.17) + (row * 7.13)) > density) continue
 
           const colorMix = clamp(t * 0.72 + mids * 0.2 + (row / Math.max(1, maxRows)) * 0.08, 0, 1)
           const baseColor = mixRgb(leadBase, contrastBase, colorMix)
@@ -1667,10 +1667,10 @@
       const stateMotion = visualizer.state === 'playing' ? 1.0
         : (visualizer.state === 'paused' ? 0.05 : 0.02)
 
-      const bandRise = visualizer.state === 'playing' ? 16.0 : 4.0
-      const bandFall = visualizer.state === 'playing' ? 4.0 : 1.5
-      const signalRise = visualizer.state === 'playing' ? 14.0 : 3.0
-      const signalFall = visualizer.state === 'playing' ? 3.0 : 1.0
+      const bandRise = visualizer.state === 'playing' ? 7.5 : 3.0
+      const bandFall = visualizer.state === 'playing' ? 1.9 : 1.1
+      const signalRise = visualizer.state === 'playing' ? 7.0 : 2.4
+      const signalFall = visualizer.state === 'playing' ? 1.7 : 0.9
 
       visualizer.energy = smoothValueByDelta(visualizer.energy, visualizer.targetEnergy, delta, signalRise, signalFall)
       visualizer.activity = smoothValueByDelta(visualizer.activity, visualizer.targetActivity, delta, signalRise, signalFall)
@@ -1686,7 +1686,7 @@
 
       const motionActivity = clamp01((visualizer.activity * 0.5) + (visualizer.loudness * 0.3) + (visualizer.signalPresence * 0.2))
       const motionGate = clamp01((visualizer.signalPresence * 1.5) + (visualizer.loudness * 0.3))
-      const motionFactor = lerp(0.01, 0.75, motionActivity) * stateMotion
+      const motionFactor = lerp(0.002, 0.11, motionActivity) * stateMotion
       
       visualizer.phase += delta * motionFactor
       visualizer.hueDrift += delta * lerp(0.002, 0.02, motionActivity)
