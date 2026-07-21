@@ -1008,6 +1008,24 @@
       el.hero.classList.toggle('is-active', next)
       el.hero.setAttribute('aria-pressed', next ? 'true' : 'false')
       el.hero.classList.toggle('is-hidden', next || heroArtState.overlayHidden)
+
+      const compactControls = el.hero.nextElementSibling
+      const compactListenButton = compactControls?.querySelector?.('.home-listen-button')
+      if (compactControls?.classList?.contains('home-wave-controls')) {
+        if (next) {
+          compactControls.style.setProperty('background', 'transparent', 'important')
+          compactControls.style.setProperty('background-attachment', 'initial', 'important')
+          compactControls.style.setProperty('backdrop-filter', 'none', 'important')
+          compactControls.style.setProperty('-webkit-backdrop-filter', 'none', 'important')
+          compactListenButton?.style.setProperty('background', 'transparent', 'important')
+        } else {
+          compactControls.style.removeProperty('background')
+          compactControls.style.removeProperty('background-attachment')
+          compactControls.style.removeProperty('backdrop-filter')
+          compactControls.style.removeProperty('-webkit-backdrop-filter')
+          compactListenButton?.style.removeProperty('background')
+        }
+      }
     }
     if (el.homeHeroTip) {
       el.homeHeroTip.classList.toggle('is-hidden', next || heroArtState.overlayHidden)
