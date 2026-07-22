@@ -10,7 +10,6 @@
   const TRACKS_CACHE_STALE_TTL_MS = 24 * 60 * 60 * 1000
   const HOME_RECO_CACHE_TTL_MS = 5 * 60 * 1000
   const HOME_RECO_STALE_TTL_MS = 7 * 24 * 60 * 60 * 1000
-  const MY_WAVE_SESSION_RESUME_TTL_MS = 8 * 60 * 60 * 1000
   const API_GET_CACHE_DEFAULT_TTL_MS = 20 * 1000
   const HOME_PERSONALIZATION_REFRESH_TTL_MS = 45 * 1000
   const HOME_PLAYBACK_PREFETCH_LIMIT = 6
@@ -30,10 +29,7 @@
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
   const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v11_${apiBase}`
-  // v2 intentionally drops pre-discovery sessions. Those queues were built
-  // before candidate provenance was retained and can otherwise live in a
-  // browser for eight hours without calling the fixed session endpoint.
-  const MY_WAVE_CACHE_KEY_PREFIX = `wavee_my_wave_v2_${apiBase}`
+  const MY_WAVE_CACHE_KEY_PREFIX = `wavee_my_wave_v1_${apiBase}`
   const PLAYBACK_SOURCE_CACHE_KEY = `wavee_playback_sources_v1_${apiBase}`
   const COVER_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMDNhOWYiLz48dGV4dCB4PSI1MCUiIHk9IjUzJSIgZmlsbD0iI2YxZjVmOSIgc3R5bGU9ImZvbnQ6IGJvbGQgNDJweCBtb25vc3BhY2U7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imao8L3RleHQ+PC9zdmc+'
 
@@ -131,9 +127,6 @@
     dislikes: new Set(),
     playlists: [],
     myWave: [],
-    myWaveSessionId: '',
-    myWaveLastStartedTrackId: '',
-    myWaveLoadState: 'idle',
     myWaveSettings: {
       character: 'favorite',
       mood: 'calm',
@@ -163,8 +156,6 @@
       'for-you': {},
       trends: {},
     },
-    homeMixQueues: new Map(),
-    homeReleaseQueues: new Map(),
     playbackSession: null,
     ctx: null,
   }
@@ -195,7 +186,6 @@
     shuf: $('wavee-player-shuffle'),
     rep: $('wavee-player-repeat'),
     hero: $('home-hero-listen'),
-    homeListenButton: document.querySelector('.home-listen-button'),
     homeWaveSettingsToggle: $('home-wave-settings-toggle'),
     homeWaveSettingsPanel: $('home-wave-settings-panel'),
     homeHeroTip: $('home-hero-tip'),
@@ -2080,46 +2070,6 @@
     return (Array.isArray(items) ? items : []).filter((item) => item?.track?.id && !isTrackDisliked(item.track))
   }
 
-  function capExactLikedWaveItems(items) {
-    const source = Array.isArray(items) ? items : []
-    if (state.likes.size === 0) return source
-
-    // Client-side capping is only a safety net for a mixed queue. If the API
-    // is temporarily unable to enrich and gives us just liked tracks, never
-    // collapse that recovery queue to one repeating song.
-    if (!source.some((item) => {
-      const trackId = stripRecoPrefix(item?.track?.id)
-      return trackId && !state.likes.has(trackId)
-    })) return source
-
-    const maxLiked = Math.min(3, Math.max(1, Math.floor(source.length * 0.05)))
-    const result = []
-    let likedUsed = 0
-    let nonLikedBeforeFirst = 0
-    let tracksSinceLiked = 12
-
-    for (const item of source) {
-      const trackId = stripRecoPrefix(item?.track?.id)
-      const exactLike = Boolean(trackId && state.likes.has(trackId))
-      if (exactLike) {
-        if (nonLikedBeforeFirst >= 8 && likedUsed < maxLiked && tracksSinceLiked >= 12) {
-          result.push(item)
-          likedUsed += 1
-          tracksSinceLiked = 0
-        }
-        continue
-      }
-      result.push(item)
-      nonLikedBeforeFirst += 1
-      tracksSinceLiked += 1
-    }
-
-    return result.length > 0 ? result : source
-  }
-  // Personalization is entirely behavioural for now.  Do not expose a
-  // second, manual tuning layer until product explicitly brings it back.
-  const waveSettingsUiEnabled = false
-
   function optimizedCoverUrl(source, size = 400) {
     const rawUrl = String(source || '').trim()
     if (!rawUrl) return ''
@@ -2147,14 +2097,7 @@
   }
 
   function getMyWaveTracks() {
-    return filterDislikedTracks(state.myWave.map((item) => item?.track?.id
-      ? {
-          ...item.track,
-          waveSessionId: item.sessionId || state.myWaveSessionId || '',
-          waveQueuePosition: item.queuePosition,
-          waveStrategy: item.strategy || '',
-        }
-      : null).filter(Boolean))
+    return filterDislikedTracks(state.myWave.map((item) => item?.track).filter((track) => track?.id))
   }
 
   function getAllHomeRecommendationTracks(mode = 'all') {
@@ -2915,33 +2858,32 @@
   }
 
   function readCachedMyWaveRecommendations() {
-    // Store only the already-issued part of a server session. This lets a
-    // reload continue the infinite queue instead of reseeding the same first
-    // batch; the server remains the source of every next portion.
     try {
       const raw = localStorage.getItem(getMyWaveCacheKey())
       if (!raw) return null
-      const cached = JSON.parse(raw)
-      const cachedAt = Number(cached?.cachedAt ?? 0)
-      if (!cached?.sessionId || !Array.isArray(cached?.items) || cached.items.length === 0) return null
-      if (!Number.isFinite(cachedAt) || (Date.now() - cachedAt) > MY_WAVE_SESSION_RESUME_TTL_MS) return null
-      return cached
+      const payload = JSON.parse(raw)
+      if (!payload || typeof payload !== 'object') return null
+      if (!Array.isArray(payload.items) || !payload.items.length) return null
+      const cachedAt = Number(payload.cachedAt || 0)
+      if (!Number.isFinite(cachedAt) || cachedAt <= 0) return null
+      if (Date.now() - cachedAt > HOME_RECO_STALE_TTL_MS) return null
+      return {
+        items: payload.items,
+        settings: payload.settings || null,
+        __cachedAt: cachedAt,
+      }
     } catch {
       return null
     }
   }
 
-  function writeCachedMyWaveRecommendations(payload = {}) {
-    const sessionId = String(payload?.sessionId || state.myWaveSessionId || '').trim()
-    const items = Array.isArray(payload?.items) ? payload.items : []
-    if (!sessionId || items.length === 0) return
+  function writeCachedMyWaveRecommendations(payload) {
+    if (!Array.isArray(payload?.items) || !payload.items.length) return
     try {
       localStorage.setItem(getMyWaveCacheKey(), JSON.stringify({
         cachedAt: Date.now(),
-        sessionId,
-        items: items.slice(-160),
-        settings: payload?.settings ?? state.myWaveSettings,
-        lastStartedTrackId: String(payload?.lastStartedTrackId ?? state.myWaveLastStartedTrackId ?? ''),
+        items: payload.items,
+        settings: payload.settings || state.myWaveSettings,
       }))
     } catch {
       // ignore cache write errors
@@ -3005,9 +2947,7 @@
     if (!hasSessionToken()) return false
     const cached = readCachedMyWaveRecommendations()
     if (!cached?.items?.length) return false
-    state.myWave = capExactLikedWaveItems(filterDislikedWaveItems(cached.items))
-    state.myWaveSessionId = String(cached.sessionId || '')
-    state.myWaveLastStartedTrackId = String(cached.lastStartedTrackId || '')
+    state.myWave = filterDislikedWaveItems(cached.items)
     if (cached.settings) {
       state.myWaveSettings = normalizeWaveSettings(cached.settings)
     }
@@ -3309,10 +3249,6 @@
       contextType,
       page,
       surface: embedMode ? 'embed' : 'standalone',
-      sessionId: track?.waveSessionId || state.myWaveSessionId || undefined,
-      queuePosition: Number.isFinite(track?.waveQueuePosition) ? track.waveQueuePosition : undefined,
-      strategy: track?.waveStrategy || undefined,
-      durationSec: track?.durationSec ?? 0,
     }
   }
 
@@ -3396,7 +3332,6 @@
   }
 
   function syncMyWaveSettingChips() {
-    if (!waveSettingsUiEnabled) return
     const chips = [...document.querySelectorAll('[data-wave-setting][data-wave-value]')]
     if (!chips.length) return
     chips.forEach((chip) => {
@@ -3539,11 +3474,18 @@
     const nextSettings = normalizeWaveSettings(settings || state.myWaveSettings)
     const requestVersion = ++myWaveLoadRequestVersion
 
-    const [payload, dislikes] = await Promise.all([
-      api('/recommendations/my-wave/sessions', {
-        method: 'POST',
+    if (persistSettings) {
+      await api('/recommendations/my-wave/settings', {
+        method: 'PUT',
         auth: 'required',
-        body: { limit: Math.min(MY_WAVE_RECOMMENDATIONS_LIMIT, 80) },
+        body: nextSettings,
+      }).catch(() => null)
+    }
+
+    const query = buildMyWaveQuery(nextSettings, MY_WAVE_RECOMMENDATIONS_LIMIT)
+    const [payload, dislikes] = await Promise.all([
+      api(`/recommendations/my-wave?${query}`, {
+        auth: 'required',
       }).catch(() => null),
       api('/library/dislikes', { auth: 'required' }).catch(() => null),
     ])
@@ -3552,14 +3494,17 @@
       return payload
     }
 
-    state.myWaveSettings = nextSettings
-    state.myWaveSessionId = String(payload?.sessionId || '')
+    if (payload?.settings) {
+      state.myWaveSettings = normalizeWaveSettings(payload.settings)
+    } else {
+      state.myWaveSettings = nextSettings
+    }
 
     if (Array.isArray(dislikes?.items)) {
       state.dislikes = new Set(dislikes.items.map((id) => stripRecoPrefix(id)).filter(Boolean))
     }
     if (Array.isArray(payload?.items)) {
-      state.myWave = capExactLikedWaveItems(filterDislikedWaveItems(payload.items))
+      state.myWave = filterDislikedWaveItems(payload.items)
       if (state.myWave.length) {
         writeCachedMyWaveRecommendations({ ...payload, items: state.myWave })
       }
@@ -3572,25 +3517,6 @@
     }
 
     schedulePlaybackPrefetch(getMyWaveTracks())
-    return payload
-  }
-
-  async function extendMyWaveSession() {
-    if (!state.myWaveSessionId || !hasSessionToken()) return null
-    const payload = await api(`/recommendations/my-wave/sessions/${encodeURIComponent(state.myWaveSessionId)}/next?limit=25`, {
-      auth: 'required',
-    }).catch(() => null)
-    if (!Array.isArray(payload?.items) || payload.items.length === 0) return payload
-    const seen = new Set(state.myWave.map((item) => item?.track?.id).filter(Boolean))
-    const additions = filterDislikedWaveItems(payload.items).filter((item) => item?.track?.id && !seen.has(item.track.id))
-    if (additions.length) {
-      state.myWave = capExactLikedWaveItems([...state.myWave, ...additions])
-      writeCachedMyWaveRecommendations({
-        sessionId: state.myWaveSessionId,
-        items: state.myWave,
-      })
-      schedulePlaybackPrefetch(getMyWaveTracks())
-    }
     return payload
   }
 
@@ -3615,20 +3541,10 @@
     }
 
     const request = (async () => {
-      // A previously cached partial response must not become a permanent Wave.
-      // Recreate it through the normal session endpoint so the server can build
-      // the full initial buffer before playback begins.
-      const shouldResumeExistingWave = Boolean(state.myWaveSessionId && state.myWave.length >= 12)
       const requests = [
         api('/library/likes', { auth: 'required' }).catch(() => null),
         api('/library/dislikes', { auth: 'required' }).catch(() => null),
-        shouldResumeExistingWave
-          ? Promise.resolve(null)
-          : api('/recommendations/my-wave/sessions', {
-              method: 'POST',
-              auth: 'required',
-              body: { limit: Math.min(MY_WAVE_RECOMMENDATIONS_LIMIT, 80) },
-            }).catch(() => null),
+        api(`/recommendations/my-wave?${buildMyWaveQuery(state.myWaveSettings, MY_WAVE_RECOMMENDATIONS_LIMIT)}`, { auth: 'required' }).catch(() => null),
       ]
 
       if (includePlaylists) {
@@ -3643,8 +3559,7 @@
         state.dislikes = new Set(dislikes.items.map((id) => stripRecoPrefix(id)).filter(Boolean))
       }
       if (Array.isArray(wave?.items)) {
-        state.myWave = capExactLikedWaveItems(filterDislikedWaveItems(wave.items))
-        state.myWaveSessionId = String(wave?.sessionId || '')
+        state.myWave = filterDislikedWaveItems(wave.items)
         if (state.myWave.length) {
           writeCachedMyWaveRecommendations({ ...wave, items: state.myWave })
         }
@@ -3773,13 +3688,6 @@
 
     state.track = track
     state.ctx = ctx
-    if (ctx === 'my-wave') {
-      state.myWaveLastStartedTrackId = String(track?.id || '')
-      writeCachedMyWaveRecommendations({
-        sessionId: state.myWaveSessionId,
-        items: state.myWave,
-      })
-    }
     setHomeWaveActive(ctx === 'my-wave')
     state.queue = playbackList
     state.idx = index
@@ -3787,29 +3695,18 @@
     setCurrent(track)
     markRows()
 
-    const payload = {
-      source: 'wavee-design-runtime',
-      type: 'wavee-play-track',
-      track,
-      list: playbackList,
-      index,
-      contextType: ctx,
-    }
-
     if (top && top !== window) {
-      // Do not turn this click into a postMessage round trip: Firefox then
-      // considers the parent audio.play() to be autoplay. The parent bridge
-      // accepts only a window belonging to one of its same-origin iframes.
-      try {
-        if (typeof top.__waveePlayFromDesignFrame === 'function'
-          && top.__waveePlayFromDesignFrame(window, payload) === true) {
-          return
-        }
-      } catch {
-        // Keep the message fallback for standalone previews and old parents.
-      }
-
-      top.postMessage(payload, window.location.origin)
+      top.postMessage(
+        {
+          source: 'wavee-design-runtime',
+          type: 'wavee-play-track',
+          track,
+          list: playbackList,
+          index,
+          contextType: ctx,
+        },
+        window.location.origin,
+      )
     }
   }
 
@@ -4029,25 +3926,15 @@
     syncPlayer()
   }
 
-  async function next(reason = 'next') {
+  function next(reason = 'next') {
     if (embedMode) return
     if (!state.queue.length) return
     const completed = reason === 'ended'
     endPlaybackSession({ completed, contextType: reason })
     if (state.repeat && state.track) return play(state.track, 'repeat')
     if (state.shuffle) return play(state.queue[Math.floor(Math.random() * state.queue.length)], 'shuffle-next')
-    let n = state.queue[state.idx + 1]
-    if (!n && state.ctx === 'my-wave') {
-      await extendMyWaveSession()
-      state.queue = getMyWaveTracks()
-      n = state.queue[state.idx + 1]
-    }
+    const n = state.queue[state.idx + 1]
     if (!n) { state.playing = false; syncPlayer(); return }
-    if (state.ctx === 'my-wave' && (state.queue.length - state.idx) < 10) {
-      void extendMyWaveSession().then(() => {
-        state.queue = getMyWaveTracks()
-      })
-    }
     play(n, 'next')
   }
 
@@ -4589,15 +4476,13 @@
     meta = '',
     featured = false,
     compact = false,
-    action = 'play-track',
-    mixId = '',
   } = {}) {
     if (!track?.id) return ''
     const artistName = track?.artist?.name || 'Wavee'
     const trackTitle = track?.title || artistName
 
     return `
-      <article class="home-playlist-card group${featured ? ' is-featured' : ''}${compact ? ' is-compact' : ''}" data-carousel-card data-action="${esc(action)}" data-track-id="${esc(track.id)}"${mixId ? ` data-mix-id="${esc(mixId)}"` : ''}>
+      <article class="home-playlist-card group${featured ? ' is-featured' : ''}${compact ? ' is-compact' : ''}" data-carousel-card data-action="play-track" data-track-id="${esc(track.id)}">
         <div class="home-playlist-cover">
           ${coverMarkup(track, `${artistName} — This Is`, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
           <div class="home-playlist-overlay${compact ? ' is-compact' : ''}"></div>
@@ -4611,7 +4496,7 @@
                 <h3 class="home-playlist-artist">${esc(artistName)}</h3>
               </div>
             `}
-          <button data-action="${esc(action)}" data-track-id="${esc(track.id)}"${mixId ? ` data-mix-id="${esc(mixId)}"` : ''} class="home-card-play" aria-label="Играть ${esc(track.title || artistName)}">
+          <button data-action="play-track" data-track-id="${esc(track.id)}" class="home-card-play" aria-label="Играть ${esc(track.title || artistName)}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
           </button>
         </div>
@@ -4636,19 +4521,17 @@
     badge = '',
     meta = '',
     featured = false,
-    action = 'play-track',
-    mixId = '',
   } = {}) {
     if (!track?.id) return ''
     const cardTitle = title || track.title || 'Релиз'
     const cardSubtitle = subtitle || formatArtistNames(track)
 
     return `
-      <article class="home-album-card group${featured ? ' is-featured' : ''}" data-carousel-card data-action="${esc(action)}" data-track-id="${esc(track.id)}"${mixId ? ` data-mix-id="${esc(mixId)}"` : ''}>
+      <article class="home-album-card group${featured ? ' is-featured' : ''}" data-carousel-card data-action="play-track" data-track-id="${esc(track.id)}">
         <div class="home-album-cover">
           ${coverMarkup(track, cardTitle, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
           ${cardBadgeMarkup()}
-          <button data-action="${esc(action)}" data-track-id="${esc(track.id)}"${mixId ? ` data-mix-id="${esc(mixId)}"` : ''} class="home-card-play" aria-label="Играть ${esc(cardTitle)}">
+          <button data-action="play-track" data-track-id="${esc(track.id)}" class="home-card-play" aria-label="Играть ${esc(cardTitle)}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
           </button>
         </div>
@@ -4871,13 +4754,15 @@
     const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
     const canUseCatalogFallback = !forceDisconnectedPlaceholders && musicTracks.length > 0
     const hasPersonalRecommendationContent = isForYouMode && hasPersonalHomeRecommendationContent(recommendationBlocks)
+    const hasPersonalRuntimeTracks = getMyWaveTracks().length > 0
+    const shouldUseForYouEmergencyFallback = requiresPersonalBlocks
+      && !isRecommendationModeLoading
+      && !hasPersonalRecommendationContent
+      && !hasPersonalRuntimeTracks
     const isWaitingForPersonal = requiresPersonalBlocks
       && !hasPersonalRecommendationContent
       && isRecommendationModeLoading
-    // Never turn a personal shelf into a random local catalogue when the
-    // recommendation API is temporarily empty. A blank personal state is
-    // more honest and prevents unrelated charts from poisoning the taste.
-    const canUsePersonalFallback = !requiresPersonalBlocks && canUseCatalogFallback
+    const canUsePersonalFallback = (!requiresPersonalBlocks || hasPersonalRuntimeTracks || shouldUseForYouEmergencyFallback) && canUseCatalogFallback
     const shouldShowPersonalSkeleton = isForYouMode && isWaitingForPersonal
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
@@ -4911,9 +4796,9 @@
       : getTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
     const releaseSource = recommendedReleaseTracks.length
       ? recommendedReleaseTracks
-      : (isTrendsMode || !requiresPersonalBlocks
+      : (isTrendsMode || !requiresPersonalBlocks || hasPersonalRuntimeTracks
           ? (canUseCatalogFallback ? trendingTracks : [])
-          : [])
+          : (shouldUseForYouEmergencyFallback ? trendingTracks : []))
     
     const getTrackReleaseTs = (t) => {
       const candidates = [t?.releasedAt, t?.releaseDate, t?.createdAt, t?.album?.releasedAt, t?.album?.releaseDate]
@@ -4932,29 +4817,15 @@
     const releaseTracks = [...releaseSource]
       .sort((a, b) => getTrackReleaseTs(b) - getTrackReleaseTs(a))
       .slice(0, 20)
-    const releaseEntries = Array.isArray(recommendationBlocks?.newReleases)
-      ? recommendationBlocks.newReleases.filter((entry) => entry?.track?.id)
-      : []
-    state.homeReleaseQueues = new Map(releaseEntries.map((entry) => [
-      String(entry?.release?.id ?? entry?.id ?? entry?.track?.id ?? ''),
-      dedupeTracks(Array.isArray(entry?.queue) ? entry.queue : [entry?.track]).filter((track) => track?.id),
-    ]).filter(([id, queue]) => id && queue.length > 0))
-    const releaseCards = releaseTracks.map((track, index) => {
-      const releaseEntry = releaseEntries.find((entry) => entry?.track?.id === track?.id)
-      const releaseId = String(releaseEntry?.release?.id ?? releaseEntry?.id ?? track?.id ?? '')
-      const release = releaseEntry?.release ?? null
-      return AlbumCard({
+    const releaseCards = releaseTracks.map((track, index) => AlbumCard({
       track,
       coverMarkup,
-      title: release?.title || track.title,
+      title: track.title,
       subtitle: `${formatArtistNames(track)} • ${resolveHomeReleaseLabel(track)}`,
       badge: isTrendsMode ? 'TOP' : (index < 5 ? 'NEW' : ''),
-      meta: isTrendsMode ? 'В чарте недели' : (release?.trackCount > 1 ? `${release.trackCount} треков` : 'Свежий релиз'),
+      meta: isTrendsMode ? 'В чарте недели' : 'Свежий релиз',
       featured: false,
-      action: releaseId && state.homeReleaseQueues.has(releaseId) ? 'play-release' : 'play-track',
-      mixId: releaseId,
-    })
-    })
+    }))
     SectionBlock({
       section: el.homeQuickAccessSection,
       headerTarget: el.homeQuickAccessHeader,
@@ -5109,10 +4980,6 @@
         )
       : []
     const mixKickers = ['Для тебя', 'Топ дня', 'Рекомендуем', 'В ротации']
-    state.homeMixQueues = new Map(mixEntries.map((entry) => [
-      String(entry?.id ?? ''),
-      dedupeTracks(Array.isArray(entry?.queue) ? entry.queue : [entry?.track]).filter((track) => track?.id),
-    ]).filter(([id, queue]) => id && queue.length > 0))
     const mixCards = mixEntries.map((entry, index) => PlaylistCard({
       track: entry.track,
       index,
@@ -5121,8 +4988,6 @@
       description: entry.subtitle || 'Персональная подборка Wavee.',
       badge: 'ДЛЯ ТЕБЯ',
       meta: index < 3 ? 'Персональная рекомендация' : 'Собрано из твоих прослушиваний',
-      action: 'play-mix',
-      mixId: entry.id,
     }))
     SectionBlock({
       section: el.homeMixesSection,
@@ -5216,28 +5081,13 @@
       const hasSession = hasSessionToken()
       const canStart = hasSession || myWaveTracks.length > 0
       const hasPersonalWave = myWaveTracks.length > 0
-      const isPreparingWave = state.myWaveLoadState === 'preparing'
-      const hasWaveLoadError = state.myWaveLoadState === 'error'
 
-      el.hero.disabled = !canStart || isPreparingWave
-      el.hero.setAttribute('aria-busy', isPreparingWave ? 'true' : 'false')
+      el.hero.disabled = !canStart
       const heroVariant = pickHeroArtVariant()
       const heroAnimalTitle = heroVariant?.title || 'Зверек'
       const heroLabelBase = hasPersonalWave ? 'Слушать мою волну' : 'Слушать волну'
       el.hero.setAttribute('aria-label', heroLabelBase + ': ' + heroAnimalTitle)
       el.hero.classList.toggle('is-muted', !canStart)
-      if (el.homeListenButton) {
-        const label = isPreparingWave
-          ? 'Готовим поток…'
-          : hasWaveLoadError
-            ? 'Повторить'
-            : state.myWaveLoadState === 'ready'
-              ? 'Готово — слушать'
-              : 'Слушать'
-        const labelNode = el.homeListenButton.querySelector('span')
-        if (labelNode) labelNode.textContent = label
-        el.homeListenButton.disabled = !canStart || isPreparingWave
-      }
       if (!heroArtState.active) {
         renderHeroArtIdle()
       }
@@ -5426,8 +5276,7 @@
         let playbackList = getMyWaveTracks()
 
         if (!playbackList.length && hasSessionToken()) {
-          state.myWaveLoadState = 'preparing'
-          renderHome()
+          el.hero.disabled = true
           await loadMyWaveRecommendations({
             settings: state.myWaveSettings,
             persistSettings: false,
@@ -5436,33 +5285,14 @@
           playbackList = getMyWaveTracks()
         }
 
-        if (!playbackList.length && state.myWaveSessionId) {
-          await extendMyWaveSession()
-          playbackList = getMyWaveTracks()
-        }
-
-        const previouslyStartedIndex = playbackList.findIndex((track) => track?.id === state.myWaveLastStartedTrackId)
-        const leadTrack = previouslyStartedIndex >= 0
-          ? (playbackList[previouslyStartedIndex + 1] || playbackList[0])
-          : playbackList[0]
+        const leadTrack = playbackList[0]
         if (!leadTrack) {
-          state.myWaveLoadState = 'error'
-          renderHome()
           el.hero.disabled = !hasSessionToken()
           return
         }
 
-        // Loading the first session is asynchronous and therefore no longer
-        // inside the original browser gesture. Make the state explicit and
-        // let the next click perform the guaranteed synchronous audio start.
-        if (state.myWaveLoadState === 'preparing') {
-          state.myWaveLoadState = 'ready'
-          renderHome()
-          return
-        }
-
         setHomeWaveActive(true)
-        play(leadTrack, 'my-wave', { list: playbackList })
+        await play(leadTrack, 'my-wave', { list: playbackList })
       }
       el.hero.onclick = (event) => {
         event.preventDefault?.()
@@ -5538,11 +5368,6 @@
     }
 
     document.querySelectorAll('[data-wave-setting][data-wave-value]').forEach((button) => {
-      if (!waveSettingsUiEnabled) {
-        button.disabled = true
-        button.setAttribute('aria-disabled', 'true')
-        return
-      }
       if (button.dataset.bound === '1') return
       button.addEventListener('click', async () => {
         if (!hasSessionToken()) {
@@ -5586,16 +5411,6 @@
           const list = page === 'home' ? getHomeTrackPool() : getPlaybackListForPage()
           play(tr, 'list-click', { list })
         }
-      }
-      if (t.getAttribute('data-action') === 'play-mix') {
-        const mixQueue = state.homeMixQueues.get(t.getAttribute('data-mix-id') || '') || []
-        const first = mixQueue[0] || findTrack(id)
-        if (first) play(first, 'mix', { list: mixQueue.length ? mixQueue : [first] })
-      }
-      if (t.getAttribute('data-action') === 'play-release') {
-        const releaseQueue = state.homeReleaseQueues.get(t.getAttribute('data-mix-id') || '') || []
-        const first = releaseQueue[0] || findTrack(id)
-        if (first) play(first, 'release', { list: releaseQueue.length ? releaseQueue : [first] })
       }
       if (t.getAttribute('data-action') === 'like-track') toggleLike(id)
     })
