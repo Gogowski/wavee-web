@@ -130,6 +130,7 @@
     myWave: [],
     myWaveSessionId: '',
     myWaveLastStartedTrackId: '',
+    myWaveLoadState: 'idle',
     myWaveSettings: {
       character: 'favorite',
       mood: 'calm',
@@ -190,6 +191,7 @@
     shuf: $('wavee-player-shuffle'),
     rep: $('wavee-player-repeat'),
     hero: $('home-hero-listen'),
+    homeListenButton: document.querySelector('.home-listen-button'),
     homeWaveSettingsToggle: $('home-wave-settings-toggle'),
     homeWaveSettingsPanel: $('home-wave-settings-panel'),
     homeHeroTip: $('home-hero-tip'),
@@ -3741,18 +3743,29 @@
     setCurrent(track)
     markRows()
 
+    const payload = {
+      source: 'wavee-design-runtime',
+      type: 'wavee-play-track',
+      track,
+      list: playbackList,
+      index,
+      contextType: ctx,
+    }
+
     if (top && top !== window) {
-      top.postMessage(
-        {
-          source: 'wavee-design-runtime',
-          type: 'wavee-play-track',
-          track,
-          list: playbackList,
-          index,
-          contextType: ctx,
-        },
-        window.location.origin,
-      )
+      // Do not turn this click into a postMessage round trip: Firefox then
+      // considers the parent audio.play() to be autoplay. The parent bridge
+      // accepts only a window belonging to one of its same-origin iframes.
+      try {
+        if (typeof top.__waveePlayFromDesignFrame === 'function'
+          && top.__waveePlayFromDesignFrame(window, payload) === true) {
+          return
+        }
+      } catch {
+        // Keep the message fallback for standalone previews and old parents.
+      }
+
+      top.postMessage(payload, window.location.origin)
     }
   }
 
@@ -5145,13 +5158,28 @@
       const hasSession = hasSessionToken()
       const canStart = hasSession || myWaveTracks.length > 0
       const hasPersonalWave = myWaveTracks.length > 0
+      const isPreparingWave = state.myWaveLoadState === 'preparing'
+      const hasWaveLoadError = state.myWaveLoadState === 'error'
 
-      el.hero.disabled = !canStart
+      el.hero.disabled = !canStart || isPreparingWave
+      el.hero.setAttribute('aria-busy', isPreparingWave ? 'true' : 'false')
       const heroVariant = pickHeroArtVariant()
       const heroAnimalTitle = heroVariant?.title || 'Зверек'
       const heroLabelBase = hasPersonalWave ? 'Слушать мою волну' : 'Слушать волну'
       el.hero.setAttribute('aria-label', heroLabelBase + ': ' + heroAnimalTitle)
       el.hero.classList.toggle('is-muted', !canStart)
+      if (el.homeListenButton) {
+        const label = isPreparingWave
+          ? 'Готовим поток…'
+          : hasWaveLoadError
+            ? 'Повторить'
+            : state.myWaveLoadState === 'ready'
+              ? 'Готово — слушать'
+              : 'Слушать'
+        const labelNode = el.homeListenButton.querySelector('span')
+        if (labelNode) labelNode.textContent = label
+        el.homeListenButton.disabled = !canStart || isPreparingWave
+      }
       if (!heroArtState.active) {
         renderHeroArtIdle()
       }
@@ -5340,7 +5368,8 @@
         let playbackList = getMyWaveTracks()
 
         if (!playbackList.length && hasSessionToken()) {
-          el.hero.disabled = true
+          state.myWaveLoadState = 'preparing'
+          renderHome()
           await loadMyWaveRecommendations({
             settings: state.myWaveSettings,
             persistSettings: false,
@@ -5359,12 +5388,23 @@
           ? (playbackList[previouslyStartedIndex + 1] || playbackList[0])
           : playbackList[0]
         if (!leadTrack) {
+          state.myWaveLoadState = 'error'
+          renderHome()
           el.hero.disabled = !hasSessionToken()
           return
         }
 
+        // Loading the first session is asynchronous and therefore no longer
+        // inside the original browser gesture. Make the state explicit and
+        // let the next click perform the guaranteed synchronous audio start.
+        if (state.myWaveLoadState === 'preparing') {
+          state.myWaveLoadState = 'ready'
+          renderHome()
+          return
+        }
+
         setHomeWaveActive(true)
-        await play(leadTrack, 'my-wave', { list: playbackList })
+        play(leadTrack, 'my-wave', { list: playbackList })
       }
       el.hero.onclick = (event) => {
         event.preventDefault?.()
