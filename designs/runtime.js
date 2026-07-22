@@ -161,6 +161,7 @@
       trends: {},
     },
     homeMixQueues: new Map(),
+    homeReleaseQueues: new Map(),
     playbackSession: null,
     ctx: null,
   }
@@ -4595,17 +4596,19 @@
     badge = '',
     meta = '',
     featured = false,
+    action = 'play-track',
+    mixId = '',
   } = {}) {
     if (!track?.id) return ''
     const cardTitle = title || track.title || 'Релиз'
     const cardSubtitle = subtitle || formatArtistNames(track)
 
     return `
-      <article class="home-album-card group${featured ? ' is-featured' : ''}" data-carousel-card data-action="play-track" data-track-id="${esc(track.id)}">
+      <article class="home-album-card group${featured ? ' is-featured' : ''}" data-carousel-card data-action="${esc(action)}" data-track-id="${esc(track.id)}"${mixId ? ` data-mix-id="${esc(mixId)}"` : ''}>
         <div class="home-album-cover">
           ${coverMarkup(track, cardTitle, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
           ${cardBadgeMarkup()}
-          <button data-action="play-track" data-track-id="${esc(track.id)}" class="home-card-play" aria-label="Играть ${esc(cardTitle)}">
+          <button data-action="${esc(action)}" data-track-id="${esc(track.id)}"${mixId ? ` data-mix-id="${esc(mixId)}"` : ''} class="home-card-play" aria-label="Играть ${esc(cardTitle)}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
           </button>
         </div>
@@ -4828,15 +4831,13 @@
     const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
     const canUseCatalogFallback = !forceDisconnectedPlaceholders && musicTracks.length > 0
     const hasPersonalRecommendationContent = isForYouMode && hasPersonalHomeRecommendationContent(recommendationBlocks)
-    const hasPersonalRuntimeTracks = getMyWaveTracks().length > 0
-    const shouldUseForYouEmergencyFallback = requiresPersonalBlocks
-      && !isRecommendationModeLoading
-      && !hasPersonalRecommendationContent
-      && !hasPersonalRuntimeTracks
     const isWaitingForPersonal = requiresPersonalBlocks
       && !hasPersonalRecommendationContent
       && isRecommendationModeLoading
-    const canUsePersonalFallback = (!requiresPersonalBlocks || hasPersonalRuntimeTracks || shouldUseForYouEmergencyFallback) && canUseCatalogFallback
+    // Never turn a personal shelf into a random local catalogue when the
+    // recommendation API is temporarily empty. A blank personal state is
+    // more honest and prevents unrelated charts from poisoning the taste.
+    const canUsePersonalFallback = !requiresPersonalBlocks && canUseCatalogFallback
     const shouldShowPersonalSkeleton = isForYouMode && isWaitingForPersonal
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
@@ -4870,9 +4871,9 @@
       : getTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
     const releaseSource = recommendedReleaseTracks.length
       ? recommendedReleaseTracks
-      : (isTrendsMode || !requiresPersonalBlocks || hasPersonalRuntimeTracks
+      : (isTrendsMode || !requiresPersonalBlocks
           ? (canUseCatalogFallback ? trendingTracks : [])
-          : (shouldUseForYouEmergencyFallback ? trendingTracks : []))
+          : [])
     
     const getTrackReleaseTs = (t) => {
       const candidates = [t?.releasedAt, t?.releaseDate, t?.createdAt, t?.album?.releasedAt, t?.album?.releaseDate]
@@ -4891,15 +4892,29 @@
     const releaseTracks = [...releaseSource]
       .sort((a, b) => getTrackReleaseTs(b) - getTrackReleaseTs(a))
       .slice(0, 20)
-    const releaseCards = releaseTracks.map((track, index) => AlbumCard({
+    const releaseEntries = Array.isArray(recommendationBlocks?.newReleases)
+      ? recommendationBlocks.newReleases.filter((entry) => entry?.track?.id)
+      : []
+    state.homeReleaseQueues = new Map(releaseEntries.map((entry) => [
+      String(entry?.release?.id ?? entry?.id ?? entry?.track?.id ?? ''),
+      dedupeTracks(Array.isArray(entry?.queue) ? entry.queue : [entry?.track]).filter((track) => track?.id),
+    ]).filter(([id, queue]) => id && queue.length > 0))
+    const releaseCards = releaseTracks.map((track, index) => {
+      const releaseEntry = releaseEntries.find((entry) => entry?.track?.id === track?.id)
+      const releaseId = String(releaseEntry?.release?.id ?? releaseEntry?.id ?? track?.id ?? '')
+      const release = releaseEntry?.release ?? null
+      return AlbumCard({
       track,
       coverMarkup,
-      title: track.title,
+      title: release?.title || track.title,
       subtitle: `${formatArtistNames(track)} • ${resolveHomeReleaseLabel(track)}`,
       badge: isTrendsMode ? 'TOP' : (index < 5 ? 'NEW' : ''),
-      meta: isTrendsMode ? 'В чарте недели' : 'Свежий релиз',
+      meta: isTrendsMode ? 'В чарте недели' : (release?.trackCount > 1 ? `${release.trackCount} треков` : 'Свежий релиз'),
       featured: false,
-    }))
+      action: releaseId && state.homeReleaseQueues.has(releaseId) ? 'play-release' : 'play-track',
+      mixId: releaseId,
+    })
+    })
     SectionBlock({
       section: el.homeQuickAccessSection,
       headerTarget: el.homeQuickAccessHeader,
@@ -5536,6 +5551,11 @@
         const mixQueue = state.homeMixQueues.get(t.getAttribute('data-mix-id') || '') || []
         const first = mixQueue[0] || findTrack(id)
         if (first) play(first, 'mix', { list: mixQueue.length ? mixQueue : [first] })
+      }
+      if (t.getAttribute('data-action') === 'play-release') {
+        const releaseQueue = state.homeReleaseQueues.get(t.getAttribute('data-mix-id') || '') || []
+        const first = releaseQueue[0] || findTrack(id)
+        if (first) play(first, 'release', { list: releaseQueue.length ? releaseQueue : [first] })
       }
       if (t.getAttribute('data-action') === 'like-track') toggleLike(id)
     })
