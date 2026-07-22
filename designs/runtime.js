@@ -3574,7 +3574,10 @@
     }
 
     const request = (async () => {
-      const shouldResumeExistingWave = Boolean(state.myWaveSessionId && state.myWave.length > 0)
+      // A previously cached partial response must not become a permanent Wave.
+      // Recreate it through the normal session endpoint so the server can build
+      // the full initial buffer before playback begins.
+      const shouldResumeExistingWave = Boolean(state.myWaveSessionId && state.myWave.length >= 12)
       const requests = [
         api('/library/likes', { auth: 'required' }).catch(() => null),
         api('/library/dislikes', { auth: 'required' }).catch(() => null),
