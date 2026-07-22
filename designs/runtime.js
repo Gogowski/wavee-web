@@ -1476,6 +1476,15 @@
       return value - Math.floor(value)
     }
 
+    const sampleCircularBand = (bands, position) => {
+      const length = bands.length
+      if (!length) return 0
+      const wrapped = ((position % length) + length) % length
+      const lower = Math.floor(wrapped)
+      const upper = (lower + 1) % length
+      return lerp(bands[lower] || 0, bands[upper] || 0, wrapped - lower)
+    }
+
     const drawPixelWave = (timestamp, delta, transitionMultiplier) => {
       const width = visualizer.width
       const height = visualizer.height
@@ -1495,8 +1504,8 @@
       const maxRows = Math.ceil(height / pitch)
       // The silhouette must answer the kick/sub, not a loud vocal or cymbal.
       // Mids/highs still control colour and texture below, but never its scale.
-      const halfAmplitude = height * (0.028 + (bassImpact * 0.35) + (bassDropImpact * 0.075)) * transitionMultiplier
-      const halfThickness = Math.max(pitch * 2.2, height * (0.032 + (bassImpact * 0.145) + (bassDropImpact * 0.075)) * transitionMultiplier)
+      const halfAmplitude = height * (0.022 + (bassImpact * 0.3) + (bassDropImpact * 0.065)) * transitionMultiplier
+      const halfThickness = Math.max(pitch * 1.8, height * (0.016 + (bassImpact * 0.085) + (bassDropImpact * 0.05)) * transitionMultiplier)
       const [leadBase, contrastBase, accentBase] = visualizer.colors
 
       context.clearRect(0, 0, width, height)
@@ -1505,15 +1514,23 @@
       for (let column = 0; column < columns; column += 1) {
         const t = column / Math.max(1, columns - 1)
         const edge = Math.pow(Math.sin(t * Math.PI), 0.72)
-        const exactBand = Math.abs(t - 0.5) * 2 * (visualizer.bands.length - 1)
-        const lower = Math.floor(exactBand)
-        const upper = Math.min(visualizer.bands.length - 1, lower + 1)
-        const band = lerp(visualizer.bands[lower] || 0, visualizer.bands[upper] || 0, exactBand - lower)
-        const ripple = Math.sin((t * Math.PI * 3.2) + (visualizer.phase * 0.72))
-          * halfAmplitude * (0.08 + (band * 0.2))
-        const coreY = centerY + ripple + Math.sin((t * Math.PI * 2) - (visualizer.phase * 0.3)) * halfAmplitude * 0.045
-        const localThickness = halfThickness * (0.54 + (edge * 0.46)) * (0.72 + (band * 0.58))
-        const fieldThickness = localThickness + (bassDropImpact * height * 0.055)
+        const bandPosition = (t * visualizer.bands.length) + (visualizer.phase * (1.7 + bassImpact * 1.2))
+        const band = sampleCircularBand(visualizer.bands, bandPosition)
+        const neighbourBand = (
+          sampleCircularBand(visualizer.bands, bandPosition - 1.35)
+          + sampleCircularBand(visualizer.bands, bandPosition + 1.35)
+        ) * 0.5
+        const localEnergy = clamp01((band * 0.7) + (neighbourBand * 0.3))
+        const lobe = 0.5 + (0.5 * Math.sin((t * Math.PI * 2.25) + (visualizer.phase * 1.55)))
+        const secondaryLobe = 0.5 + (0.5 * Math.sin((t * Math.PI * 5.4) - (visualizer.phase * 0.82)))
+        const localAmplitude = halfAmplitude * (0.12 + (localEnergy * 0.72) + (lobe * 0.16))
+        const ripple = Math.sin((t * Math.PI * 3.1) + (visualizer.phase * 0.94)) * localAmplitude
+        const coreY = centerY
+          + ripple
+          + Math.sin((t * Math.PI * 6.2) - (visualizer.phase * 0.56)) * localAmplitude * (0.04 + localEnergy * 0.14)
+        const localThickness = halfThickness
+          * (0.24 + (edge * 0.16) + (localEnergy * 0.72) + ((secondaryLobe - 0.5) * 0.14))
+        const fieldThickness = localThickness + (bassDropImpact * height * 0.035)
         const startRow = Math.max(0, Math.floor((coreY - fieldThickness) / pitch))
         const endRow = Math.min(maxRows, Math.ceil((coreY + fieldThickness) / pitch))
 
@@ -1525,7 +1542,7 @@
           const fieldDensity = bassDropImpact > 0.08 && fieldDistance <= 1
             ? Math.pow(1 - fieldDistance, 1.8) * bassDropImpact * 0.68
             : 0
-          const density = Math.max(coreDensity * (0.48 + (band * 0.52)), fieldDensity)
+          const density = Math.max(coreDensity * (0.38 + (localEnergy * 0.62)), fieldDensity)
           if (density < 0.07 || noise((column * 19.17) + (row * 7.13)) > density) continue
 
           const colorMix = clamp(t * 0.72 + mids * 0.2 + (row / Math.max(1, maxRows)) * 0.08, 0, 1)
@@ -1689,9 +1706,9 @@
       const targetPresence = visualizer.hasSignal ? visualizer.targetSignalPresence : Math.min(visualizer.targetSignalPresence, 0.05)
       visualizer.signalPresence = smoothValueByDelta(visualizer.signalPresence, targetPresence, delta, signalRise, signalFall * 0.8)
 
-      const motionActivity = clamp01((visualizer.activity * 0.5) + (visualizer.loudness * 0.3) + (visualizer.signalPresence * 0.2))
+      const motionActivity = clamp01((visualizer.bass * 0.48) + (visualizer.mids * 0.2) + (visualizer.highs * 0.08) + (visualizer.signalPresence * 0.24))
       const motionGate = clamp01((visualizer.signalPresence * 1.5) + (visualizer.loudness * 0.3))
-      const motionFactor = lerp(0.002, 0.11, motionActivity) * stateMotion
+      const motionFactor = lerp(0.012, 0.48, motionActivity) * stateMotion
       
       visualizer.phase += delta * motionFactor
       visualizer.hueDrift += delta * lerp(0.002, 0.02, motionActivity)
