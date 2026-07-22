@@ -1482,7 +1482,6 @@
       const bass = clamp01(visualizer.bass)
       const mids = clamp01(visualizer.mids)
       const highs = clamp01(visualizer.highs)
-      const activity = clamp01(visualizer.activity)
       const drop = clamp01(visualizer.drop)
       const onset = clamp01(visualizer.onset)
       const centerY = visualizer.glowPad + (visualizer.visibleHeight * 0.45)
@@ -1490,8 +1489,10 @@
       const pixelSize = Math.max(2, Math.round(pitch * 0.43))
       const columns = Math.ceil(width / pitch) + 1
       const maxRows = Math.ceil(height / pitch)
-      const halfAmplitude = height * (0.05 + (bass * 0.24) + (activity * 0.08) + (drop * 0.12)) * transitionMultiplier
-      const halfThickness = Math.max(pitch * 2.2, height * (0.045 + (activity * 0.08) + (bass * 0.1) + (drop * 0.12)) * transitionMultiplier)
+      // The silhouette must answer the kick/sub, not a loud vocal or cymbal.
+      // Mids/highs still control colour and texture below, but never its scale.
+      const halfAmplitude = height * (0.045 + (bass * 0.38) + (drop * 0.16)) * transitionMultiplier
+      const halfThickness = Math.max(pitch * 2.2, height * (0.04 + (bass * 0.17) + (drop * 0.14)) * transitionMultiplier)
       const [leadBase, contrastBase, accentBase] = visualizer.colors
 
       context.clearRect(0, 0, width, height)
