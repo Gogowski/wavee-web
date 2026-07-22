@@ -1546,9 +1546,9 @@
         const bassBandPosition = (t * lowBands.length)
           + (visualizer.phase * (1.12 + (bassImpact * 0.68)))
           + (wideWarp * 0.54)
-        const localBass = clamp01((sampleCircularBand(lowBands, bassBandPosition) * 0.65) + (bass * 0.35))
+        const localBass = clamp01((sampleCircularBand(lowBands, bassBandPosition) * 0.72) + (bass * 0.28))
         const bassLobe = 0.5 + (0.5 * Math.sin((t * Math.PI * 2.45) - (visualizer.phase * 0.46)))
-        const bassBulge = bassImpact * Math.pow(localBass, 0.72) * (0.22 + (bassLobe * 0.78))
+        const bassBulge = Math.pow(bassImpact, 0.72) * Math.pow(localBass, 0.56) * (0.12 + (bassLobe * 0.88))
         const troughCenter = 0.52 + (Math.sin(visualizer.phase * 0.24) * 0.075)
         const troughWidth = 0.18 + (Math.sin(visualizer.phase * 0.17) * 0.018)
         const troughDistance = (t - troughCenter) / troughWidth
@@ -1562,8 +1562,8 @@
           + Math.sin((t * Math.PI * 6.2) - (visualizer.phase * 1.16)) * localAmplitude * (0.04 + localEnergy * 0.14)
         const baseLocalThickness = halfThickness
           * (0.24 + (edge * 0.16) + (localEnergy * 0.72) + ((secondaryLobe - 0.5) * 0.14))
-        const localThickness = baseLocalThickness + (bassBulge * height * 0.035)
-        const fieldThickness = localThickness + (bassBulge * height * 0.012) + (kickImpact * height * 0.01) + (beatImpact * height * 0.005) + (bassDropImpact * height * 0.035)
+        const localThickness = baseLocalThickness + (bassBulge * height * 0.075)
+        const fieldThickness = localThickness + (bassBulge * height * 0.026) + (kickImpact * height * 0.01) + (beatImpact * height * 0.005) + (bassDropImpact * height * 0.035)
         const startRow = Math.max(0, Math.floor((coreY - fieldThickness) / pitch))
         const endRow = Math.min(maxRows, Math.ceil((coreY + fieldThickness) / pitch))
 
