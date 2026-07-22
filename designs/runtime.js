@@ -1514,7 +1514,8 @@
       const maxRows = Math.ceil(height / pitch)
       // The silhouette must answer the kick/sub, not a loud vocal or cymbal.
       // Mids/highs still control colour and texture below, but never its scale.
-      const halfAmplitude = height * (0.02 + (bassImpact * 0.278) + (kickImpact * 0.066) + (beatImpact * 0.03) + (bassDropImpact * 0.06)) * transitionMultiplier
+      const dynamicAmplitude = (bassImpact * 0.278) + (kickImpact * 0.066) + (beatImpact * 0.03) + (bassDropImpact * 0.06)
+      const halfAmplitude = height * (0.02 + (dynamicAmplitude * 0.95)) * transitionMultiplier
       const halfThickness = Math.max(pitch * 1.8, height * (0.016 + (bassImpact * 0.085) + (kickImpact * 0.028) + (beatImpact * 0.014) + (bassDropImpact * 0.05)) * transitionMultiplier)
       const [leadBase, contrastBase, accentBase] = visualizer.colors
 
