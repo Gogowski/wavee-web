@@ -1517,6 +1517,7 @@
       const dynamicAmplitude = (bassImpact * 0.278) + (kickImpact * 0.066) + (beatImpact * 0.03) + (bassDropImpact * 0.06)
       const halfAmplitude = height * (0.02 + (dynamicAmplitude * 0.95)) * transitionMultiplier
       const halfThickness = Math.max(pitch * 1.8, height * (0.016 + (bassImpact * 0.085) + (kickImpact * 0.028) + (beatImpact * 0.014) + (bassDropImpact * 0.05)) * transitionMultiplier)
+      const lowBands = visualizer.bands.slice(0, Math.max(3, Math.floor(visualizer.bands.length * 0.28)))
       const [leadBase, contrastBase, accentBase] = visualizer.colors
 
       context.clearRect(0, 0, width, height)
@@ -1539,6 +1540,15 @@
         const localEnergy = clamp01((band * 0.7) + (neighbourBand * 0.3))
         const lobe = 0.5 + (0.5 * Math.sin((t * Math.PI * 1.85) + (visualizer.phase * 0.64)))
         const secondaryLobe = 0.5 + (0.5 * Math.sin((t * Math.PI * 5.1) - (visualizer.phase * 1.08)))
+        // The lower spectral bins travel through their own, slower contour.
+        // A heavy bass therefore opens a few thick areas rather than making
+        // the entire wave uniformly fat.
+        const bassBandPosition = (t * lowBands.length)
+          + (visualizer.phase * (1.12 + (bassImpact * 0.68)))
+          + (wideWarp * 0.54)
+        const localBass = clamp01((sampleCircularBand(lowBands, bassBandPosition) * 0.65) + (bass * 0.35))
+        const bassLobe = 0.5 + (0.5 * Math.sin((t * Math.PI * 2.45) - (visualizer.phase * 0.46)))
+        const bassBulge = bassImpact * Math.pow(localBass, 0.72) * (0.22 + (bassLobe * 0.78))
         const troughCenter = 0.52 + (Math.sin(visualizer.phase * 0.24) * 0.075)
         const troughWidth = 0.18 + (Math.sin(visualizer.phase * 0.17) * 0.018)
         const troughDistance = (t - troughCenter) / troughWidth
@@ -1550,9 +1560,10 @@
           + ripple
           + troughDepth
           + Math.sin((t * Math.PI * 6.2) - (visualizer.phase * 1.16)) * localAmplitude * (0.04 + localEnergy * 0.14)
-        const localThickness = halfThickness
+        const baseLocalThickness = halfThickness
           * (0.24 + (edge * 0.16) + (localEnergy * 0.72) + ((secondaryLobe - 0.5) * 0.14))
-        const fieldThickness = localThickness + (kickImpact * height * 0.01) + (beatImpact * height * 0.005) + (bassDropImpact * height * 0.035)
+        const localThickness = baseLocalThickness + (bassBulge * height * 0.035)
+        const fieldThickness = localThickness + (bassBulge * height * 0.012) + (kickImpact * height * 0.01) + (beatImpact * height * 0.005) + (bassDropImpact * height * 0.035)
         const startRow = Math.max(0, Math.floor((coreY - fieldThickness) / pitch))
         const endRow = Math.min(maxRows, Math.ceil((coreY + fieldThickness) / pitch))
 
