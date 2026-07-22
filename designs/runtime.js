@@ -1202,6 +1202,8 @@
       targetSignalPresence: 0,
       onset: 0,
       targetOnset: 0,
+      kick: 0,
+      targetKick: 0,
       drop: 0,
       targetDrop: 0,
       targetBands: Array.from({ length: 24 }, () => 0.075),
@@ -1492,10 +1494,12 @@
       const mids = clamp01(visualizer.mids)
       const highs = clamp01(visualizer.highs)
       const drop = clamp01(visualizer.drop)
+      const kick = clamp01(visualizer.kick)
       // Compress the steady low end while preserving the hit: a kick/sub peak
       // remains expressive, but a bassline does not keep the whole hero huge.
       const bassImpact = Math.pow(bass, 1.35)
       const bassDropImpact = drop * bassImpact
+      const kickImpact = kick * (0.42 + (bassImpact * 0.58))
       const onset = clamp01(visualizer.onset)
       const centerY = visualizer.glowPad + (visualizer.visibleHeight * 0.45)
       const pitch = visualizer.qualityTier === 0 ? 6 : (visualizer.qualityTier === 1 ? 7 : 8)
@@ -1504,8 +1508,8 @@
       const maxRows = Math.ceil(height / pitch)
       // The silhouette must answer the kick/sub, not a loud vocal or cymbal.
       // Mids/highs still control colour and texture below, but never its scale.
-      const halfAmplitude = height * (0.02 + (bassImpact * 0.278) + (bassDropImpact * 0.06)) * transitionMultiplier
-      const halfThickness = Math.max(pitch * 1.8, height * (0.016 + (bassImpact * 0.085) + (bassDropImpact * 0.05)) * transitionMultiplier)
+      const halfAmplitude = height * (0.02 + (bassImpact * 0.278) + (kickImpact * 0.045) + (bassDropImpact * 0.06)) * transitionMultiplier
+      const halfThickness = Math.max(pitch * 1.8, height * (0.016 + (bassImpact * 0.085) + (kickImpact * 0.018) + (bassDropImpact * 0.05)) * transitionMultiplier)
       const [leadBase, contrastBase, accentBase] = visualizer.colors
 
       context.clearRect(0, 0, width, height)
@@ -1657,6 +1661,7 @@
       visualizer.targetHighs = clamp01(Number(next.highs ?? legacyHighs ?? 0.05))
       visualizer.targetSignalPresence = clamp01(Number(next.signalPresence ?? legacyPresence ?? 0))
       visualizer.targetOnset = clamp01(Number(next.onset ?? 0))
+      visualizer.targetKick = clamp01(Number(next.kick ?? 0))
       visualizer.targetDrop = clamp01(Number(next.drop ?? 0))
       visualizer.state = nextState
       visualizer.hasSignal = Boolean(next.hasSignal ?? visualizer.targetSignalPresence > 0.08)
@@ -1712,14 +1717,15 @@
       visualizer.mids = smoothValueByDelta(visualizer.mids, visualizer.targetMids, delta, signalRise * 0.9, signalFall * 0.9)
       visualizer.highs = smoothValueByDelta(visualizer.highs, visualizer.targetHighs, delta, signalRise * 0.9, signalFall * 0.9)
       visualizer.onset = smoothValueByDelta(visualizer.onset, visualizer.targetOnset, delta, 26, 8)
+      visualizer.kick = smoothValueByDelta(visualizer.kick, visualizer.targetKick, delta, 34, 8.5)
       visualizer.drop = smoothValueByDelta(visualizer.drop, visualizer.targetDrop, delta, 30, 3.8)
       
       const targetPresence = visualizer.hasSignal ? visualizer.targetSignalPresence : Math.min(visualizer.targetSignalPresence, 0.05)
       visualizer.signalPresence = smoothValueByDelta(visualizer.signalPresence, targetPresence, delta, signalRise, signalFall * 0.8)
 
-      const motionActivity = clamp01((visualizer.bass * 0.48) + (visualizer.mids * 0.2) + (visualizer.highs * 0.08) + (visualizer.signalPresence * 0.24))
+      const motionActivity = clamp01((visualizer.bass * 0.48) + (visualizer.mids * 0.2) + (visualizer.highs * 0.08) + (visualizer.signalPresence * 0.24) + (visualizer.kick * 0.26))
       const motionGate = clamp01((visualizer.signalPresence * 1.5) + (visualizer.loudness * 0.3))
-      const motionFactor = lerp(0.012, 0.48, motionActivity) * stateMotion
+      const motionFactor = lerp(0.012, 0.48, motionActivity) * stateMotion * (1 + (visualizer.kick * 0.42))
       
       visualizer.phase += delta * motionFactor
       visualizer.hueDrift += delta * lerp(0.002, 0.02, motionActivity)
