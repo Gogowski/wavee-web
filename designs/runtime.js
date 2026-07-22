@@ -127,6 +127,7 @@
     dislikes: new Set(),
     playlists: [],
     myWave: [],
+    myWaveSessionId: '',
     myWaveSettings: {
       character: 'favorite',
       mood: 'calm',
@@ -156,6 +157,7 @@
       'for-you': {},
       trends: {},
     },
+    homeMixQueues: new Map(),
     playbackSession: null,
     ctx: null,
   }
@@ -2069,6 +2071,9 @@
   function filterDislikedWaveItems(items) {
     return (Array.isArray(items) ? items : []).filter((item) => item?.track?.id && !isTrackDisliked(item.track))
   }
+  // Personalization is entirely behavioural for now.  Do not expose a
+  // second, manual tuning layer until product explicitly brings it back.
+  const waveSettingsUiEnabled = false
 
   function optimizedCoverUrl(source, size = 400) {
     const rawUrl = String(source || '').trim()
@@ -2097,7 +2102,14 @@
   }
 
   function getMyWaveTracks() {
-    return filterDislikedTracks(state.myWave.map((item) => item?.track).filter((track) => track?.id))
+    return filterDislikedTracks(state.myWave.map((item) => item?.track?.id
+      ? {
+          ...item.track,
+          waveSessionId: item.sessionId || state.myWaveSessionId || '',
+          waveQueuePosition: item.queuePosition,
+          waveStrategy: item.strategy || '',
+        }
+      : null).filter(Boolean))
   }
 
   function getAllHomeRecommendationTracks(mode = 'all') {
@@ -2858,36 +2870,12 @@
   }
 
   function readCachedMyWaveRecommendations() {
-    try {
-      const raw = localStorage.getItem(getMyWaveCacheKey())
-      if (!raw) return null
-      const payload = JSON.parse(raw)
-      if (!payload || typeof payload !== 'object') return null
-      if (!Array.isArray(payload.items) || !payload.items.length) return null
-      const cachedAt = Number(payload.cachedAt || 0)
-      if (!Number.isFinite(cachedAt) || cachedAt <= 0) return null
-      if (Date.now() - cachedAt > HOME_RECO_STALE_TTL_MS) return null
-      return {
-        items: payload.items,
-        settings: payload.settings || null,
-        __cachedAt: cachedAt,
-      }
-    } catch {
-      return null
-    }
+    // A wave is a server-side session, not a static cached playlist.
+    return null
   }
 
-  function writeCachedMyWaveRecommendations(payload) {
-    if (!Array.isArray(payload?.items) || !payload.items.length) return
-    try {
-      localStorage.setItem(getMyWaveCacheKey(), JSON.stringify({
-        cachedAt: Date.now(),
-        items: payload.items,
-        settings: payload.settings || state.myWaveSettings,
-      }))
-    } catch {
-      // ignore cache write errors
-    }
+  function writeCachedMyWaveRecommendations() {
+    // Kept as a no-op for callers shared with older builds.
   }
 
   function readPlaybackSourceCache() {
@@ -3249,6 +3237,10 @@
       contextType,
       page,
       surface: embedMode ? 'embed' : 'standalone',
+      sessionId: track?.waveSessionId || state.myWaveSessionId || undefined,
+      queuePosition: Number.isFinite(track?.waveQueuePosition) ? track.waveQueuePosition : undefined,
+      strategy: track?.waveStrategy || undefined,
+      durationSec: track?.durationSec ?? 0,
     }
   }
 
@@ -3332,6 +3324,7 @@
   }
 
   function syncMyWaveSettingChips() {
+    if (!waveSettingsUiEnabled) return
     const chips = [...document.querySelectorAll('[data-wave-setting][data-wave-value]')]
     if (!chips.length) return
     chips.forEach((chip) => {
@@ -3474,18 +3467,11 @@
     const nextSettings = normalizeWaveSettings(settings || state.myWaveSettings)
     const requestVersion = ++myWaveLoadRequestVersion
 
-    if (persistSettings) {
-      await api('/recommendations/my-wave/settings', {
-        method: 'PUT',
-        auth: 'required',
-        body: nextSettings,
-      }).catch(() => null)
-    }
-
-    const query = buildMyWaveQuery(nextSettings, MY_WAVE_RECOMMENDATIONS_LIMIT)
     const [payload, dislikes] = await Promise.all([
-      api(`/recommendations/my-wave?${query}`, {
+      api('/recommendations/my-wave/sessions', {
+        method: 'POST',
         auth: 'required',
+        body: { limit: Math.min(MY_WAVE_RECOMMENDATIONS_LIMIT, 80) },
       }).catch(() => null),
       api('/library/dislikes', { auth: 'required' }).catch(() => null),
     ])
@@ -3494,11 +3480,8 @@
       return payload
     }
 
-    if (payload?.settings) {
-      state.myWaveSettings = normalizeWaveSettings(payload.settings)
-    } else {
-      state.myWaveSettings = nextSettings
-    }
+    state.myWaveSettings = nextSettings
+    state.myWaveSessionId = String(payload?.sessionId || '')
 
     if (Array.isArray(dislikes?.items)) {
       state.dislikes = new Set(dislikes.items.map((id) => stripRecoPrefix(id)).filter(Boolean))
@@ -3517,6 +3500,21 @@
     }
 
     schedulePlaybackPrefetch(getMyWaveTracks())
+    return payload
+  }
+
+  async function extendMyWaveSession() {
+    if (!state.myWaveSessionId || !hasSessionToken()) return null
+    const payload = await api(`/recommendations/my-wave/sessions/${encodeURIComponent(state.myWaveSessionId)}/next?limit=25`, {
+      auth: 'required',
+    }).catch(() => null)
+    if (!Array.isArray(payload?.items) || payload.items.length === 0) return payload
+    const seen = new Set(state.myWave.map((item) => item?.track?.id).filter(Boolean))
+    const additions = filterDislikedWaveItems(payload.items).filter((item) => item?.track?.id && !seen.has(item.track.id))
+    if (additions.length) {
+      state.myWave.push(...additions)
+      schedulePlaybackPrefetch(getMyWaveTracks())
+    }
     return payload
   }
 
@@ -3544,7 +3542,11 @@
       const requests = [
         api('/library/likes', { auth: 'required' }).catch(() => null),
         api('/library/dislikes', { auth: 'required' }).catch(() => null),
-        api(`/recommendations/my-wave?${buildMyWaveQuery(state.myWaveSettings, MY_WAVE_RECOMMENDATIONS_LIMIT)}`, { auth: 'required' }).catch(() => null),
+        api('/recommendations/my-wave/sessions', {
+          method: 'POST',
+          auth: 'required',
+          body: { limit: Math.min(MY_WAVE_RECOMMENDATIONS_LIMIT, 80) },
+        }).catch(() => null),
       ]
 
       if (includePlaylists) {
@@ -3560,6 +3562,7 @@
       }
       if (Array.isArray(wave?.items)) {
         state.myWave = filterDislikedWaveItems(wave.items)
+        state.myWaveSessionId = String(wave?.sessionId || '')
         if (state.myWave.length) {
           writeCachedMyWaveRecommendations({ ...wave, items: state.myWave })
         }
@@ -3926,15 +3929,25 @@
     syncPlayer()
   }
 
-  function next(reason = 'next') {
+  async function next(reason = 'next') {
     if (embedMode) return
     if (!state.queue.length) return
     const completed = reason === 'ended'
     endPlaybackSession({ completed, contextType: reason })
     if (state.repeat && state.track) return play(state.track, 'repeat')
     if (state.shuffle) return play(state.queue[Math.floor(Math.random() * state.queue.length)], 'shuffle-next')
-    const n = state.queue[state.idx + 1]
+    let n = state.queue[state.idx + 1]
+    if (!n && state.ctx === 'my-wave') {
+      await extendMyWaveSession()
+      state.queue = getMyWaveTracks()
+      n = state.queue[state.idx + 1]
+    }
     if (!n) { state.playing = false; syncPlayer(); return }
+    if (state.ctx === 'my-wave' && (state.queue.length - state.idx) < 10) {
+      void extendMyWaveSession().then(() => {
+        state.queue = getMyWaveTracks()
+      })
+    }
     play(n, 'next')
   }
 
@@ -4476,13 +4489,15 @@
     meta = '',
     featured = false,
     compact = false,
+    action = 'play-track',
+    mixId = '',
   } = {}) {
     if (!track?.id) return ''
     const artistName = track?.artist?.name || 'Wavee'
     const trackTitle = track?.title || artistName
 
     return `
-      <article class="home-playlist-card group${featured ? ' is-featured' : ''}${compact ? ' is-compact' : ''}" data-carousel-card data-action="play-track" data-track-id="${esc(track.id)}">
+      <article class="home-playlist-card group${featured ? ' is-featured' : ''}${compact ? ' is-compact' : ''}" data-carousel-card data-action="${esc(action)}" data-track-id="${esc(track.id)}"${mixId ? ` data-mix-id="${esc(mixId)}"` : ''}>
         <div class="home-playlist-cover">
           ${coverMarkup(track, `${artistName} — This Is`, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
           <div class="home-playlist-overlay${compact ? ' is-compact' : ''}"></div>
@@ -4496,7 +4511,7 @@
                 <h3 class="home-playlist-artist">${esc(artistName)}</h3>
               </div>
             `}
-          <button data-action="play-track" data-track-id="${esc(track.id)}" class="home-card-play" aria-label="Играть ${esc(track.title || artistName)}">
+          <button data-action="${esc(action)}" data-track-id="${esc(track.id)}"${mixId ? ` data-mix-id="${esc(mixId)}"` : ''} class="home-card-play" aria-label="Играть ${esc(track.title || artistName)}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
           </button>
         </div>
@@ -4980,6 +4995,10 @@
         )
       : []
     const mixKickers = ['Для тебя', 'Топ дня', 'Рекомендуем', 'В ротации']
+    state.homeMixQueues = new Map(mixEntries.map((entry) => [
+      String(entry?.id ?? ''),
+      dedupeTracks(Array.isArray(entry?.queue) ? entry.queue : [entry?.track]).filter((track) => track?.id),
+    ]).filter(([id, queue]) => id && queue.length > 0))
     const mixCards = mixEntries.map((entry, index) => PlaylistCard({
       track: entry.track,
       index,
@@ -4988,6 +5007,8 @@
       description: entry.subtitle || 'Персональная подборка Wavee.',
       badge: 'ДЛЯ ТЕБЯ',
       meta: index < 3 ? 'Персональная рекомендация' : 'Собрано из твоих прослушиваний',
+      action: 'play-mix',
+      mixId: entry.id,
     }))
     SectionBlock({
       section: el.homeMixesSection,
@@ -5368,6 +5389,11 @@
     }
 
     document.querySelectorAll('[data-wave-setting][data-wave-value]').forEach((button) => {
+      if (!waveSettingsUiEnabled) {
+        button.disabled = true
+        button.setAttribute('aria-disabled', 'true')
+        return
+      }
       if (button.dataset.bound === '1') return
       button.addEventListener('click', async () => {
         if (!hasSessionToken()) {
@@ -5411,6 +5437,11 @@
           const list = page === 'home' ? getHomeTrackPool() : getPlaybackListForPage()
           play(tr, 'list-click', { list })
         }
+      }
+      if (t.getAttribute('data-action') === 'play-mix') {
+        const mixQueue = state.homeMixQueues.get(t.getAttribute('data-mix-id') || '') || []
+        const first = mixQueue[0] || findTrack(id)
+        if (first) play(first, 'mix', { list: mixQueue.length ? mixQueue : [first] })
       }
       if (t.getAttribute('data-action') === 'like-track') toggleLike(id)
     })
