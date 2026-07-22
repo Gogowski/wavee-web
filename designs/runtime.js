@@ -10,6 +10,7 @@
   const TRACKS_CACHE_STALE_TTL_MS = 24 * 60 * 60 * 1000
   const HOME_RECO_CACHE_TTL_MS = 5 * 60 * 1000
   const HOME_RECO_STALE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+  const MY_WAVE_SESSION_RESUME_TTL_MS = 8 * 60 * 60 * 1000
   const API_GET_CACHE_DEFAULT_TTL_MS = 20 * 1000
   const HOME_PERSONALIZATION_REFRESH_TTL_MS = 45 * 1000
   const HOME_PLAYBACK_PREFETCH_LIMIT = 6
@@ -128,6 +129,7 @@
     playlists: [],
     myWave: [],
     myWaveSessionId: '',
+    myWaveLastStartedTrackId: '',
     myWaveSettings: {
       character: 'favorite',
       mood: 'calm',
@@ -2870,12 +2872,37 @@
   }
 
   function readCachedMyWaveRecommendations() {
-    // A wave is a server-side session, not a static cached playlist.
-    return null
+    // Store only the already-issued part of a server session. This lets a
+    // reload continue the infinite queue instead of reseeding the same first
+    // batch; the server remains the source of every next portion.
+    try {
+      const raw = localStorage.getItem(getMyWaveCacheKey())
+      if (!raw) return null
+      const cached = JSON.parse(raw)
+      const cachedAt = Number(cached?.cachedAt ?? 0)
+      if (!cached?.sessionId || !Array.isArray(cached?.items) || cached.items.length === 0) return null
+      if (!Number.isFinite(cachedAt) || (Date.now() - cachedAt) > MY_WAVE_SESSION_RESUME_TTL_MS) return null
+      return cached
+    } catch {
+      return null
+    }
   }
 
-  function writeCachedMyWaveRecommendations() {
-    // Kept as a no-op for callers shared with older builds.
+  function writeCachedMyWaveRecommendations(payload = {}) {
+    const sessionId = String(payload?.sessionId || state.myWaveSessionId || '').trim()
+    const items = Array.isArray(payload?.items) ? payload.items : []
+    if (!sessionId || items.length === 0) return
+    try {
+      localStorage.setItem(getMyWaveCacheKey(), JSON.stringify({
+        cachedAt: Date.now(),
+        sessionId,
+        items: items.slice(-160),
+        settings: payload?.settings ?? state.myWaveSettings,
+        lastStartedTrackId: String(payload?.lastStartedTrackId ?? state.myWaveLastStartedTrackId ?? ''),
+      }))
+    } catch {
+      // ignore cache write errors
+    }
   }
 
   function readPlaybackSourceCache() {
@@ -2936,6 +2963,8 @@
     const cached = readCachedMyWaveRecommendations()
     if (!cached?.items?.length) return false
     state.myWave = filterDislikedWaveItems(cached.items)
+    state.myWaveSessionId = String(cached.sessionId || '')
+    state.myWaveLastStartedTrackId = String(cached.lastStartedTrackId || '')
     if (cached.settings) {
       state.myWaveSettings = normalizeWaveSettings(cached.settings)
     }
@@ -3513,6 +3542,10 @@
     const additions = filterDislikedWaveItems(payload.items).filter((item) => item?.track?.id && !seen.has(item.track.id))
     if (additions.length) {
       state.myWave.push(...additions)
+      writeCachedMyWaveRecommendations({
+        sessionId: state.myWaveSessionId,
+        items: state.myWave,
+      })
       schedulePlaybackPrefetch(getMyWaveTracks())
     }
     return payload
@@ -3539,14 +3572,17 @@
     }
 
     const request = (async () => {
+      const shouldResumeExistingWave = Boolean(state.myWaveSessionId && state.myWave.length > 0)
       const requests = [
         api('/library/likes', { auth: 'required' }).catch(() => null),
         api('/library/dislikes', { auth: 'required' }).catch(() => null),
-        api('/recommendations/my-wave/sessions', {
-          method: 'POST',
-          auth: 'required',
-          body: { limit: Math.min(MY_WAVE_RECOMMENDATIONS_LIMIT, 80) },
-        }).catch(() => null),
+        shouldResumeExistingWave
+          ? Promise.resolve(null)
+          : api('/recommendations/my-wave/sessions', {
+              method: 'POST',
+              auth: 'required',
+              body: { limit: Math.min(MY_WAVE_RECOMMENDATIONS_LIMIT, 80) },
+            }).catch(() => null),
       ]
 
       if (includePlaylists) {
@@ -3691,6 +3727,13 @@
 
     state.track = track
     state.ctx = ctx
+    if (ctx === 'my-wave') {
+      state.myWaveLastStartedTrackId = String(track?.id || '')
+      writeCachedMyWaveRecommendations({
+        sessionId: state.myWaveSessionId,
+        items: state.myWave,
+      })
+    }
     setHomeWaveActive(ctx === 'my-wave')
     state.queue = playbackList
     state.idx = index
@@ -5311,7 +5354,10 @@
           playbackList = getMyWaveTracks()
         }
 
-        const leadTrack = playbackList[0]
+        const previouslyStartedIndex = playbackList.findIndex((track) => track?.id === state.myWaveLastStartedTrackId)
+        const leadTrack = previouslyStartedIndex >= 0
+          ? (playbackList[previouslyStartedIndex + 1] || playbackList[0])
+          : playbackList[0]
         if (!leadTrack) {
           el.hero.disabled = !hasSessionToken()
           return
