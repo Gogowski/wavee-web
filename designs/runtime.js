@@ -5306,16 +5306,9 @@
           playbackList = getMyWaveTracks()
         }
 
-        // Do not turn a click on the mascot into a dead end while the first
-        // personalised portion is still being prepared. This remains a Wave
-        // context, but starts from the current discovery catalogue until the
-        // session has tracks to append.
-        if (!playbackList.length) {
-          playbackList = dedupeTracks([
-            ...getPersonalTracksFromRecommendationBlock(state.homeRecommendationsByMode?.['for-you']?.blocks?.bestTracks),
-            ...state.list,
-            ...state.tracks,
-          ])
+        if (!playbackList.length && state.myWaveSessionId) {
+          await extendMyWaveSession()
+          playbackList = getMyWaveTracks()
         }
 
         const leadTrack = playbackList[0]
