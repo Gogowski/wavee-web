@@ -1501,6 +1501,9 @@
       const bassDropImpact = drop * bassImpact
       const kickImpact = kick * (0.55 + (bassImpact * 0.45))
       const onset = clamp01(visualizer.onset)
+      // Onset is the wider beat pulse: snare, clap and percussion move the
+      // form too, but less than a low kick so voices cannot dominate it.
+      const beatImpact = onset * (0.45 + (mids * 0.3) + (highs * 0.12))
       const centerY = visualizer.glowPad + (visualizer.visibleHeight * 0.45)
       const pitch = visualizer.qualityTier === 0 ? 6 : (visualizer.qualityTier === 1 ? 7 : 8)
       const pixelSize = Math.max(2, Math.round(pitch * 0.43))
@@ -1508,8 +1511,8 @@
       const maxRows = Math.ceil(height / pitch)
       // The silhouette must answer the kick/sub, not a loud vocal or cymbal.
       // Mids/highs still control colour and texture below, but never its scale.
-      const halfAmplitude = height * (0.02 + (bassImpact * 0.278) + (kickImpact * 0.066) + (bassDropImpact * 0.06)) * transitionMultiplier
-      const halfThickness = Math.max(pitch * 1.8, height * (0.016 + (bassImpact * 0.085) + (kickImpact * 0.028) + (bassDropImpact * 0.05)) * transitionMultiplier)
+      const halfAmplitude = height * (0.02 + (bassImpact * 0.278) + (kickImpact * 0.066) + (beatImpact * 0.03) + (bassDropImpact * 0.06)) * transitionMultiplier
+      const halfThickness = Math.max(pitch * 1.8, height * (0.016 + (bassImpact * 0.085) + (kickImpact * 0.028) + (beatImpact * 0.014) + (bassDropImpact * 0.05)) * transitionMultiplier)
       const [leadBase, contrastBase, accentBase] = visualizer.colors
 
       context.clearRect(0, 0, width, height)
@@ -1545,7 +1548,7 @@
           + Math.sin((t * Math.PI * 6.2) - (visualizer.phase * 1.16)) * localAmplitude * (0.04 + localEnergy * 0.14)
         const localThickness = halfThickness
           * (0.24 + (edge * 0.16) + (localEnergy * 0.72) + ((secondaryLobe - 0.5) * 0.14))
-        const fieldThickness = localThickness + (kickImpact * height * 0.01) + (bassDropImpact * height * 0.035)
+        const fieldThickness = localThickness + (kickImpact * height * 0.01) + (beatImpact * height * 0.005) + (bassDropImpact * height * 0.035)
         const startRow = Math.max(0, Math.floor((coreY - fieldThickness) / pitch))
         const endRow = Math.min(maxRows, Math.ceil((coreY + fieldThickness) / pitch))
 
@@ -1725,7 +1728,7 @@
 
       const motionActivity = clamp01((visualizer.bass * 0.48) + (visualizer.mids * 0.2) + (visualizer.highs * 0.08) + (visualizer.signalPresence * 0.24) + (visualizer.kick * 0.26))
       const motionGate = clamp01((visualizer.signalPresence * 1.5) + (visualizer.loudness * 0.3))
-      const motionFactor = lerp(0.012, 0.48, motionActivity) * stateMotion * (1 + (visualizer.kick * 0.62))
+      const motionFactor = lerp(0.012, 0.48, motionActivity) * stateMotion * (1 + (visualizer.kick * 0.62) + (visualizer.onset * 0.28))
       
       visualizer.phase += delta * motionFactor
       visualizer.hueDrift += delta * lerp(0.002, 0.02, motionActivity)
