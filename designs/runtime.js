@@ -2076,6 +2076,38 @@
   function filterDislikedWaveItems(items) {
     return (Array.isArray(items) ? items : []).filter((item) => item?.track?.id && !isTrackDisliked(item.track))
   }
+
+  function capExactLikedWaveItems(items) {
+    const source = Array.isArray(items) ? items : []
+    if (state.likes.size === 0) return source
+
+    const maxLiked = Math.min(3, Math.max(1, Math.floor(source.length * 0.05)))
+    const result = []
+    let likedUsed = 0
+    let nonLikedBeforeFirst = 0
+    let tracksSinceLiked = 12
+
+    for (const item of source) {
+      const trackId = stripRecoPrefix(item?.track?.id)
+      const exactLike = Boolean(trackId && state.likes.has(trackId))
+      if (exactLike) {
+        if (nonLikedBeforeFirst >= 8 && likedUsed < maxLiked && tracksSinceLiked >= 12) {
+          result.push(item)
+          likedUsed += 1
+          tracksSinceLiked = 0
+        }
+        continue
+      }
+      result.push(item)
+      nonLikedBeforeFirst += 1
+      tracksSinceLiked += 1
+    }
+
+    // Never leave a recovery response empty when only old liked tracks are
+    // available. The server will refill the following portion after catalog
+    // enrichment, while this keeps the play button usable.
+    return result.length > 0 ? result : source.slice(0, 1)
+  }
   // Personalization is entirely behavioural for now.  Do not expose a
   // second, manual tuning layer until product explicitly brings it back.
   const waveSettingsUiEnabled = false
@@ -2965,7 +2997,7 @@
     if (!hasSessionToken()) return false
     const cached = readCachedMyWaveRecommendations()
     if (!cached?.items?.length) return false
-    state.myWave = filterDislikedWaveItems(cached.items)
+    state.myWave = capExactLikedWaveItems(filterDislikedWaveItems(cached.items))
     state.myWaveSessionId = String(cached.sessionId || '')
     state.myWaveLastStartedTrackId = String(cached.lastStartedTrackId || '')
     if (cached.settings) {
@@ -3519,7 +3551,7 @@
       state.dislikes = new Set(dislikes.items.map((id) => stripRecoPrefix(id)).filter(Boolean))
     }
     if (Array.isArray(payload?.items)) {
-      state.myWave = filterDislikedWaveItems(payload.items)
+      state.myWave = capExactLikedWaveItems(filterDislikedWaveItems(payload.items))
       if (state.myWave.length) {
         writeCachedMyWaveRecommendations({ ...payload, items: state.myWave })
       }
@@ -3544,7 +3576,7 @@
     const seen = new Set(state.myWave.map((item) => item?.track?.id).filter(Boolean))
     const additions = filterDislikedWaveItems(payload.items).filter((item) => item?.track?.id && !seen.has(item.track.id))
     if (additions.length) {
-      state.myWave.push(...additions)
+      state.myWave = capExactLikedWaveItems([...state.myWave, ...additions])
       writeCachedMyWaveRecommendations({
         sessionId: state.myWaveSessionId,
         items: state.myWave,
@@ -3603,7 +3635,7 @@
         state.dislikes = new Set(dislikes.items.map((id) => stripRecoPrefix(id)).filter(Boolean))
       }
       if (Array.isArray(wave?.items)) {
-        state.myWave = filterDislikedWaveItems(wave.items)
+        state.myWave = capExactLikedWaveItems(filterDislikedWaveItems(wave.items))
         state.myWaveSessionId = String(wave?.sessionId || '')
         if (state.myWave.length) {
           writeCachedMyWaveRecommendations({ ...wave, items: state.myWave })
