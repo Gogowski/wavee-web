@@ -1204,6 +1204,8 @@
       targetOnset: 0,
       kick: 0,
       targetKick: 0,
+      beat: 0,
+      targetBeat: 0,
       drop: 0,
       targetDrop: 0,
       targetBands: Array.from({ length: 24 }, () => 0.075),
@@ -1495,6 +1497,7 @@
       const highs = clamp01(visualizer.highs)
       const drop = clamp01(visualizer.drop)
       const kick = clamp01(visualizer.kick)
+      const beat = clamp01(visualizer.beat)
       // Compress the steady low end while preserving the hit: a kick/sub peak
       // remains expressive, but a bassline does not keep the whole hero huge.
       const bassImpact = Math.pow(bass, 1.35)
@@ -1503,7 +1506,7 @@
       const onset = clamp01(visualizer.onset)
       // Onset is the wider beat pulse: snare, clap and percussion move the
       // form too, but less than a low kick so voices cannot dominate it.
-      const beatImpact = onset * (0.45 + (mids * 0.3) + (highs * 0.12))
+      const beatImpact = beat * (0.45 + (mids * 0.3) + (highs * 0.12))
       const centerY = visualizer.glowPad + (visualizer.visibleHeight * 0.45)
       const pitch = visualizer.qualityTier === 0 ? 6 : (visualizer.qualityTier === 1 ? 7 : 8)
       const pixelSize = Math.max(2, Math.round(pitch * 0.43))
@@ -1665,6 +1668,7 @@
       visualizer.targetSignalPresence = clamp01(Number(next.signalPresence ?? legacyPresence ?? 0))
       visualizer.targetOnset = clamp01(Number(next.onset ?? 0))
       visualizer.targetKick = clamp01(Number(next.kick ?? 0))
+      visualizer.targetBeat = clamp01(Number(next.beat ?? 0))
       visualizer.targetDrop = clamp01(Number(next.drop ?? 0))
       visualizer.state = nextState
       visualizer.hasSignal = Boolean(next.hasSignal ?? visualizer.targetSignalPresence > 0.08)
@@ -1721,6 +1725,7 @@
       visualizer.highs = smoothValueByDelta(visualizer.highs, visualizer.targetHighs, delta, signalRise * 0.9, signalFall * 0.9)
       visualizer.onset = smoothValueByDelta(visualizer.onset, visualizer.targetOnset, delta, 26, 8)
       visualizer.kick = smoothValueByDelta(visualizer.kick, visualizer.targetKick, delta, 34, 8.5)
+      visualizer.beat = smoothValueByDelta(visualizer.beat, visualizer.targetBeat, delta, 30, 8.5)
       visualizer.drop = smoothValueByDelta(visualizer.drop, visualizer.targetDrop, delta, 30, 3.8)
       
       const targetPresence = visualizer.hasSignal ? visualizer.targetSignalPresence : Math.min(visualizer.targetSignalPresence, 0.05)
@@ -1728,7 +1733,7 @@
 
       const motionActivity = clamp01((visualizer.bass * 0.48) + (visualizer.mids * 0.2) + (visualizer.highs * 0.08) + (visualizer.signalPresence * 0.24) + (visualizer.kick * 0.26))
       const motionGate = clamp01((visualizer.signalPresence * 1.5) + (visualizer.loudness * 0.3))
-      const motionFactor = lerp(0.012, 0.48, motionActivity) * stateMotion * (1 + (visualizer.kick * 0.62) + (visualizer.onset * 0.28))
+      const motionFactor = lerp(0.012, 0.48, motionActivity) * stateMotion * (1 + (visualizer.kick * 0.62) + (visualizer.beat * 0.28))
       
       visualizer.phase += delta * motionFactor
       visualizer.hueDrift += delta * lerp(0.002, 0.02, motionActivity)
