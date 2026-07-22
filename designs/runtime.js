@@ -1483,6 +1483,10 @@
       const mids = clamp01(visualizer.mids)
       const highs = clamp01(visualizer.highs)
       const drop = clamp01(visualizer.drop)
+      // Compress the steady low end while preserving the hit: a kick/sub peak
+      // remains expressive, but a bassline does not keep the whole hero huge.
+      const bassImpact = Math.pow(bass, 1.35)
+      const bassDropImpact = drop * bassImpact
       const onset = clamp01(visualizer.onset)
       const centerY = visualizer.glowPad + (visualizer.visibleHeight * 0.45)
       const pitch = visualizer.qualityTier === 0 ? 6 : (visualizer.qualityTier === 1 ? 7 : 8)
@@ -1491,8 +1495,8 @@
       const maxRows = Math.ceil(height / pitch)
       // The silhouette must answer the kick/sub, not a loud vocal or cymbal.
       // Mids/highs still control colour and texture below, but never its scale.
-      const halfAmplitude = height * (0.045 + (bass * 0.38) + (drop * 0.16)) * transitionMultiplier
-      const halfThickness = Math.max(pitch * 2.2, height * (0.04 + (bass * 0.17) + (drop * 0.14)) * transitionMultiplier)
+      const halfAmplitude = height * (0.028 + (bassImpact * 0.35) + (bassDropImpact * 0.075)) * transitionMultiplier
+      const halfThickness = Math.max(pitch * 2.2, height * (0.032 + (bassImpact * 0.145) + (bassDropImpact * 0.075)) * transitionMultiplier)
       const [leadBase, contrastBase, accentBase] = visualizer.colors
 
       context.clearRect(0, 0, width, height)
@@ -1509,7 +1513,7 @@
           * halfAmplitude * (0.08 + (band * 0.2))
         const coreY = centerY + ripple + Math.sin((t * Math.PI * 2) - (visualizer.phase * 0.3)) * halfAmplitude * 0.045
         const localThickness = halfThickness * (0.54 + (edge * 0.46)) * (0.72 + (band * 0.58))
-        const fieldThickness = localThickness + (drop * height * 0.1)
+        const fieldThickness = localThickness + (bassDropImpact * height * 0.055)
         const startRow = Math.max(0, Math.floor((coreY - fieldThickness) / pitch))
         const endRow = Math.min(maxRows, Math.ceil((coreY + fieldThickness) / pitch))
 
@@ -1518,8 +1522,8 @@
           const distance = Math.abs(y - coreY) / Math.max(1, localThickness)
           const fieldDistance = Math.abs(y - coreY) / Math.max(1, fieldThickness)
           const coreDensity = distance <= 1 ? Math.pow(1 - distance, 0.42) : 0
-          const fieldDensity = drop > 0.08 && fieldDistance <= 1
-            ? Math.pow(1 - fieldDistance, 1.8) * drop * 0.72
+          const fieldDensity = bassDropImpact > 0.08 && fieldDistance <= 1
+            ? Math.pow(1 - fieldDistance, 1.8) * bassDropImpact * 0.68
             : 0
           const density = Math.max(coreDensity * (0.48 + (band * 0.52)), fieldDensity)
           if (density < 0.07 || noise((column * 19.17) + (row * 7.13)) > density) continue
@@ -1532,7 +1536,7 @@
         }
       }
 
-      if (!visualizer.reducedMotion && drop > 0.72 && timestamp - visualizer.lastDropSpawnAt > 260) {
+      if (!visualizer.reducedMotion && bassDropImpact > 0.72 && timestamp - visualizer.lastDropSpawnAt > 260) {
         visualizer.lastDropSpawnAt = timestamp
         const particleCount = visualizer.qualityTier === 0 ? 24 : 56
         for (let index = 0; index < particleCount; index += 1) {
@@ -1556,7 +1560,7 @@
         particle.x += particle.vx * delta
         particle.y += particle.vy * delta
         particle.vy += 12 * delta
-        const alpha = (1 - (particle.age / particle.life)) * (0.38 + drop * 0.28)
+        const alpha = (1 - (particle.age / particle.life)) * (0.38 + bassDropImpact * 0.28)
         context.fillStyle = rgba(particle.color, alpha * transitionMultiplier)
         context.fillRect(Math.round(particle.x / pitch) * pitch, Math.round(particle.y / pitch) * pitch, pixelSize, pixelSize)
         return true
