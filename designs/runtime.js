@@ -2081,6 +2081,14 @@
     const source = Array.isArray(items) ? items : []
     if (state.likes.size === 0) return source
 
+    // Client-side capping is only a safety net for a mixed queue. If the API
+    // is temporarily unable to enrich and gives us just liked tracks, never
+    // collapse that recovery queue to one repeating song.
+    if (!source.some((item) => {
+      const trackId = stripRecoPrefix(item?.track?.id)
+      return trackId && !state.likes.has(trackId)
+    })) return source
+
     const maxLiked = Math.min(3, Math.max(1, Math.floor(source.length * 0.05)))
     const result = []
     let likedUsed = 0
@@ -2103,10 +2111,7 @@
       tracksSinceLiked += 1
     }
 
-    // Never leave a recovery response empty when only old liked tracks are
-    // available. The server will refill the following portion after catalog
-    // enrichment, while this keeps the play button usable.
-    return result.length > 0 ? result : source.slice(0, 1)
+    return result.length > 0 ? result : source
   }
   // Personalization is entirely behavioural for now.  Do not expose a
   // second, manual tuning layer until product explicitly brings it back.
