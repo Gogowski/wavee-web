@@ -30,7 +30,10 @@
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
   const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v11_${apiBase}`
-  const MY_WAVE_CACHE_KEY_PREFIX = `wavee_my_wave_v1_${apiBase}`
+  // v2 intentionally drops pre-discovery sessions. Those queues were built
+  // before candidate provenance was retained and can otherwise live in a
+  // browser for eight hours without calling the fixed session endpoint.
+  const MY_WAVE_CACHE_KEY_PREFIX = `wavee_my_wave_v2_${apiBase}`
   const PLAYBACK_SOURCE_CACHE_KEY = `wavee_playback_sources_v1_${apiBase}`
   const COVER_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMDNhOWYiLz48dGV4dCB4PSI1MCUiIHk9IjUzJSIgZmlsbD0iI2YxZjVmOSIgc3R5bGU9ImZvbnQ6IGJvbGQgNDJweCBtb25vc3BhY2U7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imao8L3RleHQ+PC9zdmc+'
 
