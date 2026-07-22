@@ -1504,7 +1504,7 @@
       const maxRows = Math.ceil(height / pitch)
       // The silhouette must answer the kick/sub, not a loud vocal or cymbal.
       // Mids/highs still control colour and texture below, but never its scale.
-      const halfAmplitude = height * (0.022 + (bassImpact * 0.3) + (bassDropImpact * 0.065)) * transitionMultiplier
+      const halfAmplitude = height * (0.02 + (bassImpact * 0.278) + (bassDropImpact * 0.06)) * transitionMultiplier
       const halfThickness = Math.max(pitch * 1.8, height * (0.016 + (bassImpact * 0.085) + (bassDropImpact * 0.05)) * transitionMultiplier)
       const [leadBase, contrastBase, accentBase] = visualizer.colors
 
@@ -1514,20 +1514,31 @@
       for (let column = 0; column < columns; column += 1) {
         const t = column / Math.max(1, columns - 1)
         const edge = Math.pow(Math.sin(t * Math.PI), 0.72)
-        const bandPosition = (t * visualizer.bands.length) + (visualizer.phase * (1.7 + bassImpact * 1.2))
+        const wideWarp = Math.sin((t * Math.PI * 1.7) + (visualizer.phase * 0.36)) * 0.86
+        const detailWarp = Math.sin((t * Math.PI * 4.4) - (visualizer.phase * 0.62)) * 0.3
+        const bandPosition = (t * visualizer.bands.length)
+          + (visualizer.phase * (0.7 + bassImpact * 0.54))
+          + wideWarp
+          + detailWarp
         const band = sampleCircularBand(visualizer.bands, bandPosition)
         const neighbourBand = (
           sampleCircularBand(visualizer.bands, bandPosition - 1.35)
           + sampleCircularBand(visualizer.bands, bandPosition + 1.35)
         ) * 0.5
         const localEnergy = clamp01((band * 0.7) + (neighbourBand * 0.3))
-        const lobe = 0.5 + (0.5 * Math.sin((t * Math.PI * 2.25) + (visualizer.phase * 1.55)))
-        const secondaryLobe = 0.5 + (0.5 * Math.sin((t * Math.PI * 5.4) - (visualizer.phase * 0.82)))
-        const localAmplitude = halfAmplitude * (0.12 + (localEnergy * 0.72) + (lobe * 0.16))
-        const ripple = Math.sin((t * Math.PI * 3.1) + (visualizer.phase * 0.94)) * localAmplitude
+        const lobe = 0.5 + (0.5 * Math.sin((t * Math.PI * 1.85) + (visualizer.phase * 0.64)))
+        const secondaryLobe = 0.5 + (0.5 * Math.sin((t * Math.PI * 5.1) - (visualizer.phase * 1.08)))
+        const troughCenter = 0.52 + (Math.sin(visualizer.phase * 0.24) * 0.075)
+        const troughWidth = 0.18 + (Math.sin(visualizer.phase * 0.17) * 0.018)
+        const troughDistance = (t - troughCenter) / troughWidth
+        const trough = Math.exp(-(troughDistance * troughDistance) * 1.65)
+        const localAmplitude = halfAmplitude * (0.12 + (localEnergy * 0.7) + (lobe * 0.18))
+        const ripple = Math.sin((t * Math.PI * 2.75) + (visualizer.phase * 0.58)) * localAmplitude
+        const troughDepth = trough * halfAmplitude * (0.23 + (localEnergy * 0.17) + (bassImpact * 0.08))
         const coreY = centerY
           + ripple
-          + Math.sin((t * Math.PI * 6.2) - (visualizer.phase * 0.56)) * localAmplitude * (0.04 + localEnergy * 0.14)
+          + troughDepth
+          + Math.sin((t * Math.PI * 6.2) - (visualizer.phase * 1.16)) * localAmplitude * (0.04 + localEnergy * 0.14)
         const localThickness = halfThickness
           * (0.24 + (edge * 0.16) + (localEnergy * 0.72) + ((secondaryLobe - 0.5) * 0.14))
         const fieldThickness = localThickness + (bassDropImpact * height * 0.035)
