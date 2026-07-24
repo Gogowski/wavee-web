@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'wavee-shell-v3'
+const SHELL_CACHE = 'wavee-shell-v4'
 
 function isWaveeAsset(requestUrl) {
   const scopeUrl = new URL(self.registration.scope)
