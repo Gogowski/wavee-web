@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'wavee-shell-v1'
+const SHELL_CACHE = 'wavee-shell-v2'
 
 function isWaveeAsset(requestUrl) {
   const scopeUrl = new URL(self.registration.scope)
@@ -33,7 +33,13 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   // Do not call skipWaiting: an update waits for the current app session to close.
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys
+        .filter((key) => key.startsWith('wavee-shell-') && key !== SHELL_CACHE)
+        .map((key) => caches.delete(key))))
+      .then(() => self.clients.claim()),
+  )
 })
 
 self.addEventListener('fetch', (event) => {

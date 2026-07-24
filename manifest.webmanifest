@@ -6,8 +6,8 @@
   "start_url": "/wavee-web/",
   "scope": "/wavee-web/",
   "display": "standalone",
-  "background_color": "#07080a",
-  "theme_color": "#181818",
+  "background_color": "#202228",
+  "theme_color": "#202228",
   "icons": [
     {
       "src": "/wavee-web/pwa-192.png",
