@@ -1694,9 +1694,7 @@
         transform-origin: center bottom;
         transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
         scroll-snap-stop: always;
-        transform: translateZ(0);
-        backface-visibility: hidden;
-        will-change: transform;
+        transform: none;
       }
 
       .home-carousel-track .home-artist-card:hover,
@@ -1744,11 +1742,9 @@
       }
 
       .home-lazy-cover {
-        filter: blur(10px);
-        opacity: 0.86;
+        opacity: 0;
         transition:
-          filter 0.42s ease,
-          opacity 0.42s ease;
+          opacity 0.2s ease;
       }
 
       .home-lazy-cover.is-loaded {
@@ -1842,11 +1838,6 @@
       .home-playlist-copy {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
-      }
-
-      .home-artist-play,
-      .home-card-play {
-        will-change: transform, opacity;
       }
 
       .home-artist-card:hover .home-artist-play,
@@ -2183,7 +2174,7 @@
         left: 50%;
         right: auto;
         bottom: auto;
-        transform: translate(-50%, -50%) scale(0.84);
+        transform: translate(-50%, -50%) scale(0.97);
       }
 
       #home-top-tracks-row .group:hover .home-card-play,
@@ -2195,7 +2186,7 @@
       }
 
       #home-top-tracks-row .home-card-play:active {
-        transform: translate(-50%, -50%) scale(0.92);
+        transform: translate(-50%, -50%) scale(0.97);
       }
 
       /* Unified play button: centered, large icon, no capsule background */
@@ -2215,7 +2206,7 @@
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
-        transform: translate(-50%, -50%) scale(0.84);
+        transform: translate(-50%, -50%) scale(0.97);
         transition:
           opacity 0.24s ease,
           transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -2249,19 +2240,16 @@
 
       .home-card-play:active,
       .home-artist-play:active {
-        transform: translate(-50%, -50%) scale(0.92);
+        transform: translate(-50%, -50%) scale(0.97);
       }
 
-      /* Hover blur for cover background under play */
+      /* Keep covers stable; the overlay supplies hover contrast. */
       .home-playlist-cover .home-lazy-cover,
       .home-album-cover .home-lazy-cover,
       .home-small-media .home-lazy-cover,
       .home-artist-cover-shell .home-lazy-cover {
         transition:
-          filter 0.26s ease,
-          transform 0.26s ease,
-          opacity 0.26s ease;
-        will-change: filter, transform;
+          opacity 0.18s ease;
       }
 
       .home-artist-card:hover .home-artist-cover-shell .home-lazy-cover,
@@ -2272,14 +2260,12 @@
       .group:focus-within .home-playlist-cover .home-lazy-cover,
       .group:hover .home-album-cover .home-lazy-cover,
       .group:focus-within .home-album-cover .home-lazy-cover {
-        filter: blur(2.3px) brightness(0.62) saturate(0.9);
-        transform: scale(1.045);
+        transform: none;
       }
 
       .home-artist-card:hover .home-artist-cover-shell .home-lazy-cover,
       .home-artist-card:focus-within .home-artist-cover-shell .home-lazy-cover {
-        filter: brightness(0.7) saturate(0.92);
-        transform: scale(1.07);
+        transform: none;
       }
 
       .home-playlist-cover::after,
@@ -2756,7 +2742,7 @@
 
       .home-wave-trigger:hover .home-wave-trigger-art,
       .home-wave-trigger:focus-visible .home-wave-trigger-art {
-        animation: home-wave-art-hover 0.92s steps(2, end) infinite;
+        animation: home-wave-art-idle 3.6s ease-in-out infinite;
         color: #cfddff;
         text-shadow:
           0 0 15px rgba(146, 169, 225, 0.35),
@@ -2764,7 +2750,7 @@
       }
 
       .home-wave-trigger.is-active .home-wave-trigger-art {
-        animation: home-wave-art-active 0.14s steps(2, end) infinite !important;
+        animation: home-wave-art-idle 3.6s ease-in-out infinite !important;
         color: #ffffff;
         text-shadow:
           0 0 20px rgba(146, 169, 225, 0.45),
@@ -3243,7 +3229,7 @@
           opacity: 0;
           visibility: hidden;
           pointer-events: none;
-          transform: translate(-50%, -50%) scale(0.84);
+          transform: translate(-50%, -50%) scale(0.97);
         }
 
         .home-artist-info {
@@ -3386,7 +3372,7 @@
           opacity: 0;
           visibility: hidden;
           pointer-events: none;
-          transform: translate(-50%, -50%) scale(0.84);
+          transform: translate(-50%, -50%) scale(0.97);
         }
 
         .home-carousel-track [data-carousel-card]:hover,
@@ -3626,6 +3612,26 @@
         filter: brightness(1.18);
       }
 
+      :where(button, a, input, [tabindex]):focus-visible {
+        outline: 2px solid #b8c9ff;
+        outline-offset: 4px;
+      }
+      @media (hover: none) {
+        .home-card-play, .home-artist-play {
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+          transform: translate(-50%, -50%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
     </style>
   </head>
   <body data-wavee-page="home" class="relative flex min-h-screen flex-col selection:bg-[#92A9E1] selection:text-black">
@@ -3773,10 +3779,3 @@
     </script>
   </body>
 </html>
-
-
-      .home-carousel-track .home-playlist-card:active,
-      .home-carousel-track .home-small-card:active,
-      .home-carousel-track .home-album-card:active {
-        transform: none;
-      }
