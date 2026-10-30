@@ -1,0 +1,1 @@
+import{j as a}from"./index-CbwYnim1.js";function l({tabs:s,activeTab:i,onChange:n,style:r={}}){return a.jsx("nav",{className:"wavee-tabs","aria-label":"Фильтры",style:r,children:s.map(e=>a.jsx("button",{type:"button","aria-pressed":i===e.id,onClick:()=>n(e.id),className:"wavee-tab-button",children:a.jsx("span",{children:e.label||e.title||e.id})},e.id))})}export{l as W};
