@@ -1,0 +1,1 @@
+let e=null;const n=new Set;function u(t){const r=t?String(t).trim():null;r!==e&&(e=r,n.forEach(o=>{try{o(e)}catch{}}))}function a(t){return typeof t!="function"?()=>{}:(n.add(t),t(e),()=>{n.delete(t)})}export{u as a,a as s};

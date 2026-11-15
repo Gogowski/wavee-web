@@ -72,6 +72,7 @@
 
       body[data-wavee-embed='app'] {
         padding-bottom: 0;
+        background: transparent !important;
       }
 
       body.is-modal-open[data-wavee-embed='app'] {
@@ -1554,21 +1555,7 @@
         transform: translateY(0);
       }
 
-      .section-shell::after {
-        content: '';
-        position: absolute;
-        inset: 12px;
-        border-radius: 26px;
-        pointer-events: none;
-        opacity: 0;
-        background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0) 64%);
-        transition: opacity 0.34s ease;
-      }
-
-      .section-shell:hover::after,
-      .section-shell:focus-within::after {
-        opacity: 1;
-      }
+      /* Hover spotlight removed so backdrop stays driven cleanly by the global ambient wave */
 
       .section-shell.is-mode-enter {
         animation: home-mode-enter 0.44s cubic-bezier(0.2, 0.8, 0.2, 1) both;
