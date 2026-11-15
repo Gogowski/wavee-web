@@ -19,6 +19,40 @@
   const page = document.body?.dataset?.waveePage || ''
   const ACTIVE_RUNTIME_PAGES = new Set(['home', 'my-wave'])
   if (!ACTIVE_RUNTIME_PAGES.has(page)) return
+  const HAPTICS_ENABLED_KEY = 'wavee_settings_haptics_enabled'
+  const HAPTIC_PATTERNS = {
+    selection: 6,
+    light: 10,
+    medium: 15,
+    like: [10, 26, 14],
+    warning: [14, 32, 14],
+  }
+  let lastRuntimeHapticAt = 0
+  function isMobileTouchRuntime() {
+    if (typeof window === 'undefined') return false
+    const hasTouch = (
+      (typeof navigator !== 'undefined' && Number(navigator.maxTouchPoints ?? 0) > 0)
+      || 'ontouchstart' in window
+    )
+    const coarsePointer = typeof window.matchMedia === 'function'
+      ? window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(hover: none)').matches
+      : false
+    return coarsePointer || window.innerWidth <= 767 || (hasTouch && window.innerWidth <= 1024)
+  }
+  function triggerRuntimeHaptic(style = 'light') {
+    try {
+      const storedHaptics = localStorage.getItem(HAPTICS_ENABLED_KEY)
+      if (storedHaptics !== null && storedHaptics !== '1' && storedHaptics !== 'true') return
+      if (!isMobileTouchRuntime()) return
+      if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return
+      const now = Date.now()
+      if (style !== 'like' && now - lastRuntimeHapticAt < 28) return
+      lastRuntimeHapticAt = now
+      navigator.vibrate(HAPTIC_PATTERNS[style] ?? HAPTIC_PATTERNS.light)
+    } catch {
+      // Ignore vibration failures
+    }
+  }
   const searchParams = new URLSearchParams(location.search)
   const isEmbeddedFrame = window.self !== window.top
   const embedMode = searchParams.get('embed') === 'app' || isEmbeddedFrame
@@ -4114,6 +4148,7 @@
         const active = button.getAttribute('data-filter') || HOME_DEFAULT_MODE
         const previousMode = el.homeFilterChips.dataset.active || HOME_DEFAULT_MODE
         if (active === previousMode) return
+        triggerRuntimeHaptic('selection')
 
         const swipeDirection = active === 'trends' ? 'right' : 'left'
         el.homeFilterChips.dataset.swipeFx = swipeDirection
@@ -4245,8 +4280,8 @@
       <article class="home-skeleton-card home-skeleton-card--${safeVariant}" data-carousel-card aria-hidden="true" style="--card-delay:${Math.min(index * 40, 260)}ms">
         <span class="home-skeleton-shimmer"></span>
         <div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:10px;padding:12px;height:100%;pointer-events:none;">
-          <div style="position:relative;flex:1;min-height:0;border-radius:14px;background:linear-gradient(160deg,rgba(16,22,36,0.92),rgba(7,10,18,0.98));border:1px solid rgba(151,171,224,0.16);display:flex;align-items:center;justify-content:center;">
-            <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" style="color:rgba(221,231,255,0.9);opacity:0.92;">
+          <div style="position:relative;flex:1;min-height:0;border-radius:14px;background:linear-gradient(135deg,rgba(255,255,255,0.16) 0%,rgba(255,255,255,0.02) 100%),rgba(20,20,20,0.15);border:0;display:flex;align-items:center;justify-content:center;">
+            <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" style="color:rgba(255,255,255,0.86);opacity:0.92;">
               <path d="M3 9.5c2.1-2 4.6-3 7.5-3 2.1 0 4 .5 5.8 1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
               <path d="M5.6 12.3c1.4-1.2 3-1.8 4.9-1.8 1.2 0 2.3.2 3.4.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
               <path d="M8.7 15.2c.6-.5 1.2-.7 1.9-.7.5 0 1 .1 1.4.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -4255,8 +4290,8 @@
             </svg>
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;">
-            <span style="height:10px;border-radius:999px;background:rgba(208,219,252,0.72);width:72%;"></span>
-            <span style="height:8px;border-radius:999px;background:rgba(152,170,219,0.42);width:56%;"></span>
+            <span style="height:10px;border-radius:999px;background:rgba(255,255,255,0.42);width:72%;"></span>
+            <span style="height:8px;border-radius:999px;background:rgba(255,255,255,0.22);width:56%;"></span>
           </div>
         </div>
       </article>
@@ -5106,6 +5141,7 @@
   function wire() {
     document.querySelectorAll('[data-nav-route]').forEach((a) => a.addEventListener('click', (e) => {
       e.preventDefault()
+      triggerRuntimeHaptic('light')
       navigateInHost(a.getAttribute('data-nav-route') || '/')
     }))
 
@@ -5154,6 +5190,7 @@
       }
       el.hero.onclick = (event) => {
         event.preventDefault?.()
+        triggerRuntimeHaptic('medium')
         void triggerHero()
       }
       el.hero.onkeydown = (event) => {
@@ -5167,6 +5204,7 @@
       el.homeWaveSettingsToggle.onclick = (event) => {
         event.preventDefault()
         event.stopPropagation()
+        triggerRuntimeHaptic('light')
         const expanded = el.homeWaveSettingsToggle.getAttribute('aria-expanded') === 'true'
         el.homeWaveSettingsToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true')
         el.homeWaveSettingsPanel.hidden = expanded
@@ -5218,6 +5256,7 @@
       })
     }
     if (el.myWaveRefresh) el.myWaveRefresh.onclick = async () => {
+      triggerRuntimeHaptic('light')
       await loadMyWaveRecommendations({
         settings: state.myWaveSettings,
         persistSettings: false,
@@ -5239,6 +5278,7 @@
         if (!(key in WAVE_SETTING_VALUES)) return
         if (!WAVE_SETTING_VALUES[key].has(rawValue)) return
         if (state.myWaveSettings[key] === value) return
+        triggerRuntimeHaptic('selection')
 
         const nextSettings = normalizeWaveSettings({
           ...state.myWaveSettings,
@@ -5266,11 +5306,17 @@
       if (t.getAttribute('data-action') === 'play-track') {
         const tr = findTrack(id)
         if (tr) {
+          triggerRuntimeHaptic('medium')
           const list = page === 'home' ? getHomeTrackPool() : getPlaybackListForPage()
           play(tr, 'list-click', { list })
         }
       }
-      if (t.getAttribute('data-action') === 'like-track') toggleLike(id)
+      if (t.getAttribute('data-action') === 'like-track') {
+        const cleanId = stripRecoPrefix(id)
+        const willLike = !state.likes.has(cleanId)
+        triggerRuntimeHaptic(willLike ? 'like' : 'light')
+        toggleLike(id)
+      }
     })
 
     if (audio) {
