@@ -1,3 +1,1 @@
-<svg id="bullet-list-solid" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(12 12) scale(0.925) translate(-12 -12)"><g>
-    <path fill="currentColor" d="M6.5 16v4.5H4c-1.10457 0 -2 -0.8954 -2 -2V16zM22 18.5c0 1.1046 -0.8954 2 -2 2H8.5V16H22zm0 -4.5H8.5v-4H22zM6.5 10v4H2v-4zM20 3.5c1.1046 0 2 0.89543 2 2V8H8.5V3.5zM6.5 8H2V5.5c0 -1.10457 0.89543 -2 2 -2h2.5z"></path>
-  </g></g></svg>
+<svg id="bullet-list-solid" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list" aria-hidden="true"><path d="M3 5h.01"></path><path d="M3 12h.01"></path><path d="M3 19h.01"></path><path d="M8 5h13"></path><path d="M8 12h13"></path><path d="M8 19h13"></path></svg>
