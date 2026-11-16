@@ -289,10 +289,12 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 34px;
-        height: 34px;
+        width: 36px;
+        height: 36px;
         border: 0;
-        border-radius: 999px;
+        border-radius: 0;
+        clip-path: url(#wavee-star-clip);
+        -webkit-clip-path: url(#wavee-star-clip);
         background: var(--wavee-shell-chrome-bg);
         backdrop-filter: var(--wavee-shell-chrome-blur);
         -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
@@ -572,9 +574,11 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 38px;
-        height: 38px;
-        border-radius: 999px;
+        width: 40px;
+        height: 40px;
+        border-radius: 0;
+        clip-path: url(#wavee-star-clip);
+        -webkit-clip-path: url(#wavee-star-clip);
         border: 0;
         background: var(--wavee-shell-chrome-bg);
         backdrop-filter: var(--wavee-shell-chrome-blur);
@@ -806,7 +810,9 @@
         position: relative;
         width: 116px;
         height: 116px;
-        border-radius: 34px;
+        border-radius: 0;
+        clip-path: url(#wavee-star-clip);
+        -webkit-clip-path: url(#wavee-star-clip);
         overflow: hidden;
         padding: 0;
         background: transparent;
@@ -818,9 +824,9 @@
       .artist-spotlight-cover-fallback {
         width: 100%;
         height: 100%;
-        border-radius: 27px;
+        border-radius: 0;
         object-fit: cover;
-        box-shadow: 0 10px 20px rgba(15, 18, 26, 0.18);
+        box-shadow: none;
       }
 
       .artist-spotlight-cover-fallback {
@@ -1111,7 +1117,9 @@
       .home-artist-cover-shell {
         width: 100%;
         aspect-ratio: 1 / 1;
-        border-radius: 999px;
+        border-radius: 0;
+        clip-path: url(#wavee-star-clip);
+        -webkit-clip-path: url(#wavee-star-clip);
         overflow: hidden;
         border: 0;
         background: var(--wavee-shell-chrome-bg);
@@ -3407,6 +3415,13 @@
     </style>
   </head>
   <body data-wavee-page="home" class="relative flex min-h-screen flex-col selection:bg-[#92A9E1] selection:text-black">
+    <svg width="0" height="0" aria-hidden="true" style="position:fixed;width:0;height:0;pointer-events:none;">
+      <defs>
+        <clipPath id="wavee-star-clip" clipPathUnits="objectBoundingBox">
+          <path d="M0.450 0.059 Q0.500 0.020 0.550 0.059 Q0.599 0.098 0.661 0.086 Q0.723 0.075 0.749 0.132 Q0.775 0.190 0.835 0.209 Q0.895 0.227 0.891 0.290 Q0.887 0.353 0.932 0.398 Q0.977 0.442 0.944 0.496 Q0.911 0.550 0.930 0.610 Q0.949 0.670 0.895 0.703 Q0.841 0.735 0.830 0.797 Q0.818 0.859 0.755 0.863 Q0.693 0.867 0.654 0.916 Q0.615 0.966 0.557 0.940 Q0.500 0.914 0.443 0.940 Q0.385 0.966 0.346 0.916 Q0.307 0.867 0.245 0.863 Q0.182 0.859 0.170 0.797 Q0.159 0.735 0.105 0.703 Q0.051 0.670 0.070 0.610 Q0.089 0.550 0.056 0.496 Q0.023 0.442 0.068 0.398 Q0.113 0.353 0.109 0.290 Q0.105 0.227 0.165 0.209 Q0.225 0.190 0.251 0.132 Q0.277 0.075 0.339 0.086 Q0.401 0.098 0.450 0.059Z" />
+        </clipPath>
+      </defs>
+    </svg>
     <section class="hero-shell relative z-10 flex flex-col items-center justify-center overflow-visible pb-14 pt-32 text-center">
       <div class="hero-logo-shell w-full flex flex-col justify-center items-center">
         <button id="home-hero-listen" type="button" class="home-wave-trigger" aria-label="Слушать мою волну" aria-pressed="false">
