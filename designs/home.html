@@ -94,16 +94,6 @@
         transform-origin: center top;
       }
 
-      body[data-wavee-embed='app'] .home-visualizer-shell {
-        top: 150px;
-        height: min(38vh, 300px);
-      }
-
-      body[data-wavee-embed='app'] .home-visualizer-canvas {
-        top: -108px;
-        height: calc(100% + 180px);
-      }
-
       body[data-wavee-embed='app'] #home-filter-section {
         padding-top: 0.5rem !important;
         padding-bottom: 0.75rem !important;
@@ -126,64 +116,6 @@
       body::before,
       body::after {
         display: none;
-      }
-
-      .home-visualizer-shell {
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 270px;
-        width: 100%;
-        height: min(78vh, 680px);
-        margin-bottom: 0;
-        pointer-events: none;
-        overflow: visible;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        z-index: 0;
-      }
-
-      .home-visualizer-canvas {
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: -252px;
-        display: block;
-        width: 100%;
-        height: calc(100% + 384px);
-        opacity: 0;
-        image-rendering: pixelated;
-        image-rendering: crisp-edges;
-        transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        -webkit-mask-image: linear-gradient(
-          to bottom,
-          transparent 0%,
-          rgba(0, 0, 0, 0.9) 12%,
-          rgba(0, 0, 0, 1) 42%,
-          rgba(0, 0, 0, 0.92) 64%,
-          rgba(0, 0, 0, 0.42) 82%,
-          transparent 100%
-        );
-        mask-image: linear-gradient(
-          to bottom,
-          transparent 0%,
-          rgba(0, 0, 0, 0.9) 12%,
-          rgba(0, 0, 0, 1) 42%,
-          rgba(0, 0, 0, 0.92) 64%,
-          rgba(0, 0, 0, 0.42) 82%,
-          transparent 100%
-        );
-      }
-      
-      .home-visualizer-canvas.active {
-        opacity: 1;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .home-visualizer-canvas {
-          transition-duration: 120ms;
-        }
       }
 
       .hide-scrollbar::-webkit-scrollbar {
@@ -2808,46 +2740,12 @@
       }
 
       /* Active State for the Listen Button when Wave is playing */
-      #home-hero-listen[aria-pressed="true"] + .home-wave-controls {
-        max-width: 130px;
-        min-width: 130px;
-        height: 36px; /* larger hit area */
-        background: transparent;
-        border-color: transparent;
-        box-shadow: none;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-        transform: scale(0.95);
-        opacity: 0.85;
-      }
-
-      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        background: transparent !important;
-        padding: 0;
-        gap: 0;
-        flex: none;
-      }
-
-      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button::after {
-        opacity: 1;
-      }
-
-      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button:hover::after {
-        background: rgba(255, 255, 255, 0.15);
-      }
-
-      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button span {
-        max-width: 0;
-        opacity: 0;
-      }
-
-      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button .home-icon-play,
-      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button .home-icon-pause {
+      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button .home-icon-play {
         display: none;
+      }
+
+      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button .home-icon-pause {
+        display: block;
       }
 
       .home-wave-settings-button {
@@ -3059,21 +2957,6 @@
         .home-wave-trigger-art {
           font-size: 7px;
           letter-spacing: 0.04em;
-        }
-
-        .home-visualizer-shell {
-          top: 220px;
-          height: min(62vh, 480px);
-        }
-
-        .home-visualizer-canvas {
-          top: -210px;
-          height: calc(100% + 312px);
-        }
-
-        .home-visualizer-canvas {
-          top: -190px;
-          height: calc(100% + 240px);
         }
 
         .home-filter-chips {
@@ -3494,14 +3377,6 @@
         box-shadow: none !important;
       }
 
-      #home-hero-listen[aria-pressed="true"] + .home-wave-controls {
-        background: transparent !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        border: 0 !important;
-        box-shadow: none !important;
-      }
-
       .artists-carousel-control:hover:not(:disabled),
       .home-section-link:hover {
         background: var(--wavee-shell-chrome-hover-bg) !important;
@@ -3532,11 +3407,6 @@
     </style>
   </head>
   <body data-wavee-page="home" class="relative flex min-h-screen flex-col selection:bg-[#92A9E1] selection:text-black">
-    <div class="home-visualizer-shell" aria-hidden="true">
-      <canvas id="home-audio-visualizer" class="home-visualizer-canvas"></canvas>
-    </div>
-
-
     <section class="hero-shell relative z-10 flex flex-col items-center justify-center overflow-visible pb-14 pt-32 text-center">
       <div class="hero-logo-shell w-full flex flex-col justify-center items-center">
         <button id="home-hero-listen" type="button" class="home-wave-trigger" aria-label="Слушать мою волну" aria-pressed="false">
