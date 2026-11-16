@@ -1,3 +1,3 @@
-<svg id="sound-mute-solid" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g>
-    <path fill="currentColor" d="M14.3193 5.51758c0.2914 -0.27055 0.7156 -0.34333 1.0801 -0.18457 0.3646 0.15898 0.6006 0.51926 0.6006 0.91699v11.5c0 0.3977 -0.236 0.758 -0.6006 0.917 -0.3645 0.1588 -0.7887 0.086 -1.0801 -0.1846L11.1074 15.5H9c-1.10457 0 -2 -0.8954 -2 -2v-3c0 -1.10457 0.89543 -2 2 -2h2.1074z" stroke-width="1"></path>
-  </g></svg>
+<svg id="sound-mute-solid" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(12 12) scale(1.287) translate(-11.5 -12)"><g>
+    <path fill="currentColor" d="M14.3193 5.51758c0.2914 -0.27055 0.7156 -0.34333 1.0801 -0.18457 0.3646 0.15898 0.6006 0.51926 0.6006 0.91699v11.5c0 0.3977 -0.236 0.758 -0.6006 0.917 -0.3645 0.1588 -0.7887 0.086 -1.0801 -0.1846L11.1074 15.5H9c-1.10457 0 -2 -0.8954 -2 -2v-3c0 -1.10457 0.89543 -2 2 -2h2.1074z"></path>
+  </g></g></svg>
