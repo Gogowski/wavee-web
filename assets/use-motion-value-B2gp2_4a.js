@@ -1,0 +1,1 @@
+import{b as t}from"./router-B2Z1CRy2.js";import{k as a,M as r}from"./index-Qmh2YSrM.js";import{l as u}from"./single-value-2-W5_9KF.js";function m(o){const e=a(()=>u(o)),{isStatic:s}=t.useContext(r);if(s){const[,n]=t.useState(o);t.useEffect(()=>e.on("change",n),[])}return e}export{m as u};
