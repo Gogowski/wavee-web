@@ -62,8 +62,10 @@
     return q || localStorage.getItem('wavee_api_base') || API_DEFAULT
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
-  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v11_${apiBase}`
-  const MY_WAVE_CACHE_KEY_PREFIX = `wavee_my_wave_v1_${apiBase}`
+  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v12_${apiBase}`
+  const MY_WAVE_CACHE_KEY_PREFIX = `wavee_my_wave_v2_${apiBase}`
+  const HOME_NEW_RELEASE_STRICT_AGE_MS = 90 * 24 * 60 * 60 * 1000
+  const HOME_NEW_RELEASE_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000
   const PLAYBACK_SOURCE_CACHE_KEY = `wavee_playback_sources_v1_${apiBase}`
   const COVER_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiMxMDNhOWYiLz48dGV4dCB4PSI1MCUiIHk9IjUzJSIgZmlsbD0iI2YxZjVmOSIgc3R5bGU9ImZvbnQ6IGJvbGQgNDJweCBtb25vc3BhY2U7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7imao8L3RleHQ+PC9zdmc+'
 
@@ -1403,10 +1405,24 @@
           })),
       )
 
+      const now = Date.now()
+      const parseTs = (value) => {
+        if (!value) return 0
+        if (typeof value === 'number' && Number.isFinite(value)) return value > 1e12 ? value : value * 1000
+        const ts = Date.parse(String(value).trim())
+        return Number.isFinite(ts) ? ts : 0
+      }
+      const isFreshReleaseTs = (ts) => ts > 0 && ts <= now + (7 * 24 * 60 * 60 * 1000) && (now - ts) <= HOME_NEW_RELEASE_MAX_AGE_MS
+
       const releaseTracks = []
       for (const catalog of catalogs) {
         const newestRelease = catalog?.newestRelease || (Array.isArray(catalog?.albums) ? catalog.albums[0] : null)
         if (!newestRelease?.id) {
+          continue
+        }
+
+        const albumTs = parseTs(newestRelease?.releaseDate)
+        if (!isFreshReleaseTs(albumTs)) {
           continue
         }
 
@@ -1420,6 +1436,10 @@
         }
 
         const releaseDate = newestRelease?.releaseDate || track?.releasedAt || track?.createdAt || null
+        if (!isFreshReleaseTs(parseTs(releaseDate))) {
+          continue
+        }
+
         releaseTracks.push({
           ...track,
           releasedAt: releaseDate,
@@ -1440,7 +1460,7 @@
       const seenArtists = new Set()
       const hydratedEntries = releaseTracks
         .filter((track) => {
-          const artistKey = track?.artist?.id || track?.artist?.name
+          const artistKey = String(track?.artist?.name || track?.artist?.id || '').trim().toLowerCase()
           if (!artistKey || seenArtists.has(artistKey)) {
             return false
           }
@@ -1448,8 +1468,8 @@
           return true
         })
         .sort((left, right) => {
-          const leftTs = new Date(left?.releasedAt || left?.createdAt || 0).getTime()
-          const rightTs = new Date(right?.releasedAt || right?.createdAt || 0).getTime()
+          const leftTs = parseTs(left?.releasedAt || left?.createdAt)
+          const rightTs = parseTs(right?.releasedAt || right?.createdAt)
           return rightTs - leftTs
         })
         .map((track, index) => ({
@@ -1463,9 +1483,15 @@
       const mergedEntries = [
         ...hydratedEntries,
         ...existingEntries.filter((entry) => {
-          const id = stripRecoPrefix(entry?.track?.id)
+          const track = entry?.track
+          const id = stripRecoPrefix(track?.id)
           if (!id || seenTrackIds.has(id)) return false
+          const artistKey = String(track?.artist?.name || track?.artist?.id || '').trim().toLowerCase()
+          if (artistKey && seenArtists.has(artistKey)) return false
+          const ts = parseTs(track?.releasedAt || track?.releaseDate || track?.yandex?.releaseDate || track?.album?.releaseDate || track?.createdAt)
+          if (!isFreshReleaseTs(ts)) return false
           seenTrackIds.add(id)
+          if (artistKey) seenArtists.add(artistKey)
           return true
         }),
       ].slice(0, HOME_RECOMMENDATIONS_LIMIT)
@@ -2215,6 +2241,10 @@
             reason: 'favorite-artist',
           }))
 
+    const favoriteArtistNames = new Set(
+      favoriteArtists.map((entry) => String(entry?.artist?.name || '').trim().toLowerCase()).filter(Boolean),
+    )
+
     const popularArtists = getArtistEntries(trendingSorted)
       .slice(0, HOME_RECOMMENDATIONS_LIMIT)
       .map((entry) => ({
@@ -2224,20 +2254,7 @@
         reason: 'chart-popular',
       }))
 
-    const bestTracks = (effectiveMode === 'trends'
-      ? trendingSorted
-      : filterDislikedTracks([...waveTracks, ...cleanCatalog, ...cleanLikes]))
-      .slice(0, HOME_RECOMMENDATIONS_LIMIT)
-      .map((track, index) => ({
-        id: `reco-${track.id}`,
-        score: Number((1 - index * 0.02).toFixed(6)),
-        reason: effectiveMode === 'trends' ? 'chart-best' : (index < waveTracks.length ? 'vector-top' : 'wave-catalog-fallback'),
-        track,
-      }))
-
-    const releaseCandidates = effectiveMode === 'trends'
-      ? cleanCatalog
-      : filterDislikedTracks([...waveTracks, ...cleanCatalog, ...cleanLikes])
+    const now = Date.now()
     const getReleaseTs = (track) => {
       const candidates = [
         track?.releasedAt,
@@ -2255,30 +2272,77 @@
       }
       return 0
     }
-    const newReleases = [...releaseCandidates]
-      .sort((left, right) => getReleaseTs(right) - getReleaseTs(left))
+
+    const releaseCandidates = effectiveMode === 'trends'
+      ? cleanCatalog
+      : filterDislikedTracks([...waveTracks, ...cleanCatalog])
+    const freshReleasesSorted = [...releaseCandidates]
+      .filter((track) => {
+        const ts = getReleaseTs(track)
+        return ts > 0 && ts <= now + (7 * 24 * 60 * 60 * 1000) && (now - ts) <= HOME_NEW_RELEASE_MAX_AGE_MS
+      })
+      .sort((left, right) => {
+        const leftFav = favoriteArtistNames.has(String(left?.artist?.name || '').trim().toLowerCase()) ? 1 : 0
+        const rightFav = favoriteArtistNames.has(String(right?.artist?.name || '').trim().toLowerCase()) ? 1 : 0
+        const leftTs = getReleaseTs(left)
+        const rightTs = getReleaseTs(right)
+        if (Math.abs(leftTs - rightTs) <= (30 * 24 * 60 * 60 * 1000) && rightFav !== leftFav) {
+          return rightFav - leftFav
+        }
+        return rightTs - leftTs
+      })
+
+    const seenReleaseArtists = new Set()
+    const newReleases = []
+    for (const track of freshReleasesSorted) {
+      const artistKey = String(track?.artist?.name || track?.artist?.id || '').trim().toLowerCase()
+      if (artistKey && seenReleaseArtists.has(artistKey)) continue
+      if (artistKey) seenReleaseArtists.add(artistKey)
+      newReleases.push({
+        id: `reco-${track.id}`,
+        score: Number((2 - newReleases.length * 0.04).toFixed(6)),
+        reason: effectiveMode === 'trends' ? 'recent-release' : 'wave-release',
+        track,
+      })
+      if (newReleases.length >= HOME_RECOMMENDATIONS_LIMIT) break
+    }
+    const newReleaseIds = new Set(newReleases.map((entry) => stripRecoPrefix(entry.track.id)))
+
+    const bestPool = effectiveMode === 'trends'
+      ? trendingSorted.filter((track) => !newReleaseIds.has(stripRecoPrefix(track.id)))
+      : (cleanLikes.length || waveTracks.length
+          ? filterDislikedTracks([...waveTracks, ...cleanLikes, ...cleanCatalog])
+          : trendingSorted
+        ).filter((track) => !newReleaseIds.has(stripRecoPrefix(track.id)))
+
+    const bestTracks = bestPool
       .slice(0, HOME_RECOMMENDATIONS_LIMIT)
       .map((track, index) => ({
         id: `reco-${track.id}`,
         score: Number((1 - index * 0.02).toFixed(6)),
-        reason: effectiveMode === 'trends' ? 'recent-release' : 'wave-release',
+        reason: effectiveMode === 'trends' ? 'chart-best' : (index < waveTracks.length ? 'vector-top' : 'personal-favorite-hit'),
         track,
       }))
+    const bestTrackIds = new Set(bestTracks.map((entry) => stripRecoPrefix(entry.track.id)))
 
     const mixes = []
     if (effectiveMode === 'for-you') {
       const seenMixArtists = new Set()
-      for (const track of filterDislikedTracks([...waveTracks, ...cleanCatalog, ...cleanLikes])) {
+      const mixSource = filterDislikedTracks([...waveTracks, ...cleanLikes, ...cleanCatalog])
+      for (const track of mixSource) {
+        const id = stripRecoPrefix(track.id)
+        if (newReleaseIds.has(id) || bestTrackIds.has(id)) continue
         const key = String(track?.artist?.name || track?.artist?.id || '').trim().toLowerCase()
         if (key && seenMixArtists.has(key)) continue
         if (key) seenMixArtists.add(key)
-        const genre = Array.isArray(track?.genres) ? track.genres[0] : ''
+        const isFav = favoriteArtistNames.has(key)
         mixes.push({
-          id: track.id,
-          title: genre ? `${titleCase(genre)} mix` : `${titleCase(track.artist?.name || 'Wave')} mix`,
-          subtitle: formatArtistNames(track, 'Wavee selection'),
+          id: `mix-${track.id}`,
+          title: `${titleCase(track.artist?.name || 'Wave')} микс`,
+          subtitle: isFav ? 'Хиты и похожие треки' : 'Похоже на твоих любимых артистов',
+          kicker: isFav ? 'THIS IS' : 'Для тебя',
           seed: `${track.id}:local-mix`,
-          reason: 'wave-mix',
+          reason: isFav ? 'artist-mix' : 'discovery-mix',
           track,
         })
         if (mixes.length >= 16) break
@@ -2288,7 +2352,7 @@
     return {
       mode: effectiveMode,
       generatedAt: new Date().toISOString(),
-      source: waveTracks.length ? 'client-vector' : 'client-catalog',
+      source: waveTracks.length || cleanLikes.length ? 'client-vector' : 'client-catalog',
       blocks: {
         newReleases,
         favoriteArtists,
@@ -3318,13 +3382,15 @@
     meta = '',
     featured = false,
     compact = false,
+    mixId = '',
   } = {}) {
     if (!track?.id) return ''
     const artistName = track?.artist?.name || 'Wavee'
     const trackTitle = track?.title || artistName
+    const mixAttr = mixId ? ` data-mix-id="${esc(mixId)}"` : ''
 
     return `
-      <article class="home-playlist-card group${featured ? ' is-featured' : ''}${compact ? ' is-compact' : ''}" data-carousel-card data-action="play-track" data-track-id="${esc(track.id)}">
+      <article class="home-playlist-card group${featured ? ' is-featured' : ''}${compact ? ' is-compact' : ''}" data-carousel-card data-action="play-track" data-track-id="${esc(track.id)}"${mixAttr}>
         <div class="home-playlist-cover">
           ${coverMarkup(track, `${artistName} — This Is`, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
           <div class="home-playlist-overlay${compact ? ' is-compact' : ''}"></div>
@@ -3633,10 +3699,6 @@
     const recommendedReleaseTracks = isForYouMode
       ? getPersonalTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
       : getTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
-    const releaseSource = recommendedReleaseTracks.length
-      ? recommendedReleaseTracks
-      : (canUseCatalogFallback ? trendingTracks : [])
-    
     const getTrackReleaseTs = (t) => {
       const candidates = [t?.releasedAt, t?.releaseDate, t?.yandex?.releaseDate, t?.createdAt, t?.album?.releasedAt, t?.album?.releaseDate]
       for (const c of candidates) {
@@ -3650,6 +3712,16 @@
       }
       return 0
     }
+    const nowTs = Date.now()
+    const freshFallbackReleases = canUseCatalogFallback
+      ? trendingTracks.filter((t) => {
+          const ts = getTrackReleaseTs(t)
+          return ts > 0 && ts <= nowTs + (7 * 24 * 60 * 60 * 1000) && (nowTs - ts) <= HOME_NEW_RELEASE_MAX_AGE_MS
+        })
+      : []
+    const releaseSource = recommendedReleaseTracks.length
+      ? recommendedReleaseTracks
+      : freshFallbackReleases
 
     const releaseTracks = [...releaseSource]
       .sort((a, b) => getTrackReleaseTs(b) - getTrackReleaseTs(a))
@@ -3804,15 +3876,16 @@
               }) : [])
         )
       : []
-    const mixKickers = ['Для тебя', 'Топ дня', 'Рекомендуем', 'В ротации']
+    const mixKickers = ['THIS IS', 'Для тебя', 'По жанру', 'В ротации']
     const mixCards = mixEntries.map((entry, index) => PlaylistCard({
       track: entry.track,
       index,
       coverMarkup,
-      kicker: mixKickers[index % mixKickers.length],
+      kicker: entry.kicker || mixKickers[index % mixKickers.length],
       description: entry.subtitle || 'Персональная подборка Wavee.',
       badge: 'ДЛЯ ТЕБЯ',
       meta: index < 3 ? 'Персональная рекомендация' : 'Собрано из твоих прослушиваний',
+      mixId: entry.id || '',
     }))
     SectionBlock({
       section: el.homeMixesSection,
@@ -4239,8 +4312,25 @@
         const tr = findTrack(id)
         if (tr) {
           triggerRuntimeHaptic('medium')
-          const list = page === 'home' ? getHomeTrackPool() : getPlaybackListForPage()
-          play(tr, 'list-click', { list })
+          const mixNode = t.closest('[data-mix-id]')
+          const mixId = mixNode?.getAttribute('data-mix-id') || ''
+          let list = page === 'home' ? getHomeTrackPool() : getPlaybackListForPage()
+          if (page === 'home' && mixId) {
+            const activeMode = el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE
+            const mixEntry = (getHomeRecommendationBlocks(activeMode)?.mixes || []).find((m) => m?.id === mixId)
+            if (mixEntry) {
+              const mixTrackIds = Array.isArray(mixEntry.mixTrackIds) ? mixEntry.mixTrackIds : []
+              const mixList = dedupeTracks([
+                tr,
+                ...mixTrackIds.map((trackId) => findTrack(trackId)).filter(Boolean),
+                ...list.filter((item) => item?.artist?.name === tr?.artist?.name),
+              ])
+              if (mixList.length > 0) {
+                list = mixList
+              }
+            }
+          }
+          play(tr, mixId ? 'home-mix' : 'list-click', { list })
         }
       }
       if (t.getAttribute('data-action') === 'like-track') {
