@@ -62,8 +62,8 @@
     return q || localStorage.getItem('wavee_api_base') || API_DEFAULT
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
-  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v12_${apiBase}`
-  const MY_WAVE_CACHE_KEY_PREFIX = `wavee_my_wave_v2_${apiBase}`
+  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v13_${apiBase}`
+  const MY_WAVE_CACHE_KEY_PREFIX = `wavee_my_wave_v3_${apiBase}`
   const HOME_NEW_RELEASE_STRICT_AGE_MS = 90 * 24 * 60 * 60 * 1000
   const HOME_NEW_RELEASE_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000
   const PLAYBACK_SOURCE_CACHE_KEY = `wavee_playback_sources_v1_${apiBase}`
@@ -182,6 +182,9 @@
     repeat: false,
     authInvalid: false,
     homeCatalogReady: false,
+    homePersonalLoading: Boolean(localStorage.getItem(TOKEN)),
+    lastRenderedHomeMode: '',
+    lastRenderedHomeHasBlocks: false,
     homeRecommendationsByMode: {
       'for-you': null,
       trends: null,
@@ -263,11 +266,6 @@
     homeMixes: $('home-mixes-row'),
     homeMixesPrev: $('home-mixes-prev'),
     homeMixesNext: $('home-mixes-next'),
-    homePodcastsSection: $('home-podcasts-section'),
-    homePodcastsHeader: $('home-podcasts-header'),
-    homePodcasts: $('home-podcasts-row'),
-    homePodcastsPrev: $('home-podcasts-prev'),
-    homePodcastsNext: $('home-podcasts-next'),
     homeExtraSection: $('home-extra-section'),
     homeExtraHeader: $('home-extra-header'),
     homeExtra: $('home-extra-row'),
@@ -321,6 +319,7 @@
   const runtimeGetInflight = new Map()
   const HOME_DEFAULT_MODE = hasSessionToken() ? 'for-you' : 'trends'
   const HOME_RECOMMENDATIONS_LIMIT = 20
+  const HOME_NEW_RELEASES_LIMIT = 36
   const MY_WAVE_RECOMMENDATIONS_LIMIT = 80
   const WAVE_SETTING_VALUES = {
     character: new Set(['any', 'favorite', 'unfamiliar', 'popular']),
@@ -335,7 +334,6 @@
     { slot: 'home-top-tracks', rowKey: 'homeTopTracks', prevKey: 'homeTopTracksPrev', nextKey: 'homeTopTracksNext' },
     { slot: 'home-new-releases', rowKey: 'homeNewReleases', prevKey: 'homeNewReleasesPrev', nextKey: 'homeNewReleasesNext' },
     { slot: 'home-mixes', rowKey: 'homeMixes', prevKey: 'homeMixesPrev', nextKey: 'homeMixesNext' },
-    { slot: 'home-podcasts', rowKey: 'homePodcasts', prevKey: 'homePodcastsPrev', nextKey: 'homePodcastsNext' },
     { slot: 'home-extra', rowKey: 'homeExtra', prevKey: 'homeExtraPrev', nextKey: 'homeExtraNext' },
   ]
   const homeUiFxState = {
@@ -1378,7 +1376,7 @@
     }
 
     const existingEntries = Array.isArray(payload.blocks?.newReleases) ? payload.blocks.newReleases : []
-    if (existingEntries.some((entry) => entry?.reason === 'favorite-artist-latest' && entry?.track?.id)) {
+    if (state.hostSynced && existingEntries.some((entry) => entry?.track?.id)) {
       return payload
     }
 
@@ -1396,13 +1394,12 @@
     }
 
     const request = (async () => {
+      const targetArtists = favoriteArtists.slice(0, 24)
       const catalogs = await Promise.all(
-        favoriteArtists
-          .slice(0, 8)
-          .map((entry) => fetchArtistCatalog({
-            artistId: entry?.artist?.id,
-            artistName: entry?.artist?.name,
-          })),
+        targetArtists.map((entry) => fetchArtistCatalog({
+          artistId: entry?.artist?.id,
+          artistName: entry?.artist?.name,
+        })),
       )
 
       const now = Date.now()
@@ -1414,62 +1411,75 @@
       }
       const isFreshReleaseTs = (ts) => ts > 0 && ts <= now + (7 * 24 * 60 * 60 * 1000) && (now - ts) <= HOME_NEW_RELEASE_MAX_AGE_MS
 
+      const artistRankMap = new Map()
+      targetArtists.forEach((entry, index) => {
+        const key = String(entry?.artist?.name || entry?.artist?.id || '').trim().toLowerCase()
+        if (key && !artistRankMap.has(key)) {
+          artistRankMap.set(key, targetArtists.length - index)
+        }
+      })
+
       const releaseTracks = []
-      for (const catalog of catalogs) {
-        const newestRelease = catalog?.newestRelease || (Array.isArray(catalog?.albums) ? catalog.albums[0] : null)
-        if (!newestRelease?.id) {
-          continue
-        }
-
-        const albumTs = parseTs(newestRelease?.releaseDate)
-        if (!isFreshReleaseTs(albumTs)) {
-          continue
-        }
-
-        const albumCatalog = await fetchAlbumCatalogById(newestRelease.id)
-        const track = (Array.isArray(albumCatalog?.tracks) ? albumCatalog.tracks[0] : null)
-          || (Array.isArray(catalog?.tracks)
-            ? (catalog.tracks.find((item) => item?.album?.id === newestRelease.id) || catalog.tracks[0])
-            : null)
-        if (!track?.id) {
-          continue
-        }
-
-        const releaseDate = newestRelease?.releaseDate || track?.releasedAt || track?.createdAt || null
-        if (!isFreshReleaseTs(parseTs(releaseDate))) {
-          continue
-        }
-
-        releaseTracks.push({
-          ...track,
-          releasedAt: releaseDate,
-          createdAt: releaseDate,
-          album: track?.album
-            ? {
-                ...track.album,
-                releaseDate: releaseDate || track.album?.releaseDate || null,
-              }
-            : track?.album,
+      const seenAlbumIds = new Set()
+      for (let idx = 0; idx < catalogs.length; idx += 1) {
+        const catalog = catalogs[idx]
+        if (!catalog) continue
+        const albumCandidates = [
+          catalog?.newestRelease,
+          ...(Array.isArray(catalog?.albums) ? catalog.albums : []),
+        ].filter((album, index, arr) => {
+          if (!album?.id) return false
+          return arr.findIndex((item) => item?.id === album.id) === index
         })
+
+        let collectedForArtist = 0
+        for (const candidateAlbum of albumCandidates) {
+          if (collectedForArtist >= 3) break
+          if (seenAlbumIds.has(candidateAlbum.id)) continue
+          const albumTs = parseTs(candidateAlbum?.releaseDate)
+          if (!isFreshReleaseTs(albumTs)) continue
+          seenAlbumIds.add(candidateAlbum.id)
+
+          const albumCatalog = await fetchAlbumCatalogById(candidateAlbum.id)
+          const track = (Array.isArray(albumCatalog?.tracks) ? albumCatalog.tracks[0] : null)
+            || (Array.isArray(catalog?.tracks)
+              ? (catalog.tracks.find((item) => item?.album?.id === candidateAlbum.id) || null)
+              : null)
+          if (!track?.id) continue
+
+          const releaseDate = candidateAlbum?.releaseDate || track?.releasedAt || track?.createdAt || null
+          if (!isFreshReleaseTs(parseTs(releaseDate))) continue
+
+          collectedForArtist += 1
+          releaseTracks.push({
+            ...track,
+            releasedAt: releaseDate,
+            createdAt: releaseDate,
+            album: track?.album
+              ? {
+                  ...track.album,
+                  releaseDate: releaseDate || track.album?.releaseDate || null,
+                }
+              : track?.album,
+          })
+        }
       }
 
       if (!releaseTracks.length) {
         return payload
       }
 
-      const seenArtists = new Set()
       const hydratedEntries = releaseTracks
-        .filter((track) => {
-          const artistKey = String(track?.artist?.name || track?.artist?.id || '').trim().toLowerCase()
-          if (!artistKey || seenArtists.has(artistKey)) {
-            return false
-          }
-          seenArtists.add(artistKey)
-          return true
-        })
         .sort((left, right) => {
           const leftTs = parseTs(left?.releasedAt || left?.createdAt)
           const rightTs = parseTs(right?.releasedAt || right?.createdAt)
+          const monthMs = 30 * 24 * 60 * 60 * 1000
+          const leftBucket = Math.floor(Math.max(0, now - leftTs) / monthMs)
+          const rightBucket = Math.floor(Math.max(0, now - rightTs) / monthMs)
+          if (leftBucket !== rightBucket) return leftBucket - rightBucket
+          const leftRank = artistRankMap.get(String(left?.artist?.name || left?.artist?.id || '').trim().toLowerCase()) || 0
+          const rightRank = artistRankMap.get(String(right?.artist?.name || right?.artist?.id || '').trim().toLowerCase()) || 0
+          if (rightRank !== leftRank) return rightRank - leftRank
           return rightTs - leftTs
         })
         .map((track, index) => ({
@@ -1486,15 +1496,12 @@
           const track = entry?.track
           const id = stripRecoPrefix(track?.id)
           if (!id || seenTrackIds.has(id)) return false
-          const artistKey = String(track?.artist?.name || track?.artist?.id || '').trim().toLowerCase()
-          if (artistKey && seenArtists.has(artistKey)) return false
           const ts = parseTs(track?.releasedAt || track?.releaseDate || track?.yandex?.releaseDate || track?.album?.releaseDate || track?.createdAt)
           if (!isFreshReleaseTs(ts)) return false
           seenTrackIds.add(id)
-          if (artistKey) seenArtists.add(artistKey)
           return true
         }),
-      ].slice(0, HOME_RECOMMENDATIONS_LIMIT)
+      ].slice(0, HOME_NEW_RELEASES_LIMIT)
 
       return {
         ...payload,
@@ -2273,47 +2280,66 @@
       return 0
     }
 
+    if (effectiveMode === 'for-you' && !cleanLikes.length && !waveTracks.length) {
+      return {
+        mode: effectiveMode,
+        generatedAt: new Date().toISOString(),
+        source: 'client-pending',
+        blocks: {
+          newReleases: [],
+          favoriteArtists: [],
+          popularArtists: [],
+          bestTracks: [],
+          mixes: [],
+          genresAndMoods: [],
+        },
+      }
+    }
+
     const releaseCandidates = effectiveMode === 'trends'
       ? cleanCatalog
-      : filterDislikedTracks([...waveTracks, ...cleanCatalog])
+      : filterDislikedTracks([...waveTracks, ...cleanLikes])
+    const monthMs = 30 * 24 * 60 * 60 * 1000
     const freshReleasesSorted = [...releaseCandidates]
       .filter((track) => {
         const ts = getReleaseTs(track)
         return ts > 0 && ts <= now + (7 * 24 * 60 * 60 * 1000) && (now - ts) <= HOME_NEW_RELEASE_MAX_AGE_MS
       })
       .sort((left, right) => {
-        const leftFav = favoriteArtistNames.has(String(left?.artist?.name || '').trim().toLowerCase()) ? 1 : 0
-        const rightFav = favoriteArtistNames.has(String(right?.artist?.name || '').trim().toLowerCase()) ? 1 : 0
         const leftTs = getReleaseTs(left)
         const rightTs = getReleaseTs(right)
-        if (Math.abs(leftTs - rightTs) <= (30 * 24 * 60 * 60 * 1000) && rightFav !== leftFav) {
-          return rightFav - leftFav
-        }
+        const leftBucket = Math.floor(Math.max(0, now - leftTs) / monthMs)
+        const rightBucket = Math.floor(Math.max(0, now - rightTs) / monthMs)
+        if (leftBucket !== rightBucket) return leftBucket - rightBucket
+        const leftKey = String(left?.artist?.name || left?.artist?.id || '').trim().toLowerCase()
+        const rightKey = String(right?.artist?.name || right?.artist?.id || '').trim().toLowerCase()
+        const leftScore = artistMap.get(`name:${leftKey}`)?.score || (favoriteArtistNames.has(leftKey) ? 3 : 0)
+        const rightScore = artistMap.get(`name:${rightKey}`)?.score || (favoriteArtistNames.has(rightKey) ? 3 : 0)
+        if (rightScore !== leftScore) return rightScore - leftScore
         return rightTs - leftTs
       })
 
-    const seenReleaseArtists = new Set()
+    const artistReleaseCounts = new Map()
     const newReleases = []
     for (const track of freshReleasesSorted) {
       const artistKey = String(track?.artist?.name || track?.artist?.id || '').trim().toLowerCase()
-      if (artistKey && seenReleaseArtists.has(artistKey)) continue
-      if (artistKey) seenReleaseArtists.add(artistKey)
+      const currentCount = artistReleaseCounts.get(artistKey) || 0
+      if (artistKey && currentCount >= 3) continue
+      if (artistKey) artistReleaseCounts.set(artistKey, currentCount + 1)
       newReleases.push({
         id: `reco-${track.id}`,
         score: Number((2 - newReleases.length * 0.04).toFixed(6)),
-        reason: effectiveMode === 'trends' ? 'recent-release' : 'wave-release',
+        reason: effectiveMode === 'trends' ? 'recent-release' : 'favorite-artist-latest',
         track,
       })
-      if (newReleases.length >= HOME_RECOMMENDATIONS_LIMIT) break
+      if (newReleases.length >= HOME_NEW_RELEASES_LIMIT) break
     }
     const newReleaseIds = new Set(newReleases.map((entry) => stripRecoPrefix(entry.track.id)))
 
-    const bestPool = effectiveMode === 'trends'
-      ? trendingSorted.filter((track) => !newReleaseIds.has(stripRecoPrefix(track.id)))
-      : (cleanLikes.length || waveTracks.length
-          ? filterDislikedTracks([...waveTracks, ...cleanLikes, ...cleanCatalog])
-          : trendingSorted
-        ).filter((track) => !newReleaseIds.has(stripRecoPrefix(track.id)))
+    const bestPool = (effectiveMode === 'trends'
+      ? trendingSorted
+      : filterDislikedTracks([...waveTracks, ...cleanLikes])
+    ).filter((track) => !newReleaseIds.has(stripRecoPrefix(track.id)))
 
     const bestTracks = bestPool
       .slice(0, HOME_RECOMMENDATIONS_LIMIT)
@@ -2328,12 +2354,13 @@
     const mixes = []
     if (effectiveMode === 'for-you') {
       const seenMixArtists = new Set()
-      const mixSource = filterDislikedTracks([...waveTracks, ...cleanLikes, ...cleanCatalog])
-      for (const track of mixSource) {
+      const mixSource = filterDislikedTracks([...waveTracks, ...cleanLikes])
+      const pushMixTrack = (track, allowOverlap = false) => {
+        if (!track?.id) return false
         const id = stripRecoPrefix(track.id)
-        if (newReleaseIds.has(id) || bestTrackIds.has(id)) continue
+        if (!allowOverlap && (newReleaseIds.has(id) || bestTrackIds.has(id))) return false
         const key = String(track?.artist?.name || track?.artist?.id || '').trim().toLowerCase()
-        if (key && seenMixArtists.has(key)) continue
+        if (key && seenMixArtists.has(key)) return false
         if (key) seenMixArtists.add(key)
         const isFav = favoriteArtistNames.has(key)
         mixes.push({
@@ -2345,9 +2372,25 @@
           reason: isFav ? 'artist-mix' : 'discovery-mix',
           track,
         })
+        return true
+      }
+
+      for (const track of mixSource) {
+        pushMixTrack(track, false)
         if (mixes.length >= 16) break
       }
+      if (mixes.length < 6) {
+        for (const track of mixSource) {
+          pushMixTrack(track, true)
+          if (mixes.length >= 16) break
+        }
+      }
     }
+
+    const genresSource = effectiveMode === 'trends'
+      ? cleanCatalog
+      : filterDislikedTracks([...waveTracks, ...cleanLikes])
+    const genresAndMoods = genresSource.length ? getGenreMoodBuckets(genresSource) : []
 
     return {
       mode: effectiveMode,
@@ -2359,7 +2402,7 @@
         popularArtists,
         bestTracks,
         mixes,
-        genresAndMoods: [],
+        genresAndMoods,
       },
     }
   }
@@ -2459,7 +2502,7 @@
 
     const request = (async () => {
       const [likes, dislikes] = await Promise.all([
-        api('/library/likes?limit=200', { auth: 'required' }).catch(() => null),
+        api('/library/likes?limit=1000', { auth: 'required' }).catch(() => null),
         api('/library/dislikes', { auth: 'required' }).catch(() => null),
       ])
 
@@ -2470,6 +2513,7 @@
       if (Array.isArray(dislikes?.items)) {
         state.dislikes = new Set(dislikes.items.map((id) => stripRecoPrefix(id)).filter(Boolean))
       }
+      state.homePersonalLoading = false
       if (!state.hostSynced) {
         const localPayload = buildLocalHomeRecommendations(HOME_DEFAULT_MODE)
         const hydrated = await hydrateMissingHomeNewReleases(localPayload, HOME_DEFAULT_MODE).catch(() => localPayload)
@@ -3580,47 +3624,6 @@
     })
   }
 
-  function detectTrackKind(track) {
-    const haystack = [
-      track?.title,
-      track?.artist?.name,
-      ...(Array.isArray(track?.genres) ? track.genres : []),
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-
-    const podcastTokens = ['podcast', 'подкаст', 'episode', 'эпизод', 'show', 'интервью', 'talk']
-    const audiobookTokens = ['audiobook', 'аудиокнига', 'chapter', 'глава', 'book', 'книга', 'роман']
-    if (audiobookTokens.some((token) => haystack.includes(token))) return 'audiobook'
-    if (podcastTokens.some((token) => haystack.includes(token))) return 'podcast'
-    return 'music'
-  }
-
-  function splitHomeTracksByKind(tracks) {
-    const buckets = {
-      music: [],
-      podcasts: [],
-      audiobooks: [],
-    }
-
-    tracks.forEach((track) => {
-      if (!track?.id) return
-      const kind = detectTrackKind(track)
-      if (kind === 'podcast') {
-        buckets.podcasts.push(track)
-        return
-      }
-      if (kind === 'audiobook') {
-        buckets.audiobooks.push(track)
-        return
-      }
-      buckets.music.push(track)
-    })
-
-    return buckets
-  }
-
   function renderHome({ modeSwitch = false, activeMode = '' } = {}) {
     const forceDisconnectedPlaceholders = HOME_FORCE_DISCONNECTED_PLACEHOLDERS
     let activeFilter = activeMode || el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE
@@ -3633,8 +3636,7 @@
     const pool = forceDisconnectedPlaceholders ? [] : getHomeTrackPool(activeFilter)
     const fallbackTracks = forceDisconnectedPlaceholders ? [] : filterDislikedTracks(state.tracks)
     const baseTracks = pool.length ? pool : fallbackTracks
-    const categories = splitHomeTracksByKind(baseTracks)
-    const musicTracks = categories.music.length ? categories.music : baseTracks
+    const musicTracks = baseTracks.filter((track) => track?.id)
     let isLoadingContent = !state.homeCatalogReady && !baseTracks.length
     let priorityImageBudget = 6
 
@@ -3662,15 +3664,16 @@
     const isRecommendationModeLoading = Boolean(state.homeRecommendationsLoadingByMode[activeFilter])
     const canUseCatalogFallback = !forceDisconnectedPlaceholders && musicTracks.length > 0
     const hasPersonalRecommendationContent = isForYouMode && hasPersonalHomeRecommendationContent(recommendationBlocks)
-    const hasPersonalRuntimeTracks = getMyWaveTracks().length > 0
+    const hasPersonalRuntimeTracks = getMyWaveTracks().length > 0 || state.likedTracks.length > 0
     const isWaitingForPersonal = requiresPersonalBlocks
-      && !hasPersonalRecommendationContent
-      && !canUseCatalogFallback
-      && isRecommendationModeLoading
-    const canUsePersonalFallback = !isWaitingForPersonal && canUseCatalogFallback
+      && (
+        Boolean(state.homePersonalLoading)
+        || (!hasPersonalRecommendationContent && !hasPersonalRuntimeTracks && (isRecommendationModeLoading || (!state.hostSynced && !hasAnyRecommendationContent)))
+      )
+    const canUsePersonalFallback = !isWaitingForPersonal && !hasPersonalRuntimeTracks && canUseCatalogFallback
     const shouldShowPersonalSkeleton = isForYouMode && isWaitingForPersonal
 
-    if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
+    if (!hasRecommendationBlocks && (state.homeRecommendationsLoadingByMode[activeFilter] || isWaitingForPersonal)) {
       isLoadingContent = true
     }
     if (el.homeFilterChips) {
@@ -3713,19 +3716,19 @@
       return 0
     }
     const nowTs = Date.now()
-    const freshFallbackReleases = canUseCatalogFallback
-      ? trendingTracks.filter((t) => {
-          const ts = getTrackReleaseTs(t)
-          return ts > 0 && ts <= nowTs + (7 * 24 * 60 * 60 * 1000) && (nowTs - ts) <= HOME_NEW_RELEASE_MAX_AGE_MS
-        })
+    const freshFallbackReleases = (isTrendsMode ? canUseCatalogFallback : canUsePersonalFallback)
+      ? [...trendingTracks]
+          .filter((t) => {
+            const ts = getTrackReleaseTs(t)
+            return ts > 0 && ts <= nowTs + (7 * 24 * 60 * 60 * 1000) && (nowTs - ts) <= HOME_NEW_RELEASE_MAX_AGE_MS
+          })
+          .sort((a, b) => getTrackReleaseTs(b) - getTrackReleaseTs(a))
       : []
     const releaseSource = recommendedReleaseTracks.length
       ? recommendedReleaseTracks
       : freshFallbackReleases
 
-    const releaseTracks = [...releaseSource]
-      .sort((a, b) => getTrackReleaseTs(b) - getTrackReleaseTs(a))
-      .slice(0, 20)
+    const releaseTracks = releaseSource.slice(0, HOME_NEW_RELEASES_LIMIT)
     const releaseCards = releaseTracks.map((track, index) => AlbumCard({
       track,
       coverMarkup,
@@ -3900,37 +3903,6 @@
       cards: withSkeleton(mixCards, 'medium', 5, shouldShowPersonalSkeleton),
       emptyText: 'Персональные миксы подгружаются.',
       visible: isForYouMode,
-    })
-
-    const podcastTracks = dedupeTracks([
-      ...categories.podcasts,
-      ...categories.audiobooks,
-    ]).slice(0, 12)
-    const podcastCards = podcastTracks.map((track) => {
-      const kind = detectTrackKind(track)
-      const kindLabel = kind === 'audiobook' ? 'Аудиокнига' : 'Подкаст'
-      return AlbumCard({
-        track,
-        coverMarkup,
-        title: track.title,
-        subtitle: `${track.artist?.name || 'Wavee'} • ${kindLabel}`,
-        badge: kind === 'audiobook' ? 'BOOK' : 'PODCAST',
-        meta: 'Новый эпизод',
-      })
-    })
-    SectionBlock({
-      section: el.homePodcastsSection,
-      headerTarget: el.homePodcastsHeader,
-      rowTarget: el.homePodcasts,
-      title: 'Подкасты и аудиокниги',
-      actionHref: '/search',
-      actionLabel: 'Показать все',
-      controlsPrefix: 'home-podcasts',
-      controlsAriaLabel: 'Навигация по подкастам и аудиокнигам',
-      controlsKeys: ['homePodcastsPrev', 'homePodcastsNext'],
-      cards: withSkeleton(podcastCards, 'medium', 5),
-      emptyText: 'Когда появятся подкасты, они отобразятся здесь.',
-      visible: isForYouMode && (podcastCards.length > 0 || isLoadingContent),
     })
 
     const recommendedGenresAndMoods = Array.isArray(recommendationBlocks?.genresAndMoods)
@@ -4391,9 +4363,39 @@
     return () => clearTimeout(timer)
   }
 
+  function getHomeBlocksSignature(blocks) {
+    if (!blocks || typeof blocks !== 'object') return ''
+    const keys = ['newReleases', 'favoriteArtists', 'popularArtists', 'bestTracks', 'mixes', 'genresAndMoods']
+    return keys
+      .map((key) => {
+        const list = Array.isArray(blocks[key]) ? blocks[key] : []
+        return `${key}:${list.map((entry) => entry?.track?.id || entry?.artist?.id || entry?.artist?.name || entry?.id || '').join(',')}`
+      })
+      .join('|')
+  }
+
+  function applyHostPlaybackSync(playback) {
+    if (!playback || typeof playback !== 'object') return
+    if (playback.currentTrack) {
+      state.track = playback.currentTrack
+    } else if (playback.currentTrack === null) {
+      state.track = null
+    }
+    state.playing = Boolean(playback.isPlaying)
+    const waveActive = Boolean(playback.isWaveActive)
+    if (waveActive) {
+      state.ctx = 'my-wave'
+    } else if (state.ctx === 'my-wave') {
+      state.ctx = 'manual'
+    }
+    setHomeWaveActive(Boolean(state.playing && waveActive))
+    syncLikes()
+  }
+
   function applyHostHomeSync(payload) {
     if (!payload || typeof payload !== 'object') return
     state.hostSynced = true
+    state.homePersonalLoading = Boolean(payload.isPersonalLoading)
 
     if (Array.isArray(payload.dislikedTrackIds)) {
       state.dislikes = new Set(payload.dislikedTrackIds.map(stripRecoPrefix).filter(Boolean))
@@ -4422,36 +4424,35 @@
       }
     }
 
+    let blocksChanged = false
     if (payload.homeRecommendations?.blocks) {
       const rec = payload.homeRecommendations
       const mode = rec.mode === 'trends' ? 'trends' : 'for-you'
-      const previousHydratedReleases = Array.isArray(state.homeRecommendationsByMode?.[mode]?.blocks?.newReleases)
-        ? state.homeRecommendationsByMode[mode].blocks.newReleases.filter((entry) => entry?.reason === 'favorite-artist-latest' && entry?.track?.id)
-        : []
-      let nextBlocks = rec.blocks
-      if (previousHydratedReleases.length && Array.isArray(rec.blocks.newReleases)) {
-        const seenIds = new Set(previousHydratedReleases.map((entry) => stripRecoPrefix(entry.track.id)))
-        nextBlocks = {
-          ...rec.blocks,
-          newReleases: [
-            ...previousHydratedReleases,
-            ...rec.blocks.newReleases.filter((entry) => {
-              const id = stripRecoPrefix(entry?.track?.id)
-              if (!id || seenIds.has(id)) return false
-              seenIds.add(id)
-              return true
-            }),
-          ].slice(0, HOME_RECOMMENDATIONS_LIMIT),
-        }
-      }
+      const prevBlocks = state.homeRecommendationsByMode?.[mode]?.blocks || null
+      const nextBlocks = rec.blocks
+      const prevSig = `${state.lastRenderedHomeMode || ''}:${getHomeBlocksSignature(prevBlocks)}`
+      const nextSig = `${mode}:${getHomeBlocksSignature(nextBlocks)}`
+      blocksChanged = prevSig !== nextSig || !state.lastRenderedHomeHasBlocks
+
       const nextPayload = { ...rec, blocks: nextBlocks, __cachedAt: Date.now() }
       state.homeRecommendationsByMode[mode] = nextPayload
-      state.homeRecommendationsLoadingByMode[mode] = false
-      writeCachedHomeRecommendations(mode, hasSessionToken(), nextPayload)
+      state.homeRecommendationsLoadingByMode[mode] = Boolean(state.homePersonalLoading)
+      if (!state.homePersonalLoading) {
+        writeCachedHomeRecommendations(mode, hasSessionToken(), nextPayload)
+      }
 
-      if (mode === 'for-you' && Array.isArray(nextBlocks.favoriteArtists) && nextBlocks.favoriteArtists.length) {
+      if (
+        mode === 'for-you'
+        && !state.homePersonalLoading
+        && Array.isArray(nextBlocks.favoriteArtists)
+        && nextBlocks.favoriteArtists.length
+        && (!Array.isArray(nextBlocks.newReleases) || nextBlocks.newReleases.length === 0)
+      ) {
         void hydrateMissingHomeNewReleases(nextPayload, mode).then((hydrated) => {
           if (!hydrated?.blocks) return
+          if (getHomeBlocksSignature(hydrated.blocks) === getHomeBlocksSignature(state.homeRecommendationsByMode[mode]?.blocks)) {
+            return
+          }
           state.homeRecommendationsByMode[mode] = { ...hydrated, __cachedAt: Date.now() }
           writeCachedHomeRecommendations(mode, hasSessionToken(), hydrated)
           if (page === 'home') renderHome()
@@ -4459,26 +4460,27 @@
       }
     }
 
-    if (payload.catalogReady || state.tracks.length || state.myWave.length || state.likedTracks.length) {
-      state.homeCatalogReady = true
+    const nextCatalogReady = Boolean(payload.catalogReady)
+      || (!state.homePersonalLoading && Boolean(state.tracks.length || state.myWave.length || state.likedTracks.length))
+    if (nextCatalogReady !== state.homeCatalogReady) {
+      state.homeCatalogReady = nextCatalogReady
+      blocksChanged = true
     }
 
     if (payload.playback && typeof payload.playback === 'object') {
-      if (payload.playback.currentTrack) {
-        state.track = payload.playback.currentTrack
-      }
-      state.playing = Boolean(payload.playback.isPlaying)
-      const waveActive = Boolean(payload.playback.isWaveActive)
-      if (waveActive) {
-        state.ctx = 'my-wave'
-      } else if (state.ctx === 'my-wave') {
-        state.ctx = 'manual'
-      }
-      setHomeWaveActive(Boolean(state.playing && waveActive))
+      applyHostPlaybackSync(payload.playback)
+    } else {
+      syncLikes()
     }
 
-    syncLikes()
-    if (page === 'home') renderHome()
+    if (page === 'home' && (blocksChanged || !state.lastRenderedHomeHasBlocks)) {
+      const currentMode = el.homeFilterChips?.dataset.active || HOME_DEFAULT_MODE
+      state.lastRenderedHomeMode = currentMode
+      state.lastRenderedHomeHasBlocks = Boolean(
+        hasHomeRecommendationContent(state.homeRecommendationsByMode?.[currentMode]?.blocks),
+      )
+      renderHome()
+    }
     if (page === 'my-wave') renderMyWave()
   }
 
@@ -4492,6 +4494,8 @@
         const message = event.data
         if (message?.source === 'wavee-host' && message?.type === 'wavee-home-sync') {
           applyHostHomeSync(message.payload)
+        } else if (message?.source === 'wavee-host' && message?.type === 'wavee-home-playback') {
+          applyHostPlaybackSync(message.payload)
         }
       })
       notifyParent('wavee-home-ready', {})
@@ -4609,11 +4613,13 @@
     }
 
     const handleVisibilityRefresh = () => {
+      if (state.hostSynced) return
       if (document.visibilityState === 'visible') {
         void refreshPersonalization({ rerender: true, force: false })
       }
     }
     const handleFocusRefresh = () => {
+      if (state.hostSynced) return
       void refreshPersonalization({ rerender: true, force: false })
     }
     window.addEventListener('focus', handleFocusRefresh)
