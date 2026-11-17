@@ -14,7 +14,7 @@
   const HOME_PERSONALIZATION_REFRESH_TTL_MS = 45 * 1000
   const HOME_PLAYBACK_PREFETCH_LIMIT = 6
   const PLAYBACK_SOURCE_CACHE_TTL_MS = 10 * 60 * 1000
-  const HOME_ARTIST_MONTHLY_HYDRATION_LIMIT = 4
+  const HOME_ARTIST_MONTHLY_HYDRATION_LIMIT = 12
   const HOME_FORCE_DISCONNECTED_PLACEHOLDERS = false
   const page = document.body?.dataset?.waveePage || ''
   const ACTIVE_RUNTIME_PAGES = new Set(['home', 'my-wave'])
@@ -158,9 +158,11 @@
     tracks: [],
     list: [],
     likes: new Set(),
+    likedTracks: [],
     dislikes: new Set(),
     playlists: [],
     myWave: [],
+    hostSynced: false,
     myWaveSettings: {
       character: 'favorite',
       mood: 'calm',
@@ -973,19 +975,21 @@
     const recommendationTracks = getAllHomeRecommendationTracks(mode)
 
     if (mode === 'for-you') {
-      return dedupeTracks([
+      return filterDislikedTracks([
         ...getMyWaveTracks(),
         ...recommendationTracks,
+        ...state.likedTracks,
         ...playlistTracks,
-      ]).filter((track) => track?.id)
+        ...state.tracks,
+      ])
     }
 
-    return dedupeTracks([
+    return filterDislikedTracks([
       ...getMyWaveTracks(),
       ...recommendationTracks,
       ...state.tracks,
       ...playlistTracks,
-    ]).filter((track) => track?.id)
+    ])
   }
 
   function pickTracks(source, count, offset = 0) {
@@ -1182,7 +1186,7 @@
   function extractCatalogArtistId(value) {
     const source = String(value || '').trim()
     if (!source) return ''
-    const prefixedMatch = source.match(/^ym-artist-(\d+)$/i)
+    const prefixedMatch = source.match(/^(?:ym-artist-|yandex-artist:)(\d+)$/i)
     if (prefixedMatch) return prefixedMatch[1]
     if (/^\d+$/.test(source)) return source
     return ''
@@ -1371,8 +1375,8 @@
       return payload
     }
 
-    const existing = getTracksFromRecommendationBlock(payload.blocks?.newReleases)
-    if (existing.length) {
+    const existingEntries = Array.isArray(payload.blocks?.newReleases) ? payload.blocks.newReleases : []
+    if (existingEntries.some((entry) => entry?.reason === 'favorite-artist-latest' && entry?.track?.id)) {
       return payload
     }
 
@@ -1407,7 +1411,10 @@
         }
 
         const albumCatalog = await fetchAlbumCatalogById(newestRelease.id)
-        const track = Array.isArray(albumCatalog?.tracks) ? albumCatalog.tracks[0] : null
+        const track = (Array.isArray(albumCatalog?.tracks) ? albumCatalog.tracks[0] : null)
+          || (Array.isArray(catalog?.tracks)
+            ? (catalog.tracks.find((item) => item?.album?.id === newestRelease.id) || catalog.tracks[0])
+            : null)
         if (!track?.id) {
           continue
         }
@@ -1431,7 +1438,7 @@
       }
 
       const seenArtists = new Set()
-      const entries = releaseTracks
+      const hydratedEntries = releaseTracks
         .filter((track) => {
           const artistKey = track?.artist?.id || track?.artist?.name
           if (!artistKey || seenArtists.has(artistKey)) {
@@ -1445,7 +1452,6 @@
           const rightTs = new Date(right?.releasedAt || right?.createdAt || 0).getTime()
           return rightTs - leftTs
         })
-        .slice(0, HOME_RECOMMENDATIONS_LIMIT)
         .map((track, index) => ({
           id: `reco-${track.id}`,
           score: Number((2 - (index * 0.04)).toFixed(6)),
@@ -1453,11 +1459,22 @@
           track,
         }))
 
+      const seenTrackIds = new Set(hydratedEntries.map((entry) => stripRecoPrefix(entry?.track?.id)))
+      const mergedEntries = [
+        ...hydratedEntries,
+        ...existingEntries.filter((entry) => {
+          const id = stripRecoPrefix(entry?.track?.id)
+          if (!id || seenTrackIds.has(id)) return false
+          seenTrackIds.add(id)
+          return true
+        }),
+      ].slice(0, HOME_RECOMMENDATIONS_LIMIT)
+
       return {
         ...payload,
         blocks: {
           ...payload.blocks,
-          newReleases: entries,
+          newReleases: mergedEntries,
         },
       }
     })().finally(() => {
@@ -1476,10 +1493,19 @@
       const artistId = row.getAttribute('data-artist-id') || ''
       const artistName = row.getAttribute('data-artist-name') || ''
       const artist = await fetchArtistStats({ artistId, artistName })
-      if (!row.isConnected) return
+      if (!row.isConnected || !artist) return
       const resolvedMonthly = resolveArtistMonthlyListeners({ artist })
-      if (!resolvedMonthly) return
-      row.textContent = formatMonthlyListeners(resolvedMonthly)
+      if (resolvedMonthly) {
+        row.textContent = formatMonthlyListeners(resolvedMonthly)
+      }
+      if (artist.coverUrl) {
+        const card = row.closest('.home-artist-card')
+        const coverShell = card?.querySelector('.home-artist-cover-shell')
+        if (coverShell && coverShell.querySelector('.home-artist-cover-fallback')) {
+          coverShell.innerHTML = `<img src="${esc(optimizedCoverUrl(artist.coverUrl, 300))}" alt="" aria-label="${esc(artistName || artist.name || '')}" class="home-lazy-cover" loading="lazy" decoding="async">`
+          wireHomeLazyCoverFx(coverShell)
+        }
+      }
     }))
   }
 
@@ -2147,6 +2173,133 @@
     })
   }
 
+  function buildLocalHomeRecommendations(mode = HOME_DEFAULT_MODE) {
+    const effectiveMode = mode === 'trends' || !hasSessionToken() ? 'trends' : 'for-you'
+    const waveTracks = getMyWaveTracks()
+    const cleanLikes = filterDislikedTracks(state.likedTracks)
+    const cleanCatalog = filterDislikedTracks(state.tracks)
+    const trendingSorted = [...cleanCatalog].sort(
+      (left, right) => Number(right?.playCount ?? 0) - Number(left?.playCount ?? 0),
+    )
+
+    const artistMap = new Map()
+    const nameToKey = new Map()
+    cleanLikes.forEach((track, index) => {
+      const artist = track?.artist
+      const name = String(artist?.name || '').trim()
+      if (!name || !track?.id) return
+      const normalized = name.toLowerCase()
+      const rawKey = artist?.id ? `id:${artist.id}` : `name:${normalized}`
+      const key = nameToKey.get(normalized) || rawKey
+      if (!nameToKey.has(normalized)) nameToKey.set(normalized, key)
+      const weight = 3 + Math.max(0, 1.2 - index * 0.015)
+      const existing = artistMap.get(key)
+      if (!existing) {
+        artistMap.set(key, { artist: { ...artist, name }, track, score: weight })
+      } else {
+        existing.score += weight
+        if (!existing.artist?.id && artist?.id) existing.artist = { ...existing.artist, ...artist }
+        if (!existing.track?.coverUrl && track?.coverUrl) existing.track = track
+      }
+    })
+
+    const favoriteArtists = effectiveMode === 'trends'
+      ? []
+      : [...artistMap.values()]
+          .sort((left, right) => right.score - left.score)
+          .slice(0, HOME_RECOMMENDATIONS_LIMIT)
+          .map((entry) => ({
+            artist: entry.artist,
+            track: entry.track,
+            score: Number(entry.score.toFixed(4)),
+            reason: 'favorite-artist',
+          }))
+
+    const popularArtists = getArtistEntries(trendingSorted)
+      .slice(0, HOME_RECOMMENDATIONS_LIMIT)
+      .map((entry) => ({
+        artist: entry.artist,
+        track: entry.track,
+        score: Number(entry.track?.playCount ?? 0) || 1,
+        reason: 'chart-popular',
+      }))
+
+    const bestTracks = (effectiveMode === 'trends'
+      ? trendingSorted
+      : filterDislikedTracks([...waveTracks, ...cleanCatalog, ...cleanLikes]))
+      .slice(0, HOME_RECOMMENDATIONS_LIMIT)
+      .map((track, index) => ({
+        id: `reco-${track.id}`,
+        score: Number((1 - index * 0.02).toFixed(6)),
+        reason: effectiveMode === 'trends' ? 'chart-best' : (index < waveTracks.length ? 'vector-top' : 'wave-catalog-fallback'),
+        track,
+      }))
+
+    const releaseCandidates = effectiveMode === 'trends'
+      ? cleanCatalog
+      : filterDislikedTracks([...waveTracks, ...cleanCatalog, ...cleanLikes])
+    const getReleaseTs = (track) => {
+      const candidates = [
+        track?.releasedAt,
+        track?.releaseDate,
+        track?.yandex?.releaseDate,
+        track?.album?.releasedAt,
+        track?.album?.releaseDate,
+        track?.createdAt,
+      ]
+      for (const candidate of candidates) {
+        if (!candidate) continue
+        if (typeof candidate === 'number') return candidate > 1e12 ? candidate : candidate * 1000
+        const ts = Date.parse(String(candidate).trim())
+        if (Number.isFinite(ts)) return ts
+      }
+      return 0
+    }
+    const newReleases = [...releaseCandidates]
+      .sort((left, right) => getReleaseTs(right) - getReleaseTs(left))
+      .slice(0, HOME_RECOMMENDATIONS_LIMIT)
+      .map((track, index) => ({
+        id: `reco-${track.id}`,
+        score: Number((1 - index * 0.02).toFixed(6)),
+        reason: effectiveMode === 'trends' ? 'recent-release' : 'wave-release',
+        track,
+      }))
+
+    const mixes = []
+    if (effectiveMode === 'for-you') {
+      const seenMixArtists = new Set()
+      for (const track of filterDislikedTracks([...waveTracks, ...cleanCatalog, ...cleanLikes])) {
+        const key = String(track?.artist?.name || track?.artist?.id || '').trim().toLowerCase()
+        if (key && seenMixArtists.has(key)) continue
+        if (key) seenMixArtists.add(key)
+        const genre = Array.isArray(track?.genres) ? track.genres[0] : ''
+        mixes.push({
+          id: track.id,
+          title: genre ? `${titleCase(genre)} mix` : `${titleCase(track.artist?.name || 'Wave')} mix`,
+          subtitle: formatArtistNames(track, 'Wavee selection'),
+          seed: `${track.id}:local-mix`,
+          reason: 'wave-mix',
+          track,
+        })
+        if (mixes.length >= 16) break
+      }
+    }
+
+    return {
+      mode: effectiveMode,
+      generatedAt: new Date().toISOString(),
+      source: waveTracks.length ? 'client-vector' : 'client-catalog',
+      blocks: {
+        newReleases,
+        favoriteArtists,
+        popularArtists,
+        bestTracks,
+        mixes,
+        genresAndMoods: [],
+      },
+    }
+  }
+
   async function fetchHomeRecommendationsMode(mode) {
     const tokenPresent = hasSessionToken()
     const effectiveMode = tokenPresent ? mode : 'trends'
@@ -2158,91 +2311,31 @@
 
     const current = state.homeRecommendationsByMode[effectiveMode]
     const hasBlocks = current?.blocks && typeof current.blocks === 'object'
-    const cachedAt = current?.__cachedAt || 0
-    const isFresh = cachedAt > 0 && (Date.now() - cachedAt < 30 * 1000)
-
-    if (hasBlocks && isFresh) {
+    if (state.hostSynced && hasBlocks) {
       return current
-    }
-
-    if (!hasBlocks) {
-      const cached = readCachedHomeRecommendations(effectiveMode, tokenPresent)
-      if (cached?.blocks) {
-        state.homeRecommendationsByMode[effectiveMode] = cached
-        if (page === 'home') renderHome()
-      }
     }
 
     const activeRequest = homeRecommendationsInflight.get(effectiveMode)
     if (activeRequest) {
-      if (state.homeRecommendationsByMode[effectiveMode]?.blocks) {
-        return state.homeRecommendationsByMode[effectiveMode]
-      }
-      return activeRequest
+      return hasBlocks ? current : activeRequest
     }
 
     state.homeRecommendationsLoadingByMode[effectiveMode] = true
-    const authMode = tokenPresent ? 'required' : 'none'
-    const path = `/recommendations/home?limit=${HOME_RECOMMENDATIONS_LIMIT}&mode=${encodeURIComponent(effectiveMode)}`
-    const refreshPath = `${path}&refresh=1`
-
-    const applyHomeRecommendationsPayload = async (payload, { fromRefresh = false } = {}) => {
-      if (!payload?.blocks) return null
-      if (
-        effectiveMode === 'for-you'
-        && tokenPresent
-        && !hasPersonalHomeRecommendationContent(payload.blocks)
-      ) {
-        if (!fromRefresh) {
-          void api(refreshPath, { auth: authMode, retry: false })
-            .then((freshPayload) => applyHomeRecommendationsPayload(freshPayload, { fromRefresh: true }))
-            .then(() => {
-              if (page === 'home') renderHome()
-            })
-            .catch(() => null)
-        }
-        return state.homeRecommendationsByMode[effectiveMode]?.blocks
-          ? state.homeRecommendationsByMode[effectiveMode]
-          : null
-      }
-      const hydratedPayload = await hydrateMissingHomeNewReleases(payload, effectiveMode).catch(() => payload)
+    const request = (async () => {
+      const localPayload = buildLocalHomeRecommendations(effectiveMode)
+      const hydratedPayload = await hydrateMissingHomeNewReleases(localPayload, effectiveMode).catch(() => localPayload)
       const enriched = { ...hydratedPayload, __cachedAt: Date.now() }
-      state.homeRecommendationsByMode[effectiveMode] = enriched
-      writeCachedHomeRecommendations(effectiveMode, tokenPresent, hydratedPayload)
-
-      const needsRefresh = payload.snapshotStatus === 'stale'
-        || payload.snapshotStatus === 'miss'
-        || (effectiveMode === 'for-you' && tokenPresent && !hasPersonalHomeRecommendationContent(payload.blocks))
-
-      if (!fromRefresh && needsRefresh) {
-        void api(refreshPath, { auth: authMode, retry: false })
-          .then((freshPayload) => applyHomeRecommendationsPayload(freshPayload, { fromRefresh: true }))
-          .then(() => {
-            if (page === 'home') renderHome()
-          })
-          .catch(() => null)
+      if (!state.hostSynced || !state.homeRecommendationsByMode[effectiveMode]?.blocks) {
+        state.homeRecommendationsByMode[effectiveMode] = enriched
       }
-
-      return enriched
-    }
-
-    const request = api(path, { auth: authMode })
-      .then((payload) => applyHomeRecommendationsPayload(payload))
-      .catch((error) => {
-        if (error?.status === 401) {
-          clearAuthSession()
-          if (effectiveMode === 'for-you') {
-            return fetchHomeRecommendationsMode('trends')
-          }
-        }
+      writeCachedHomeRecommendations(effectiveMode, tokenPresent, hydratedPayload)
+      return state.homeRecommendationsByMode[effectiveMode] || enriched
+    })()
+      .catch(() => {
         const fallback = readCachedHomeRecommendations(effectiveMode, tokenPresent)
         if (fallback?.blocks) {
           state.homeRecommendationsByMode[effectiveMode] = fallback
           return fallback
-        }
-        const existing = state.homeRecommendationsByMode[effectiveMode]
-        if (existing?.blocks) {
-          return existing
         }
         const empty = { ...createEmptyHomeRecommendations(effectiveMode), __cachedAt: Date.now() }
         state.homeRecommendationsByMode[effectiveMode] = empty
@@ -2255,16 +2348,10 @@
       })
 
     homeRecommendationsInflight.set(effectiveMode, request)
-
-    if (state.homeRecommendationsByMode[effectiveMode]?.blocks) {
-      return state.homeRecommendationsByMode[effectiveMode]
-    }
-
-    return request
+    return hasBlocks ? current : request
   }
 
-  let myWaveLoadRequestVersion = 0
-  async function loadMyWaveRecommendations({ settings = null, persistSettings = false, rerender = true } = {}) {
+  async function loadMyWaveRecommendations({ rerender = true } = {}) {
     if (!hasSessionToken()) {
       state.myWave = []
       if (rerender) {
@@ -2274,58 +2361,17 @@
       return null
     }
 
-    const nextSettings = normalizeWaveSettings(settings || state.myWaveSettings)
-    const requestVersion = ++myWaveLoadRequestVersion
-
-    if (persistSettings) {
-      await api('/recommendations/my-wave/settings', {
-        method: 'PUT',
-        auth: 'required',
-        body: nextSettings,
-      }).catch(() => null)
-    }
-
-    const query = buildMyWaveQuery(nextSettings, MY_WAVE_RECOMMENDATIONS_LIMIT)
-    const [payload, dislikes] = await Promise.all([
-      api(`/recommendations/my-wave?${query}`, {
-        auth: 'required',
-      }).catch(() => null),
-      api('/library/dislikes', { auth: 'required' }).catch(() => null),
-    ])
-
-    if (requestVersion !== myWaveLoadRequestVersion) {
-      return payload
-    }
-
-    if (payload?.settings) {
-      state.myWaveSettings = normalizeWaveSettings(payload.settings)
-    } else {
-      state.myWaveSettings = nextSettings
-    }
-
-    if (Array.isArray(dislikes?.items)) {
-      state.dislikes = new Set(dislikes.items.map((id) => stripRecoPrefix(id)).filter(Boolean))
-    }
-    if (Array.isArray(payload?.items)) {
-      state.myWave = filterDislikedWaveItems(payload.items)
-      if (state.myWave.length) {
-        writeCachedMyWaveRecommendations({ ...payload, items: state.myWave })
-      }
-    }
-    syncMyWaveSettingChips()
-
     if (rerender) {
       if (page === 'my-wave') renderMyWave()
       if (page === 'home') renderHome()
     }
-
-    schedulePlaybackPrefetch(getMyWaveTracks())
-    return payload
+    return { items: state.myWave, settings: state.myWaveSettings }
   }
 
-  async function refreshPersonalization({ includePlaylists = false, rerender = true, force = false } = {}) {
+  async function refreshPersonalization({ rerender = true, force = false } = {}) {
     if (!hasSessionToken()) {
       state.likes = new Set()
+      state.likedTracks = []
       state.dislikes = new Set()
       state.myWave = []
       if (rerender) {
@@ -2333,6 +2379,10 @@
         if (page === 'home') renderHome()
       }
       return null
+    }
+
+    if (state.hostSynced && state.likedTracks.length && !force) {
+      return { items: state.myWave }
     }
 
     const now = Date.now()
@@ -2344,34 +2394,22 @@
     }
 
     const request = (async () => {
-      const requests = [
-        api('/library/likes', { auth: 'required' }).catch(() => null),
+      const [likes, dislikes] = await Promise.all([
+        api('/library/likes?limit=200', { auth: 'required' }).catch(() => null),
         api('/library/dislikes', { auth: 'required' }).catch(() => null),
-        api(`/recommendations/my-wave?${buildMyWaveQuery(state.myWaveSettings, MY_WAVE_RECOMMENDATIONS_LIMIT)}`, { auth: 'required' }).catch(() => null),
-      ]
+      ])
 
-      if (includePlaylists) {
-        requests.push(api('/playlists', { auth: 'required' }).catch(() => null))
-      }
-
-      const [likes, dislikes, wave, playlists] = await Promise.all(requests)
       if (Array.isArray(likes?.items)) {
-        state.likes = new Set(likes.items.map((track) => stripRecoPrefix(track?.id)).filter(Boolean))
+        state.likedTracks = likes.items.filter((track) => track?.id)
+        state.likes = new Set(state.likedTracks.map((track) => stripRecoPrefix(track?.id)).filter(Boolean))
       }
       if (Array.isArray(dislikes?.items)) {
         state.dislikes = new Set(dislikes.items.map((id) => stripRecoPrefix(id)).filter(Boolean))
       }
-      if (Array.isArray(wave?.items)) {
-        state.myWave = filterDislikedWaveItems(wave.items)
-        if (state.myWave.length) {
-          writeCachedMyWaveRecommendations({ ...wave, items: state.myWave })
-        }
-      }
-      if (wave?.settings) {
-        state.myWaveSettings = normalizeWaveSettings(wave.settings)
-      }
-      if (includePlaylists && Array.isArray(playlists?.items)) {
-        state.playlists = playlists.items
+      if (!state.hostSynced) {
+        const localPayload = buildLocalHomeRecommendations(HOME_DEFAULT_MODE)
+        const hydrated = await hydrateMissingHomeNewReleases(localPayload, HOME_DEFAULT_MODE).catch(() => localPayload)
+        state.homeRecommendationsByMode[localPayload.mode] = { ...hydrated, __cachedAt: Date.now() }
       }
       personalizationRefreshState.lastAt = Date.now()
       syncMyWaveSettingChips()
@@ -2380,7 +2418,7 @@
         if (page === 'my-wave') renderMyWave()
         if (page === 'home') renderHome()
       }
-      return wave
+      return { items: state.myWave }
     })().finally(() => {
       personalizationRefreshState.inflight = null
     })
@@ -2426,7 +2464,7 @@
   function findTrack(id) {
     const myWaveTracks = getMyWaveTracks()
     const recommendationTracks = getAllHomeRecommendationTracks()
-    for (const arr of [state.list, myWaveTracks, recommendationTracks, state.tracks, ...state.playlists.map((p) => p.tracks || [])]) {
+    for (const arr of [state.list, myWaveTracks, recommendationTracks, state.likedTracks, state.tracks, ...state.playlists.map((p) => p.tracks || [])]) {
       const f = arr.find((t) => t.id === id)
       if (f && !isTrackDisliked(f)) return f
     }
@@ -3527,7 +3565,7 @@
     const isTrendsMode = activeFilter === 'trends'
     const requiresPersonalBlocks = isForYouMode && hasSessionToken()
     const pool = forceDisconnectedPlaceholders ? [] : getHomeTrackPool(activeFilter)
-    const fallbackTracks = (forceDisconnectedPlaceholders || isForYouMode) ? [] : dedupeTracks(state.tracks)
+    const fallbackTracks = forceDisconnectedPlaceholders ? [] : filterDislikedTracks(state.tracks)
     const baseTracks = pool.length ? pool : fallbackTracks
     const categories = splitHomeTracksByKind(baseTracks)
     const musicTracks = categories.music.length ? categories.music : baseTracks
@@ -3559,14 +3597,11 @@
     const canUseCatalogFallback = !forceDisconnectedPlaceholders && musicTracks.length > 0
     const hasPersonalRecommendationContent = isForYouMode && hasPersonalHomeRecommendationContent(recommendationBlocks)
     const hasPersonalRuntimeTracks = getMyWaveTracks().length > 0
-    const shouldUseForYouEmergencyFallback = requiresPersonalBlocks
-      && !isRecommendationModeLoading
-      && !hasPersonalRecommendationContent
-      && !hasPersonalRuntimeTracks
     const isWaitingForPersonal = requiresPersonalBlocks
       && !hasPersonalRecommendationContent
+      && !canUseCatalogFallback
       && isRecommendationModeLoading
-    const canUsePersonalFallback = (!requiresPersonalBlocks || hasPersonalRuntimeTracks || shouldUseForYouEmergencyFallback) && canUseCatalogFallback
+    const canUsePersonalFallback = !isWaitingForPersonal && canUseCatalogFallback
     const shouldShowPersonalSkeleton = isForYouMode && isWaitingForPersonal
 
     if (!hasRecommendationBlocks && state.homeRecommendationsLoadingByMode[activeFilter]) {
@@ -3600,12 +3635,10 @@
       : getTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
     const releaseSource = recommendedReleaseTracks.length
       ? recommendedReleaseTracks
-      : (isTrendsMode || !requiresPersonalBlocks || hasPersonalRuntimeTracks
-          ? (canUseCatalogFallback ? trendingTracks : [])
-          : (shouldUseForYouEmergencyFallback ? trendingTracks : []))
+      : (canUseCatalogFallback ? trendingTracks : [])
     
     const getTrackReleaseTs = (t) => {
-      const candidates = [t?.releasedAt, t?.releaseDate, t?.createdAt, t?.album?.releasedAt, t?.album?.releaseDate]
+      const candidates = [t?.releasedAt, t?.releaseDate, t?.yandex?.releaseDate, t?.createdAt, t?.album?.releasedAt, t?.album?.releaseDate]
       for (const c of candidates) {
         if (!c) continue
         if (typeof c === 'number') return c > 1e12 ? c : c * 1000
@@ -3656,19 +3689,7 @@
         .slice(0, 20)
       : []
     const favoriteArtists = isForYouMode
-      ? (
-          recommendedFavoriteArtists.length
-            ? recommendedFavoriteArtists
-            : (canUsePersonalFallback ? [...getArtistEntries(musicTracks)]
-              .sort((left, right) => {
-                const leftScore = stablePercent(`${left.artist?.id || left.artist?.name}:fallback-favorite`, 20, 100)
-                  + (state.likes.has(left.track?.id) ? 12 : 0)
-                const rightScore = stablePercent(`${right.artist?.id || right.artist?.name}:fallback-favorite`, 20, 100)
-                  + (state.likes.has(right.track?.id) ? 12 : 0)
-                return rightScore - leftScore
-              })
-              .slice(0, 20) : [])
-        )
+      ? recommendedFavoriteArtists
       : []
     const favoriteArtistCards = favoriteArtists.map((entry, index) => ArtistCard({
       entry,
@@ -4080,14 +4101,14 @@
 
         let playbackList = getMyWaveTracks()
 
-        if (!playbackList.length && hasSessionToken()) {
-          el.hero.disabled = true
-          await loadMyWaveRecommendations({
-            settings: state.myWaveSettings,
-            persistSettings: false,
-            rerender: true,
-          })
-          playbackList = getMyWaveTracks()
+        if (!playbackList.length && embedMode) {
+          setHomeWaveActive(true)
+          notifyParent('wavee-start-wave', {})
+          return
+        }
+
+        if (!playbackList.length) {
+          playbackList = getHomeTrackPool()
         }
 
         const leadTrack = playbackList[0]
@@ -4280,8 +4301,111 @@
     return () => clearTimeout(timer)
   }
 
+  function applyHostHomeSync(payload) {
+    if (!payload || typeof payload !== 'object') return
+    state.hostSynced = true
+
+    if (Array.isArray(payload.dislikedTrackIds)) {
+      state.dislikes = new Set(payload.dislikedTrackIds.map(stripRecoPrefix).filter(Boolean))
+    }
+    if (Array.isArray(payload.likedTrackIds)) {
+      state.likes = new Set(payload.likedTrackIds.map(stripRecoPrefix).filter(Boolean))
+    }
+    if (Array.isArray(payload.likedTracks)) {
+      state.likedTracks = normalizeTrackItems(payload.likedTracks)
+    }
+    if (Array.isArray(payload.playlists)) {
+      state.playlists = payload.playlists
+    }
+
+    const incomingTracks = normalizeTrackItems(payload.tracks)
+    if (incomingTracks.length) {
+      state.tracks = dedupeTracks([...state.tracks, ...incomingTracks])
+      state.list = [...state.tracks]
+      writeCachedTracks(state.tracks)
+    }
+
+    if (Array.isArray(payload.myWave)) {
+      state.myWave = filterDislikedWaveItems(payload.myWave)
+      if (state.myWave.length) {
+        writeCachedMyWaveRecommendations({ items: state.myWave, settings: state.myWaveSettings })
+      }
+    }
+
+    if (payload.homeRecommendations?.blocks) {
+      const rec = payload.homeRecommendations
+      const mode = rec.mode === 'trends' ? 'trends' : 'for-you'
+      const previousHydratedReleases = Array.isArray(state.homeRecommendationsByMode?.[mode]?.blocks?.newReleases)
+        ? state.homeRecommendationsByMode[mode].blocks.newReleases.filter((entry) => entry?.reason === 'favorite-artist-latest' && entry?.track?.id)
+        : []
+      let nextBlocks = rec.blocks
+      if (previousHydratedReleases.length && Array.isArray(rec.blocks.newReleases)) {
+        const seenIds = new Set(previousHydratedReleases.map((entry) => stripRecoPrefix(entry.track.id)))
+        nextBlocks = {
+          ...rec.blocks,
+          newReleases: [
+            ...previousHydratedReleases,
+            ...rec.blocks.newReleases.filter((entry) => {
+              const id = stripRecoPrefix(entry?.track?.id)
+              if (!id || seenIds.has(id)) return false
+              seenIds.add(id)
+              return true
+            }),
+          ].slice(0, HOME_RECOMMENDATIONS_LIMIT),
+        }
+      }
+      const nextPayload = { ...rec, blocks: nextBlocks, __cachedAt: Date.now() }
+      state.homeRecommendationsByMode[mode] = nextPayload
+      state.homeRecommendationsLoadingByMode[mode] = false
+      writeCachedHomeRecommendations(mode, hasSessionToken(), nextPayload)
+
+      if (mode === 'for-you' && Array.isArray(nextBlocks.favoriteArtists) && nextBlocks.favoriteArtists.length) {
+        void hydrateMissingHomeNewReleases(nextPayload, mode).then((hydrated) => {
+          if (!hydrated?.blocks) return
+          state.homeRecommendationsByMode[mode] = { ...hydrated, __cachedAt: Date.now() }
+          writeCachedHomeRecommendations(mode, hasSessionToken(), hydrated)
+          if (page === 'home') renderHome()
+        }).catch(() => null)
+      }
+    }
+
+    if (payload.catalogReady || state.tracks.length || state.myWave.length || state.likedTracks.length) {
+      state.homeCatalogReady = true
+    }
+
+    if (payload.playback && typeof payload.playback === 'object') {
+      if (payload.playback.currentTrack) {
+        state.track = payload.playback.currentTrack
+      }
+      state.playing = Boolean(payload.playback.isPlaying)
+      const waveActive = Boolean(payload.playback.isWaveActive)
+      if (waveActive) {
+        state.ctx = 'my-wave'
+      } else if (state.ctx === 'my-wave') {
+        state.ctx = 'manual'
+      }
+      setHomeWaveActive(Boolean(state.playing && waveActive))
+    }
+
+    syncLikes()
+    if (page === 'home') renderHome()
+    if (page === 'my-wave') renderMyWave()
+  }
+
   ;(async () => {
     wire()
+    if (embedMode) {
+      window.addEventListener('message', (event) => {
+        if (window.location.origin !== 'null' && event.origin !== window.location.origin) {
+          return
+        }
+        const message = event.data
+        if (message?.source === 'wavee-host' && message?.type === 'wavee-home-sync') {
+          applyHostHomeSync(message.payload)
+        }
+      })
+      notifyParent('wavee-home-ready', {})
+    }
     const hasSession = Boolean(localStorage.getItem(TOKEN))
     const cachedTracks = readCachedTracks()
     const hydratedReco = hydrateHomeRecommendationsFromCache()
@@ -4334,15 +4458,26 @@
 
     const catalogTracks = normalizeTrackItems(catalogFeed.items)
     const searchTracks = normalizeTrackItems(tracks.items)
-    const nextTracks = catalogTracks.length ? catalogTracks : searchTracks
+    const nextTracks = dedupeTracks([...catalogTracks, ...searchTracks])
 
     if (nextTracks.length) {
-      state.tracks = nextTracks
-      writeCachedTracks(nextTracks)
+      state.tracks = dedupeTracks([...nextTracks, ...state.tracks])
+      writeCachedTracks(state.tracks)
     } else if (!state.tracks.length) {
       state.tracks = []
     }
     state.homeCatalogReady = true
+    if (!state.hostSynced && state.tracks.length) {
+      const rebuilt = buildLocalHomeRecommendations(primaryMode)
+      state.homeRecommendationsByMode[primaryMode] = { ...rebuilt, __cachedAt: Date.now() }
+      if (primaryMode === 'for-you' && rebuilt.blocks?.favoriteArtists?.length) {
+        void hydrateMissingHomeNewReleases(rebuilt, primaryMode).then((hydrated) => {
+          if (!hydrated?.blocks || state.hostSynced) return
+          state.homeRecommendationsByMode[primaryMode] = { ...hydrated, __cachedAt: Date.now() }
+          if (page === 'home') renderHome()
+        }).catch(() => null)
+      }
+    }
 
     state.list = [...state.tracks]
     scheduleEmbedScrollReset()
@@ -4358,7 +4493,7 @@
 
     if (hasSession) {
       void Promise.all([
-        refreshPersonalization({ includePlaylists: false, rerender: false, force: true }),
+        state.hostSynced ? Promise.resolve(null) : refreshPersonalization({ rerender: false, force: true }),
         primaryRecommendationsRequest,
       ]).then(() => {
         renderCurrentPage({ initial: false })
@@ -4369,6 +4504,12 @@
       })
     } else {
       void primaryRecommendationsRequest.then(() => {
+        if (!state.hostSynced && state.tracks.length) {
+          state.homeRecommendationsByMode[primaryMode] = {
+            ...buildLocalHomeRecommendations(primaryMode),
+            __cachedAt: Date.now(),
+          }
+        }
         state.homeCatalogReady = true
         if (page === 'home') renderHome()
       }).catch(() => {
