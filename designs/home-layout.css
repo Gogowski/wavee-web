@@ -1,0 +1,457 @@
+/* Reuse the shell's glass, typography and media shapes for the listening view. */
+.home-page-heading,
+.home-overview {
+  position: relative;
+  z-index: 1;
+  width: min(1280px, 100%);
+  margin-inline: auto;
+  padding-inline: 32px;
+}
+
+.home-page-heading {
+  padding-top: 132px;
+  padding-bottom: 0;
+}
+
+.home-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.home-overview {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+  margin-bottom: 30px;
+}
+
+.home-wave-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 24px;
+  background: transparent;
+}
+
+.home-wave-covers {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 228px;
+  margin: 10px 0 14px;
+  pointer-events: none;
+}
+
+.home-wave-cover {
+  position: absolute;
+  width: 174px;
+  height: 174px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--wavee-shell-chrome-bg);
+  backdrop-filter: var(--wavee-shell-chrome-blur);
+  -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
+}
+
+.home-wave-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home-wave-cover:nth-last-child(3) {
+  transform: translate(-35px, -10px) rotate(-12deg);
+}
+
+.home-wave-cover:nth-last-child(2) {
+  transform: translate(34px, -4px) rotate(11deg);
+}
+
+.home-wave-cover:last-child {
+  transform: translateY(10px);
+}
+
+.home-wave-cover-empty {
+  display: grid;
+  place-items: center;
+  color: #92a9e1;
+}
+
+.home-wave-panel .home-wave-controls {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: 48px;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.home-wave-panel .home-listen-button {
+  min-width: 0;
+  padding: 0 22px;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  gap: 10px;
+}
+
+.home-wave-panel .home-wave-settings-toggle {
+  width: 48px;
+}
+
+.home-wave-panel .home-wave-settings-toggle:disabled {
+  opacity: 0.38;
+}
+
+.home-wave-panel .home-listen-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.home-wave-panel .home-listen-button[aria-pressed='true'] .home-icon-play {
+  opacity: 0;
+  transform: scale(0.55);
+}
+
+.home-wave-panel .home-listen-button[aria-pressed='true'] .home-icon-pause {
+  opacity: 1;
+  transform: scale(1);
+}
+
+body .home-overview > .section-shell {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+body .home-overview #home-quick-access-section {
+  padding: 0 !important;
+}
+
+body:not([data-wavee-embed='app']) .home-page-heading {
+  padding-top: 40px;
+}
+
+.home-overview .home-section-header {
+  min-height: 32px;
+  margin-bottom: 18px;
+}
+
+.home-section-title {
+  font-size: 26px;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.home-section-title::after {
+  width: 0.8em;
+  height: 0.8em;
+}
+
+.home-overview .home-section-title {
+  font-size: 24px;
+}
+
+.home-overview .home-section-title::after {
+  display: none;
+}
+
+.home-overview .artists-carousel-control {
+  width: 32px;
+  height: 32px;
+}
+
+.home-overview .home-album-card {
+  width: 224px;
+  min-width: 224px;
+  max-width: 224px;
+}
+
+body .section-shell {
+  padding-inline: 32px;
+}
+
+.home-section-head-copy .home-section-subline,
+#home-subtitle-section {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .home-overview {
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .home-wave-panel {
+    padding: 22px;
+  }
+
+  .home-wave-cover {
+    width: 154px;
+    height: 154px;
+  }
+
+  .home-wave-covers {
+    height: 200px;
+  }
+}
+
+@media (max-width: 767px) {
+  .home-page-heading,
+  .home-overview,
+  body .section-shell {
+    padding-inline: 20px;
+  }
+
+  .home-page-heading {
+    padding-top: 96px;
+    padding-bottom: 0;
+  }
+
+  .home-overview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    margin-bottom: 14px;
+  }
+
+  .home-wave-panel {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    grid-template-rows: auto;
+    gap: 14px 18px;
+    padding: 20px;
+    align-items: center;
+  }
+
+  .home-wave-covers {
+    grid-column: 1;
+    grid-row: 1;
+    height: 100px;
+    margin: 0;
+  }
+
+  .home-wave-cover {
+    width: 72px;
+    height: 72px;
+    border-radius: 14px;
+  }
+
+  .home-wave-cover:nth-last-child(3) {
+    transform: translate(-12px, -8px) rotate(-12deg);
+  }
+
+  .home-wave-cover:nth-last-child(2) {
+    transform: translate(12px, -5px) rotate(11deg);
+  }
+
+  .home-wave-cover:last-child {
+    transform: translateY(5px);
+  }
+
+  .home-wave-panel .home-wave-controls {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    height: 44px;
+  }
+
+  .home-wave-panel .home-listen-button {
+    padding-inline: 14px;
+    font-size: 11px;
+    gap: 7px;
+  }
+
+  .home-wave-panel .home-wave-settings-toggle {
+    width: 44px;
+  }
+
+  .home-section-title,
+  .home-overview .home-section-title {
+    font-size: 21px;
+  }
+
+  .home-overview .home-album-card {
+    width: 158px;
+    min-width: 158px;
+    max-width: 158px;
+  }
+}
+
+@media (max-width: 374px) {
+  .home-wave-panel {
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px;
+  }
+}
+
+/* TrackRow's scalloped playback control and playing badge, scaled for covers. */
+body [data-carousel-card] :is(.home-card-play, .home-artist-play) {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 12px;
+  border: 0;
+  border-radius: 0;
+  clip-path: url(#wavee-star-clip);
+  -webkit-clip-path: url(#wavee-star-clip);
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #0b0c10 !important;
+  box-shadow: none;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: translate(-50%, -50%) scale(0.76) rotate(-14deg) !important;
+  transition: opacity 140ms cubic-bezier(0.2, 0, 0, 1),
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 140ms;
+  animation: none !important;
+  z-index: 4;
+}
+
+body [data-carousel-card] :is(.home-card-play, .home-artist-play) svg {
+  grid-area: 1 / 1;
+  width: 24px;
+  height: 24px;
+  filter: none;
+  transition: opacity 140ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.home-card-icon-play {
+  opacity: 1;
+}
+
+.home-card-icon-pause {
+  opacity: 0;
+}
+
+[data-carousel-card] [aria-pressed='true'] .home-card-icon-play {
+  opacity: 0;
+}
+
+[data-carousel-card] [aria-pressed='true'] .home-card-icon-pause {
+  opacity: 1;
+}
+
+.home-card-playing-mark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  height: 36px;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms cubic-bezier(0.2, 0, 0, 1);
+  z-index: 3;
+}
+
+.home-card-playing-mark svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: #92a9e1;
+}
+
+.home-card-playing-bars {
+  fill: #10141d;
+}
+
+.home-card-playing-bars rect {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.is-playing .home-card-playing-mark {
+  opacity: 1;
+}
+
+.is-playing .home-card-playing-bars rect:nth-child(1) {
+  animation: home-playing-bar 0.82s ease-in-out infinite alternate;
+}
+
+.is-playing .home-card-playing-bars rect:nth-child(2) {
+  animation: home-playing-bar 0.66s 0.12s ease-in-out infinite alternate-reverse;
+}
+
+.is-playing .home-card-playing-bars rect:nth-child(3) {
+  animation: home-playing-bar 0.74s 0.22s ease-in-out infinite alternate;
+}
+
+@keyframes home-playing-bar {
+  from { transform: scaleY(0.55); }
+  to { transform: scaleY(1); }
+}
+
+[data-carousel-card].is-active :is(.home-album-title, .home-top-track-title,
+  .home-playlist-artist, .home-artist-name, .home-small-title) {
+  color: #92a9e1 !important;
+}
+
+/* A mouse click must not hold the hover control open after the pointer leaves. */
+@media (hover: hover) and (pointer: fine) {
+  body [data-carousel-card]:hover :is(.home-card-play, .home-artist-play) {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg) !important;
+    transition-delay: 0s;
+  }
+
+  [data-carousel-card]:hover .home-card-playing-mark {
+    opacity: 0;
+  }
+}
+
+body [data-carousel-card]:has(button:focus-visible) :is(.home-card-play, .home-artist-play) {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translate(-50%, -50%) scale(1) rotate(0deg) !important;
+  transition-delay: 0s;
+}
+
+[data-carousel-card]:has(button:focus-visible) .home-card-playing-mark {
+  opacity: 0;
+}
+
+body [data-carousel-card] :is(.home-card-play, .home-artist-play):active {
+  transform: translate(-50%, -50%) scale(0.92) !important;
+}
+
+body :is(.home-playlist-cover, .home-album-cover)::after,
+body .home-small-media::before {
+  background: rgba(7, 8, 11, 0.34);
+}
+
+@media (hover: none), (pointer: coarse) {
+  body [data-carousel-card] :is(.home-card-play, .home-artist-play) {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg) !important;
+  }
+
+  [data-carousel-card] .home-card-playing-mark {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-playing .home-card-playing-bars rect {
+    animation: none;
+  }
+}

@@ -227,12 +227,9 @@
     shuf: $('wavee-player-shuffle'),
     rep: $('wavee-player-repeat'),
     hero: $('home-hero-listen'),
+    homeWaveCovers: $('home-wave-covers'),
     homeWaveSettingsToggle: $('home-wave-settings-toggle'),
     homeWaveSettingsPanel: $('home-wave-settings-panel'),
-    homeHeroTip: $('home-hero-tip'),
-    homeWaveArt: $('home-wave-art'),
-    homeWaveArtImage: $('home-wave-art-image'),
-    homeGreeting: $('home-greeting'),
     homeFilterSection: $('home-filter-section'),
     homeFilterChips: $('home-filter-chips'),
     homeQuickAccessSection: $('home-quick-access-section'),
@@ -312,7 +309,7 @@
     seen: new Set(),
     timer: null,
   }
-  const railAnimationState = new WeakMap()
+  const homeRailBindings = new WeakMap()
   const homeRecommendationsInflight = new Map()
   const homePersonalReleaseInflight = new Map()
   const runtimeGetCache = new Map()
@@ -341,11 +338,7 @@
     modeFxTimer: null,
     filterSwipeTimer: null,
   }
-  const RAIL_SCROLL_MIN_DURATION_MS = 220
-  const RAIL_SCROLL_MAX_DURATION_MS = 460
-  const RAIL_SCROLL_DISTANCE_FACTOR = 0.46
-  const railTargetState = new WeakMap()
-  const railScrollActivityTimers = new WeakMap()
+  const HOME_RAIL_SCROLL_AMOUNT = 500
   const ARTIST_STATS_CACHE_TTL_MS = 15 * 60 * 1000
   const artistStatsCache = new Map()
   const artistStatsInflight = new Map()
@@ -373,12 +366,6 @@
     }
     return (hash >>> 0).toString(36)
   }
-  const easeInOutCubic = (value) => (
-    value < 0.5
-      ? 4 * value * value * value
-      : 1 - (((-2 * value) + 2) ** 3) / 2
-  )
-  const easeOutCubic = (value) => 1 - ((1 - value) ** 3)
   // Native wheel/touch scrolling avoids competing 520ms scroll tweens.
   const CYRILLIC_RE = /[Ð-Ð¯Ð°-ÑÐÑ‘]/
   const GENERIC_MOOD_GENRES = ['indie', 'lofi', 'chill', 'electropop', 'alternative', 'dream', 'ambient', 'pop', 'rock']
@@ -437,103 +424,6 @@
     tone: 'Ð¢ÐµÐ¿Ð»Ñ‹Ð¹ Ñ Ñ„Ð¸Ñ€',
   }
 
-  const HERO_ART_VARIANTS = [
-    {
-      id: 'cat',
-      title: 'Кот',
-      role: 'Инди и лоуфай',
-      futureGenres: ['indie', 'lofi', 'dream pop', 'bedroom pop', 'alternative'],
-      image: 'assets/animals/cat.png',
-      idle: [],
-    },
-    {
-      id: 'bunny',
-      title: 'Заяц',
-      role: 'Поп и танцевальная музыка',
-      futureGenres: ['pop', 'dance', 'k pop', 'electropop', 'hyperpop'],
-      image: 'assets/animals/bunny.png',
-      idle: [],
-    },
-    {
-      id: 'otter',
-      title: 'Выдра',
-      role: 'Чилл и эмбиент',
-      futureGenres: ['ambient', 'chill', 'downtempo', 'chillout', 'lofi'],
-      image: 'assets/animals/otter.png',
-      idle: [],
-    },
-    {
-      id: 'raccoon',
-      title: 'Енот',
-      role: 'Брейкбит и гараж',
-      futureGenres: ['drum and bass', 'breakbeat', 'garage', 'uk garage', 'jungle'],
-      image: 'assets/animals/raccoon.png',
-      idle: [],
-    },
-    {
-      id: 'capybara',
-      title: 'Капибара',
-      role: 'Акустика и фолк',
-      futureGenres: ['acoustic', 'folk', 'indie folk', 'singer songwriter', 'soft rock'],
-      image: 'assets/animals/capybara.png',
-      idle: [],
-    },
-    {
-      id: 'bat',
-      title: 'Летучая мышь',
-      role: 'Темная электроника',
-      futureGenres: ['darkwave', 'post punk', 'synthwave', 'wave', 'industrial'],
-      image: 'assets/animals/bat.png',
-      idle: [],
-    },
-    {
-      id: 'mouse',
-      title: 'Мышь',
-      role: 'Хаус и техно',
-      futureGenres: ['house', 'techno', 'electronic', 'edm', 'minimal'],
-      image: 'assets/animals/mouse.png',
-      idle: [],
-    },
-    {
-      id: 'turtle',
-      title: 'Черепаха',
-      role: 'Классика и инструментал',
-      futureGenres: ['classical', 'instrumental', 'neo classical', 'piano', 'soundtrack'],
-      image: 'assets/animals/turtle.png',
-      idle: [],
-    },
-    {
-      id: 'duck',
-      title: 'Утка',
-      role: 'Фанк и диско',
-      futureGenres: ['funk', 'disco', 'nu disco', 'soul', 'boogie'],
-      image: 'assets/animals/duck.png',
-      idle: [],
-    },
-    {
-      id: 'repov',
-      title: 'Репов',
-      role: 'Рэп и хип-хоп',
-      futureGenres: ['rap', 'hip hop', 'trap', 'drill', 'grime'],
-      image: 'assets/animals/repov.png',
-      idle: [],
-    },
-  ]
-  const heroArtState = {
-    seedSource: '',
-    genreSignature: '',
-    variantIndex: 0,
-    invalidImageSrcs: new Set(),
-    variantLocked: false,
-    active: false,
-    phase: 0,
-    timer: null,
-  }
-
-  function clamp01(value) {
-    return clamp(value, 0, 1)
-  }
-
   function hashString(value) {
     let hash = 0
     const source = String(value || '')
@@ -544,278 +434,59 @@
     return hash
   }
 
-  function getHeroArtSeedSource() {
-    try {
-      const rawUser = localStorage.getItem('wavee_user')
-      if (rawUser) {
-        const user = JSON.parse(rawUser)
-        const direct = [user?.id, user?.email, user?.name].find((item) => typeof item === 'string' && item.trim())
-        if (direct) return direct
-      }
-    } catch {
-      // ignore malformed user payload
-    }
-
-    const token = localStorage.getItem(TOKEN) || ''
-    if (token) return token.slice(0, 24)
-    return 'guest'
-  }
-
-  function normalizeAnimalGenre(value) {
-    return String(value || '')
-      .trim()
-      .toLowerCase()
-      .replaceAll('_', ' ')
-      .replaceAll('-', ' ')
-  }
-
-  function collectHomeGenreSignals() {
-    const signals = []
-    const pushGenres = (list) => {
-      if (!Array.isArray(list)) return
-      list.forEach((genre) => {
-        const normalized = normalizeAnimalGenre(genre)
-        if (normalized) signals.push(normalized)
-      })
-    }
-
-    if (Array.isArray(state.myWave) && state.myWave.length) {
-      state.myWave.forEach((item) => pushGenres(item?.track?.genres))
-    }
-
-    if (!signals.length && Array.isArray(state.tracks)) {
-      state.tracks.slice(0, 40).forEach((track) => pushGenres(track?.genres))
-    }
-
-    return signals
-  }
-
-  function scoreHeroVariant(variant, genreSignals) {
-    const targets = Array.isArray(variant?.futureGenres)
-      ? variant.futureGenres.map(normalizeAnimalGenre).filter(Boolean)
-      : []
-
-    if (!targets.length || !genreSignals.length) return 0
-
-    let score = 0
-    genreSignals.forEach((genre, index) => {
-      const weight = Math.max(1, 7 - Math.floor(index / 3))
-      targets.forEach((target) => {
-        if (genre === target) {
-          score += 3 * weight
-        } else if (genre.includes(target) || target.includes(genre)) {
-          score += 1 * weight
-        }
-      })
-    })
-
-    return score
-  }
-
-  function pickHeroArtVariant() {
-    if (heroArtState.variantLocked) {
-      return HERO_ART_VARIANTS[heroArtState.variantIndex] || HERO_ART_VARIANTS[0]
-    }
-
-    const seedSource = getHeroArtSeedSource()
-    const genreSignals = collectHomeGenreSignals()
-    const genreSignature = genreSignals.slice(0, 30).join('|')
-
-    if (seedSource === heroArtState.seedSource && genreSignature === heroArtState.genreSignature) {
-      return HERO_ART_VARIANTS[heroArtState.variantIndex] || HERO_ART_VARIANTS[0]
-    }
-
-    heroArtState.seedSource = seedSource
-    heroArtState.genreSignature = genreSignature
-
-    let bestIndex = -1
-    let bestScore = 0
-
-    HERO_ART_VARIANTS.forEach((variant, index) => {
-      const score = scoreHeroVariant(variant, genreSignals)
-      if (score > bestScore) {
-        bestScore = score
-        bestIndex = index
-        return
-      }
-
-      if (score === bestScore && score > 0) {
-        const currentId = bestIndex >= 0 ? HERO_ART_VARIANTS[bestIndex].id : ''
-        const currentTie = Math.abs(hashString(seedSource + ':' + currentId))
-        const nextTie = Math.abs(hashString(seedSource + ':' + variant.id))
-        if (nextTie > currentTie) {
-          bestIndex = index
-        }
-      }
-    })
-
-    if (bestIndex < 0) {
-      bestIndex = Math.abs(hashString(seedSource)) % HERO_ART_VARIANTS.length
-    }
-
-    heroArtState.variantIndex = bestIndex
-    return HERO_ART_VARIANTS[bestIndex] || HERO_ART_VARIANTS[0]
-  }
-
-  function setHeroAnimalImage(src) {
-    if (!el.homeWaveArtImage || !src) return false
-    const fallbackSrc = 'assets/animals/cat.png'
-    if (!el.homeWaveArtImage.dataset.waveeHeroImageBound) {
-      el.homeWaveArtImage.addEventListener('load', () => {
-        heroArtState.variantLocked = true
-      })
-      el.homeWaveArtImage.addEventListener('error', () => {
-        const currentSrc = el.homeWaveArtImage?.getAttribute('data-variant-src')
-          || el.homeWaveArtImage?.getAttribute('src')
-          || ''
-        if (currentSrc) {
-          heroArtState.invalidImageSrcs.add(currentSrc)
-        }
-        heroArtState.variantLocked = false
-        if (currentSrc !== fallbackSrc) {
-          el.homeWaveArtImage.setAttribute('data-variant-src', fallbackSrc)
-          el.homeWaveArtImage.setAttribute('src', fallbackSrc)
-        }
-      })
-      el.homeWaveArtImage.dataset.waveeHeroImageBound = '1'
-    }
-
-    const targetSrc = heroArtState.invalidImageSrcs.has(src)
-      ? fallbackSrc
-      : src
-
-    if (heroArtState.invalidImageSrcs.has(src)) {
-      heroArtState.variantLocked = false
-    }
-
-    const current = el.homeWaveArtImage.getAttribute('data-variant-src') || ''
-    if (current === targetSrc && el.homeWaveArtImage.getAttribute('src') === targetSrc) {
-      return true
-    }
-
-    el.homeWaveArtImage.setAttribute('data-variant-src', targetSrc)
-    el.homeWaveArtImage.setAttribute('src', targetSrc)
-    return true
-  }
-
-  function renderHeroArtIdle() {
-    if (page !== 'home') {
-      return
-    }
-
-    const variant = pickHeroArtVariant()
-    if (setHeroAnimalImage(variant?.image)) {
-      return
-    }
-
-    if (el.homeWaveArt) {
-      el.homeWaveArt.textContent = Array.isArray(variant?.idle) ? variant.idle.join('\n') : ''
-    }
-  }
-
-  function renderHeroArtActiveFrame() {
-    if (page !== 'home') {
-      return
-    }
-
-    const variant = pickHeroArtVariant()
-    if (setHeroAnimalImage(variant?.image)) {
-      return
-    }
-
-    if (!el.homeWaveArt) {
-      return
-    }
-
-    const waveRows = buildHeroWaveRows(heroArtState.phase)
-    const lines = [
-      '               \u0421 \u041b \u0423 \u0428 \u0410 \u0422 \u042c',
-      ...waveRows,
-    ]
-    el.homeWaveArt.textContent = lines.join('\n')
-  }
-
-  function stopHeroArtAnimation() {
-    if (heroArtState.timer) {
-      clearInterval(heroArtState.timer)
-      heroArtState.timer = null
-    }
-  }
-
-  function startHeroArtAnimation() {
-    if (el.homeWaveArtImage) {
-      stopHeroArtAnimation()
-      return
-    }
-
-    if (heroArtState.timer || page !== 'home' || (!el.homeWaveArt && !el.homeWaveArtImage)) {
-      return
-    }
-
-    heroArtState.timer = setInterval(() => {
-      if (!heroArtState.active) {
-        return
-      }
-      heroArtState.phase = (heroArtState.phase + 1) % 10_000
-      renderHeroArtActiveFrame()
-    }, 96)
-  }
-
-  function buildHeroWaveRows(phase) {
-    const width = 27
-    const height = 6
-    const palette = ['.', ':', '+', '#', '@']
-    const rows = []
-
-    for (let row = height; row >= 1; row -= 1) {
-      let line = ''
-      for (let column = 0; column < width; column += 1) {
-        const motion = (
-          Math.sin((column * 0.38) + (phase * 0.2))
-          + (Math.sin((column * 0.16) - (phase * 0.27)) * 0.52)
-          + 2
-        ) / 3.4
-        const level = Math.max(1, Math.round(clamp01(motion) * height))
-
-        if (level >= row) {
-          const density = clamp(Math.round(((height - row + 1) + (motion * height)) / 2), 1, height)
-          const glyphIndex = clamp(Math.round((density / height) * (palette.length - 1)), 0, palette.length - 1)
-          line += `${palette[glyphIndex]} `
-        } else {
-          line += '  '
-        }
-      }
-      rows.push(`      ${line.trimEnd()}`)
-    }
-
-    return rows
-  }
-
-
   function setHomeWaveActive(active) {
     if (page !== 'home' || !document.body) {
       return
     }
 
     const next = Boolean(active)
-    heroArtState.active = next
     if (el.hero) {
       el.hero.classList.toggle('is-active', next)
       el.hero.setAttribute('aria-pressed', next ? 'true' : 'false')
+      el.hero.setAttribute('aria-label', next ? 'Приостановить мою волну' : 'Слушать мою волну')
+      const listenLabel = el.hero.querySelector('.home-listen-label')
+      if (listenLabel) listenLabel.textContent = next ? 'Пауза' : 'Моя волна'
+    }
+  }
+
+  function renderHomeWaveCovers({ musicTracks = [], allowCatalogFallback = false } = {}) {
+    if (!el.homeWaveCovers) {
+      return
     }
 
-    if (next) {
-      heroArtState.phase = 0
-      renderHeroArtActiveFrame()
-      if (el.homeWaveArtImage) {
-        stopHeroArtAnimation()
-      } else {
-        startHeroArtAnimation()
+    const candidateTracks = [
+      ...getMyWaveTracks(),
+      ...filterDislikedTracks(state.likedTracks),
+      ...(allowCatalogFallback ? filterDislikedTracks(musicTracks) : []),
+    ]
+    const seenCoverUrls = new Set()
+    const coverUrls = []
+
+    for (const track of candidateTracks) {
+      const coverUrl = String(track?.coverUrl || '').trim()
+      if (!coverUrl || seenCoverUrls.has(coverUrl)) {
+        continue
       }
-    } else {
-      stopHeroArtAnimation()
-      renderHeroArtIdle()
+
+      seenCoverUrls.add(coverUrl)
+      coverUrls.push(coverUrl)
+      if (coverUrls.length >= 3) {
+        break
+      }
     }
+
+    const markup = coverUrls.length
+      ? coverUrls.map((coverUrl) => (
+        `<span class="home-wave-cover"><img src="${esc(optimizedCoverUrl(coverUrl, 400))}" alt=""></span>`
+      )).join('')
+      : '<span class="home-wave-cover home-wave-cover-empty" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13M9 9l12-2"></path><ellipse cx="6" cy="18" rx="3" ry="3"></ellipse><ellipse cx="18" cy="16" rx="3" ry="3"></ellipse></svg></span>'
+
+    if (el.homeWaveCovers.dataset.waveeRenderedMarkup === markup) {
+      return
+    }
+
+    el.homeWaveCovers.innerHTML = markup
+    el.homeWaveCovers.dataset.waveeRenderedMarkup = markup
   }
 
   const playIcon = (isPlaying) => isPlaying
@@ -2565,6 +2236,7 @@
       el.play.setAttribute('aria-label', state.playing ? 'ÐŸÐ°ÑƒÐ·Ð°' : 'Ð˜Ð³Ñ€Ð°Ñ‚ÑŒ')
       el.play.title = state.playing ? 'ÐŸÐ°ÑƒÐ·Ð°' : 'Ð˜Ð³Ñ€Ð°Ñ‚ÑŒ'
     }
+    markRows()
     syncLikes()
   }
 
@@ -2589,6 +2261,20 @@
     document.querySelectorAll('[data-track-row-id]').forEach((row) => {
       const on = row.getAttribute('data-track-row-id') === state.track?.id
       row.classList.toggle('bg-white/10', on)
+    })
+    document.querySelectorAll('[data-carousel-card][data-track-id]').forEach((card) => {
+      const active = stripRecoPrefix(card.dataset.trackId) === stripRecoPrefix(state.track?.id)
+      const playing = active && state.playing
+      card.classList.toggle('is-active', active)
+      card.classList.toggle('is-playing', playing)
+      if (active) card.setAttribute('aria-current', 'true')
+      else card.removeAttribute('aria-current')
+      const button = card.querySelector('.home-card-play, .home-artist-play')
+      if (!button) return
+      button.setAttribute('aria-pressed', String(playing))
+      button.setAttribute('aria-label', playing
+        ? `Поставить «${button.dataset.playbackTitle}» на паузу`
+        : `Воспроизвести «${button.dataset.playbackTitle}»`)
     })
   }
 
@@ -2920,98 +2606,6 @@
     }
   }
 
-  function animateRailScroll(row, target, options = {}) {
-    if (!row) return
-    const {
-      syncControls = () => {},
-      setSnap = null,
-      onComplete = null,
-      respectReducedMotion = true,
-    } = options
-
-    const maxScrollLeft = Math.max(0, row.scrollWidth - row.clientWidth)
-    const clampedTarget = clamp(target, 0, maxScrollLeft)
-    const reducedMotion = respectReducedMotion && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
-    const start = row.scrollLeft
-    const distance = clampedTarget - start
-    if (Math.abs(distance) < 2 || reducedMotion) {
-      row.scrollLeft = clampedTarget
-      syncControls()
-      if (typeof onComplete === 'function') onComplete(clampedTarget)
-      return
-    }
-
-    const activeState = railAnimationState.get(row)
-    if (activeState?.frame) {
-      // Update the active tween in-place to avoid jumpy restarts on rapid clicks.
-      activeState.start = row.scrollLeft
-      activeState.target = clampedTarget
-      activeState.startedAt = performance.now()
-      activeState.duration = clamp(
-        Math.abs(activeState.target - activeState.start) * RAIL_SCROLL_DISTANCE_FACTOR,
-        RAIL_SCROLL_MIN_DURATION_MS,
-        RAIL_SCROLL_MAX_DURATION_MS,
-      )
-      activeState.syncControls = syncControls
-      activeState.onComplete = onComplete
-      return
-    }
-
-    if (typeof setSnap === 'function') {
-      setSnap(false)
-    }
-
-    const duration = clamp(
-      Math.abs(distance) * RAIL_SCROLL_DISTANCE_FACTOR,
-      RAIL_SCROLL_MIN_DURATION_MS,
-      RAIL_SCROLL_MAX_DURATION_MS,
-    )
-    const tween = {
-      frame: 0,
-      start,
-      target: clampedTarget,
-      startedAt: performance.now(),
-      duration,
-      syncControls,
-      onComplete,
-    }
-
-    const tick = (now) => {
-      const progress = clamp((now - tween.startedAt) / tween.duration, 0, 1)
-      row.scrollLeft = tween.start + ((tween.target - tween.start) * easeInOutCubic(progress))
-      tween.syncControls()
-      if (progress < 1) {
-        tween.frame = requestAnimationFrame(tick)
-        railAnimationState.set(row, tween)
-        return
-      }
-
-      railAnimationState.delete(row)
-      row.scrollLeft = tween.target
-      if (typeof tween.onComplete === 'function') tween.onComplete(tween.target)
-      if (typeof setSnap === 'function') {
-        requestAnimationFrame(() => {
-          setSnap(true)
-          tween.syncControls()
-        })
-        return
-      }
-      tween.syncControls()
-    }
-
-    tween.frame = requestAnimationFrame(tick)
-    railAnimationState.set(row, tween)
-  }
-
-  function getHomeRailStep(row) {
-    if (!row) return 320
-    const card = row.querySelector('[data-carousel-card]')
-    if (!card) return Math.max(row.clientWidth * 0.84, 240)
-    const styles = window.getComputedStyle(row)
-    const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0
-    return (card.getBoundingClientRect().width + gap) * 2
-  }
-
   function getHomeRailTriples() {
     return HOME_RAIL_REGISTRY.map((item) => ({
       slot: item.slot,
@@ -3047,7 +2641,7 @@
       if (!row) return
       const rawValue = snapshot[slot]
       if (!Number.isFinite(rawValue)) return
-      row.scrollLeft = rawValue
+      row.scrollTo({ left: rawValue, behavior: 'instant' })
     })
   }
 
@@ -3055,81 +2649,66 @@
     if (!row || !prevButton || !nextButton) return
     const maxScrollLeft = Math.max(0, row.scrollWidth - row.clientWidth)
     const scrollLeft = row.scrollLeft
-    prevButton.disabled = scrollLeft <= 8
-    nextButton.disabled = scrollLeft >= maxScrollLeft - 8 || maxScrollLeft <= 8
+    prevButton.disabled = scrollLeft <= 5
+    nextButton.disabled = scrollLeft >= maxScrollLeft - 5
   }
 
-  function scrollHomeRail(row, prevButton, nextButton, direction = 1) {
-    if (!row) return
-    const maxScrollLeft = Math.max(0, row.scrollWidth - row.clientWidth)
-    const baseTarget = railTargetState.get(row)
-    const base = Number.isFinite(baseTarget) ? baseTarget : row.scrollLeft
-    const nextTarget = clamp(base + (getHomeRailStep(row) * direction), 0, maxScrollLeft)
-    railTargetState.set(row, nextTarget)
-    animateRailScroll(row, nextTarget, {
-      syncControls: () => {
-        syncHomeRailControls(row, prevButton, nextButton)
-      },
-      setSnap: (enabled) => {
-        row.style.scrollSnapType = enabled ? '' : 'none'
-      },
-      onComplete: () => {
-        row.classList.remove('is-scrolling')
-        railTargetState.delete(row)
-        rememberHomeRailPosition(row)
-      },
-      respectReducedMotion: false,
+  function scrollHomeRail(row, direction = 1) {
+    // Match smoothScrollElement used by ScrollControls in the React pages.
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    row.scrollBy({
+      left: HOME_RAIL_SCROLL_AMOUNT * direction,
+      behavior: reduceMotion ? 'instant' : 'smooth',
     })
   }
 
   function wireHomeRail(row, prevButton, nextButton) {
     if (!row || !prevButton || !nextButton) return
-    let scrollSyncFrame = 0
-    const sync = () => {
-      syncHomeRailControls(row, prevButton, nextButton)
-      if (!railAnimationState.has(row)) {
-        railTargetState.delete(row)
-      }
-      if (!railAnimationState.has(row)) {
+    let binding = homeRailBindings.get(row)
+    if (!binding) {
+      binding = { prevButton, nextButton, frame: 0, activityTimer: 0, resizeTimer: 0 }
+      const sync = () => {
+        syncHomeRailControls(row, binding.prevButton, binding.nextButton)
         rememberHomeRailPosition(row)
       }
-      row.classList.add('is-scrolling')
-      const prevTimer = railScrollActivityTimers.get(row)
-      if (prevTimer) clearTimeout(prevTimer)
-      const nextTimer = setTimeout(() => {
-        if (!railAnimationState.has(row)) {
-          row.classList.remove('is-scrolling')
-        }
-      }, 110)
-      railScrollActivityTimers.set(row, nextTimer)
-    }
-    const scheduleSync = () => {
-      if (scrollSyncFrame) return
-      scrollSyncFrame = requestAnimationFrame(() => {
-        scrollSyncFrame = 0
-        sync()
-      })
+      const scheduleSync = () => {
+        if (binding.frame) return
+        binding.frame = requestAnimationFrame(() => {
+          binding.frame = 0
+          sync()
+        })
+      }
+      binding.scheduleSync = scheduleSync
+      row.addEventListener('scroll', () => {
+        row.classList.add('is-scrolling')
+        clearTimeout(binding.activityTimer)
+        binding.activityTimer = setTimeout(() => row.classList.remove('is-scrolling'), 110)
+        scheduleSync()
+      }, { passive: true })
+      window.addEventListener('resize', () => {
+        clearTimeout(binding.resizeTimer)
+        binding.resizeTimer = setTimeout(scheduleSync, 90)
+      }, { passive: true })
+      if (typeof ResizeObserver !== 'undefined') {
+        binding.observer = new ResizeObserver(scheduleSync)
+        binding.observer.observe(row)
+      }
+      homeRailBindings.set(row, binding)
     }
 
-    if (row.dataset.homeRailBound === '1') {
-      requestAnimationFrame(sync)
-      return
-    }
-
-    row.addEventListener('scroll', scheduleSync, { passive: true })
-
+    // Headers can be replaced when recommendations change; keep one listener
+    // per rail and bind its current controls instead of retaining old buttons.
+    binding.prevButton = prevButton
+    binding.nextButton = nextButton
     prevButton.onclick = () => {
-      row.classList.add('is-scrolling')
-      scrollHomeRail(row, prevButton, nextButton, -1)
+      scrollHomeRail(row, -1)
+      binding.scheduleSync()
     }
     nextButton.onclick = () => {
-      row.classList.add('is-scrolling')
-      scrollHomeRail(row, prevButton, nextButton, 1)
+      scrollHomeRail(row, 1)
+      binding.scheduleSync()
     }
-
-    window.addEventListener('resize', sync)
-    row.dataset.homeRailBound = '1'
-    requestAnimationFrame(sync)
+    binding.scheduleSync()
   }
 
   function syncHomeTrackRailControls() {
@@ -3391,6 +2970,26 @@
     })
   }
 
+  function homeCardPlayback(trackId, title, className = 'home-card-play') {
+    const starPath = document.querySelector('#wavee-star-clip path')?.getAttribute('d') || ''
+    return `
+      <button type="button" data-action="play-track" data-track-id="${esc(trackId)}" data-playback-title="${esc(title)}" class="${className}" aria-label="Воспроизвести «${esc(title)}»" aria-pressed="false">
+        <svg class="home-card-icon-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
+        <svg class="home-card-icon-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/pause-solid.svg#pause-solid"></use></svg>
+      </button>
+      <span class="home-card-playing-mark" aria-hidden="true">
+        <svg viewBox="0 0 1 1" focusable="false">
+          <path d="${esc(starPath)}" />
+          <g class="home-card-playing-bars">
+            <rect x="0.31" y="0.41" width="0.08" height="0.18" rx="0.04" />
+            <rect x="0.46" y="0.32" width="0.08" height="0.36" rx="0.04" />
+            <rect x="0.61" y="0.38" width="0.08" height="0.24" rx="0.04" />
+          </g>
+        </svg>
+      </span>
+    `
+  }
+
   function ArtistCard({ entry = {}, badge = '', meta = '' } = {}) {
     const artistName = entry?.artist?.name || 'Wavee Artist'
     const artistAvatarUrl = getArtistAvatarUrl(entry)
@@ -3411,9 +3010,7 @@
               : `<div class="home-artist-cover-fallback">${esc(getArtistInitials(artistName))}</div>`}
           </div>
           ${cardBadgeMarkup()}
-          <button data-action="play-track" data-track-id="${esc(trackId)}" class="home-artist-play" aria-label="Играть ${esc(artistName)}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
-          </button>
+          ${homeCardPlayback(trackId, artistName, 'home-artist-play')}
         </div>
         <div class="home-artist-info">
           <h3 class="home-artist-name${artistNameSizeClass}">${esc(artistName)}</h3>
@@ -3454,9 +3051,7 @@
                 <h3 class="home-playlist-artist">${esc(artistName)}</h3>
               </div>
             `}
-          <button data-action="play-track" data-track-id="${esc(track.id)}" class="home-card-play" aria-label="Играть ${esc(track.title || artistName)}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
-          </button>
+          ${homeCardPlayback(track.id, track.title || artistName)}
         </div>
         ${compact
           ? `
@@ -3489,9 +3084,7 @@
         <div class="home-album-cover">
           ${coverMarkup(track, cardTitle, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
           ${cardBadgeMarkup()}
-          <button data-action="play-track" data-track-id="${esc(track.id)}" class="home-card-play" aria-label="Играть ${esc(cardTitle)}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
-          </button>
+          ${homeCardPlayback(track.id, cardTitle)}
         </div>
         <h3 class="home-album-title">${esc(cardTitle)}</h3>
         <p class="home-album-subtitle">${esc(cardSubtitle)}</p>
@@ -3519,9 +3112,7 @@
         <div class="home-small-media">
           ${coverMarkup(track, cardTitle, 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105')}
           ${cardBadgeMarkup({ label: badge, tone: size === 'large' ? 'hot' : 'soft' })}
-          <button data-action="play-track" data-track-id="${esc(track.id)}" class="home-card-play" aria-label="Играть ${esc(cardTitle)}">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="../icons/play-solid.svg#play-solid"></use></svg>
-          </button>
+          ${homeCardPlayback(track.id, cardTitle)}
         </div>
         <div class="home-small-body">
           <h3 class="home-small-title">${esc(cardTitle)}</h3>
@@ -3609,7 +3200,6 @@
           controlsAriaLabel,
         })
         headerTarget.dataset.signature = signature
-        if (rowTarget) rowTarget.dataset.homeRailBound = ''
       }
       bindNavRoutes(headerTarget)
     }
@@ -3709,7 +3299,7 @@
       ? getPersonalTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
       : getTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
     const getTrackReleaseTs = (t) => {
-      const candidates = [t?.releasedAt, t?.releaseDate, t?.yandex?.releaseDate, t?.createdAt, t?.album?.releasedAt, t?.album?.releaseDate]
+      const candidates = [t?.releasedAt, t?.releaseDate, t?.yandex?.releaseDate, t?.album?.releasedAt, t?.album?.releaseDate, t?.createdAt]
       for (const c of candidates) {
         if (!c) continue
         if (typeof c === 'number') return c > 1e12 ? c : c * 1000
@@ -3722,17 +3312,17 @@
       return 0
     }
     const nowTs = Date.now()
+    const isRecentRelease = (track) => {
+      const ts = getTrackReleaseTs(track)
+      return ts > 0 && ts <= nowTs && nowTs - ts <= HOME_NEW_RELEASE_STRICT_AGE_MS
+    }
     const freshFallbackReleases = (isTrendsMode ? canUseCatalogFallback : canUsePersonalFallback)
-      ? [...trendingTracks]
-          .filter((t) => {
-            const ts = getTrackReleaseTs(t)
-            return ts > 0 && ts <= nowTs + (7 * 24 * 60 * 60 * 1000) && (nowTs - ts) <= HOME_NEW_RELEASE_MAX_AGE_MS
-          })
-          .sort((a, b) => getTrackReleaseTs(b) - getTrackReleaseTs(a))
+      ? musicTracks.filter(isRecentRelease)
       : []
-    const releaseSource = recommendedReleaseTracks.length
-      ? recommendedReleaseTracks
-      : freshFallbackReleases
+    const releaseSource = dedupeTracks([
+      ...recommendedReleaseTracks.filter(isRecentRelease),
+      ...freshFallbackReleases,
+    ]).sort((a, b) => getTrackReleaseTs(b) - getTrackReleaseTs(a))
 
     const releaseTracks = releaseSource.slice(0, HOME_NEW_RELEASES_LIMIT)
     const releaseCards = releaseTracks.map((track, index) => AlbumCard({
@@ -3740,15 +3330,15 @@
       coverMarkup,
       title: track.title,
       subtitle: `${formatArtistNames(track)} • ${resolveHomeReleaseLabel(track)}`,
-      badge: isTrendsMode ? 'TOP' : (index < 5 ? 'NEW' : ''),
-      meta: isTrendsMode ? 'В чарте недели' : 'Свежий релиз',
+      badge: index < 5 ? 'NEW' : '',
+      meta: 'Свежий релиз',
       featured: false,
     }))
     SectionBlock({
       section: el.homeQuickAccessSection,
       headerTarget: el.homeQuickAccessHeader,
       rowTarget: el.homeQuickAccess,
-      title: isTrendsMode ? 'Чарты недели' : 'Новые релизы',
+      title: 'Новые релизы',
       actionHref: '/library',
       actionLabel: 'Показать все',
       controlsPrefix: 'home-quick-access',
@@ -3946,29 +3536,30 @@
     })
 
     wireHomeTrackRails()
-    restoreHomeRailPositions(activeFilter)
+    if (modeSwitch) restoreHomeRailPositions(activeFilter)
     requestAnimationFrame(syncHomeTrackRailControls)
     wireHomeSectionRevealFx()
     if (modeSwitch) playHomeModeTransitionFx()
     scheduleHydrateHomeArtistMonthlyListeners()
 
+    const myWaveTracks = getMyWaveTracks()
+    renderHomeWaveCovers({
+      musicTracks,
+      allowCatalogFallback: !state.homePersonalLoading && !isWaitingForPersonal && canUseCatalogFallback,
+    })
+
     if (el.hero) {
-      const myWaveTracks = getMyWaveTracks()
       const hasSession = hasSessionToken()
       const canStart = hasSession || myWaveTracks.length > 0
       const hasPersonalWave = myWaveTracks.length > 0
 
       el.hero.disabled = !canStart
-      const heroVariant = pickHeroArtVariant()
-      const heroAnimalTitle = heroVariant?.title || 'Зверек'
       const heroLabelBase = hasPersonalWave ? 'Слушать мою волну' : 'Слушать волну'
-      el.hero.setAttribute('aria-label', heroLabelBase + ': ' + heroAnimalTitle)
+      const isWavePlaying = Boolean(state.playing && state.ctx === 'my-wave')
+      el.hero.setAttribute('aria-label', isWavePlaying ? 'Приостановить мою волну' : heroLabelBase)
       el.hero.classList.toggle('is-muted', !canStart)
-      if (!heroArtState.active) {
-        renderHeroArtIdle()
-      }
     }
-
+    markRows()
   }
 
   function renderMyWave() {
@@ -4290,6 +3881,11 @@
         const tr = findTrack(id)
         if (tr) {
           triggerRuntimeHaptic('medium')
+          if (page === 'home' && stripRecoPrefix(tr.id) === stripRecoPrefix(state.track?.id)) {
+            if (state.playing) pause()
+            else resume()
+            return
+          }
           const mixNode = t.closest('[data-mix-id]')
           const mixId = mixNode?.getAttribute('data-mix-id') || ''
           let list = page === 'home' ? getHomeTrackPool() : getPlaybackListForPage()
@@ -4395,6 +3991,7 @@
       state.ctx = 'manual'
     }
     setHomeWaveActive(Boolean(state.playing && waveActive))
+    markRows()
     syncLikes()
   }
 
@@ -4632,7 +4229,6 @@
     document.addEventListener('visibilitychange', handleVisibilityRefresh)
     window.addEventListener('pagehide', () => {
       endPlaybackSession({ completed: false, contextType: 'pagehide' })
-      stopHeroArtAnimation()
       window.removeEventListener('focus', handleFocusRefresh)
       document.removeEventListener('visibilitychange', handleVisibilityRefresh)
     }, { once: true })

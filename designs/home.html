@@ -747,7 +747,7 @@
         gap: 18px;
         overflow-x: auto;
         padding: 8px 4px 14px;
-        scroll-snap-type: x mandatory;
+        scroll-snap-type: none;
         scroll-padding-left: 4px;
         scroll-behavior: auto;
         overscroll-behavior-x: contain;
@@ -1105,7 +1105,7 @@
         gap: 16px;
         overflow-x: auto;
         padding: 4px 2px 16px 2px;
-        scroll-snap-type: x mandatory;
+        scroll-snap-type: none;
         scroll-padding-left: 2px;
         overscroll-behavior-x: contain;
         scroll-behavior: smooth;
@@ -1577,7 +1577,7 @@
         position: relative;
         transform-origin: center bottom;
         transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
-        scroll-snap-stop: always;
+        scroll-snap-stop: normal;
         transform: none;
       }
 
@@ -1776,7 +1776,7 @@
       .artists-carousel-control:focus-visible,
       .home-card-play:focus-visible,
       .home-artist-play:focus-visible,
-      .home-carousel-track [data-carousel-card]:focus-within {
+      .home-carousel-track [data-carousel-card]:has(:focus-visible) {
         outline: 2px solid rgba(255, 255, 255, 0.6);
         outline-offset: 2px;
       }
@@ -3465,6 +3465,7 @@
         }
       }
     </style>
+    <link rel="stylesheet" href="./home-layout.css" />
   </head>
   <body data-wavee-page="home" class="relative flex min-h-screen flex-col selection:bg-[#92A9E1] selection:text-black">
     <svg width="0" height="0" aria-hidden="true" style="position:fixed;width:0;height:0;pointer-events:none;">
@@ -3474,69 +3475,30 @@
         </clipPath>
       </defs>
     </svg>
-    <section class="hero-shell relative z-10 flex flex-col items-center justify-center overflow-visible pb-14 pt-32 text-center">
-      <div class="hero-logo-shell w-full flex flex-col justify-center items-center">
-        <button id="home-hero-listen" type="button" class="home-wave-trigger" aria-label="Слушать мою волну" aria-pressed="false">
-          <img id="home-wave-art-image" src="assets/animals/cat.png" alt="" class="home-wave-trigger-image" aria-hidden="true" loading="eager" decoding="async" fetchpriority="high" />
-        </button>
-
+    <header class="home-page-heading">
+      <h1 class="home-visually-hidden">Главная</h1>
+    </header>
+    <div class="home-overview">
+      <section class="home-wave-panel" aria-label="Моя волна">
+        <div id="home-wave-covers" class="home-wave-covers" aria-hidden="true">
+          <span class="home-wave-cover home-wave-cover-empty">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13M9 9l12-2"/><ellipse cx="6" cy="18" rx="3" ry="3"/><ellipse cx="18" cy="16" rx="3" ry="3"/></svg>
+          </span>
+        </div>
         <div class="home-wave-controls">
-          <button type="button" class="home-listen-button" onclick="document.getElementById('home-hero-listen').click()">
+          <button id="home-hero-listen" type="button" class="home-listen-button" aria-label="Слушать мою волну" aria-pressed="false">
             <span class="home-listen-icons" aria-hidden="true">
-              <svg class="home-icon-play" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path></svg>
-              <svg class="home-icon-pause" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="14" y="3" width="5" height="18" rx="1"></rect><rect x="5" y="3" width="5" height="18" rx="1"></rect></svg>
+              <svg class="home-icon-play" viewBox="0 0 24 24" fill="currentColor"><use href="../icons/play-solid.svg#play-solid"></use></svg>
+              <svg class="home-icon-pause" viewBox="0 0 24 24" fill="currentColor"><use href="../icons/pause-solid.svg#pause-solid"></use></svg>
             </span>
-            <span>Слушать</span>
+            <span class="home-listen-label">Моя волна</span>
           </button>
           <button id="home-wave-settings-toggle" type="button" class="home-wave-settings-toggle" aria-label="Настройки волны временно недоступны" title="Настройки волны временно недоступны" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 3-.6 2-2 .9-1.9-.5-2.5 4.2L4 11v2l-1.5 1.4L5 18.6l1.9-.5 2 .9.6 2h5l.6-2 2-.9 1.9.5 2.5-4.2L20 13v-2l1.5-1.4L19 5.4l-1.9.5-2-.9-.6-2z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
-
-        <div id="home-wave-settings-panel" class="home-wave-settings-panel" hidden data-status="temporarily-disabled">
-          <p class="home-wave-settings-title" style="display: block; color: #ffadad; font-size: 11px; margin-bottom: 0;">Функционал временно отключен</p>
-          <!-- Settings content preserved but hidden -->
-          <div class="home-wave-settings-group">
-            <span class="home-wave-settings-label">Цель</span>
-            <div class="home-wave-settings-options">
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="any">Любая</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="sleep">Сон</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="work">Работа</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="training">Тренировка</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="road">Дорога</button>
-            </div>
-          </div>
-          <div class="home-wave-settings-group">
-            <span class="home-wave-settings-label">Настроение</span>
-            <div class="home-wave-settings-options">
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="any">Любое</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="energetic">Бодрое</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="happy">Веселое</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="calm">Спокойное</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="sad">Грустное</button>
-            </div>
-          </div>
-          <div class="home-wave-settings-group">
-            <span class="home-wave-settings-label">Характер</span>
-            <div class="home-wave-settings-options">
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="any">Любой</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="favorite">Любимое</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="unfamiliar">Незнакомое</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="popular">Популярное</button>
-            </div>
-          </div>
-          <div class="home-wave-settings-group">
-            <span class="home-wave-settings-label">Язык</span>
-            <div class="home-wave-settings-options">
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="any">Любой</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="ru">Русский</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="foreign">Иностранный</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="instrumental">Без слов</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+        <div id="home-wave-settings-panel" hidden data-status="temporarily-disabled"></div>
+      </section>
 
     <section id="home-quick-access-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-6">
       <div id="home-quick-access-header"></div>
@@ -3546,6 +3508,8 @@
         </div>
       </div>
     </section>
+
+    </div>
 
     <section id="home-favorite-artists-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-6">
       <div id="home-favorite-artists-header"></div>
