@@ -62,7 +62,7 @@
     return q || localStorage.getItem('wavee_api_base') || API_DEFAULT
   })()
   const TRACKS_CACHE_KEY = `wavee_tracks_cache_${apiBase}`
-  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v13_${apiBase}`
+  const HOME_RECO_CACHE_KEY_PREFIX = `wavee_home_reco_v14_${apiBase}`
   const MY_WAVE_CACHE_KEY_PREFIX = `wavee_my_wave_v3_${apiBase}`
   const HOME_NEW_RELEASE_STRICT_AGE_MS = 90 * 24 * 60 * 60 * 1000
   const HOME_NEW_RELEASE_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000
@@ -1469,17 +1469,22 @@
         return payload
       }
 
+      const dayMs = 24 * 60 * 60 * 1000
+      const maxArtistRank = Math.max(1, targetArtists.length)
+      const getEffectiveTs = (track) => {
+        const ts = parseTs(track?.releasedAt || track?.createdAt)
+        const rank = artistRankMap.get(String(track?.artist?.name || track?.artist?.id || '').trim().toLowerCase()) || 0
+        const boostDays = rank > 0 ? (1.5 + (rank / maxArtistRank) * 7.5) : 0
+        return ts + (boostDays * dayMs)
+      }
+
       const hydratedEntries = releaseTracks
         .sort((left, right) => {
-          const leftTs = parseTs(left?.releasedAt || left?.createdAt)
+          const rightEff = getEffectiveTs(right)
+          const leftEff = getEffectiveTs(left)
+          if (rightEff !== leftEff) return rightEff - leftEff
           const rightTs = parseTs(right?.releasedAt || right?.createdAt)
-          const monthMs = 30 * 24 * 60 * 60 * 1000
-          const leftBucket = Math.floor(Math.max(0, now - leftTs) / monthMs)
-          const rightBucket = Math.floor(Math.max(0, now - rightTs) / monthMs)
-          if (leftBucket !== rightBucket) return leftBucket - rightBucket
-          const leftRank = artistRankMap.get(String(left?.artist?.name || left?.artist?.id || '').trim().toLowerCase()) || 0
-          const rightRank = artistRankMap.get(String(right?.artist?.name || right?.artist?.id || '').trim().toLowerCase()) || 0
-          if (rightRank !== leftRank) return rightRank - leftRank
+          const leftTs = parseTs(left?.releasedAt || left?.createdAt)
           return rightTs - leftTs
         })
         .map((track, index) => ({
@@ -2299,24 +2304,25 @@
     const releaseCandidates = effectiveMode === 'trends'
       ? cleanCatalog
       : filterDislikedTracks([...waveTracks, ...cleanLikes])
-    const monthMs = 30 * 24 * 60 * 60 * 1000
+    const dayMs = 24 * 60 * 60 * 1000
+    const maxArtistScore = Math.max(1, ...[...artistMap.values()].map((entry) => Number(entry?.score ?? 0)))
+    const getEffectiveReleaseTs = (track) => {
+      const ts = getReleaseTs(track)
+      const key = String(track?.artist?.name || track?.artist?.id || '').trim().toLowerCase()
+      const score = artistMap.get(`name:${key}`)?.score || (favoriteArtistNames.has(key) ? 3 : 0)
+      const boostDays = score > 0 ? (1.5 + Math.min(1, score / maxArtistScore) * 7.5) : 0
+      return ts + (boostDays * dayMs)
+    }
     const freshReleasesSorted = [...releaseCandidates]
       .filter((track) => {
         const ts = getReleaseTs(track)
         return ts > 0 && ts <= now + (7 * 24 * 60 * 60 * 1000) && (now - ts) <= HOME_NEW_RELEASE_MAX_AGE_MS
       })
       .sort((left, right) => {
-        const leftTs = getReleaseTs(left)
-        const rightTs = getReleaseTs(right)
-        const leftBucket = Math.floor(Math.max(0, now - leftTs) / monthMs)
-        const rightBucket = Math.floor(Math.max(0, now - rightTs) / monthMs)
-        if (leftBucket !== rightBucket) return leftBucket - rightBucket
-        const leftKey = String(left?.artist?.name || left?.artist?.id || '').trim().toLowerCase()
-        const rightKey = String(right?.artist?.name || right?.artist?.id || '').trim().toLowerCase()
-        const leftScore = artistMap.get(`name:${leftKey}`)?.score || (favoriteArtistNames.has(leftKey) ? 3 : 0)
-        const rightScore = artistMap.get(`name:${rightKey}`)?.score || (favoriteArtistNames.has(rightKey) ? 3 : 0)
-        if (rightScore !== leftScore) return rightScore - leftScore
-        return rightTs - leftTs
+        const rightEff = getEffectiveReleaseTs(right)
+        const leftEff = getEffectiveReleaseTs(left)
+        if (rightEff !== leftEff) return rightEff - leftEff
+        return getReleaseTs(right) - getReleaseTs(left)
       })
 
     const artistReleaseCounts = new Map()
