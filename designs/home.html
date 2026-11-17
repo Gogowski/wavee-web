@@ -2389,6 +2389,279 @@
         }
       }
 
+      body:not([data-wavee-embed='app']) .hero-logo-shell {
+        min-height: 280px;
+      }
+
+      .home-wave-trigger {
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: clamp(150px, 24vw, 280px);
+        border: 0;
+        padding: 0;
+        background: none;
+        color: #b2c5f7;
+        cursor: pointer;
+        transition:
+          opacity 0.32s ease,
+          transform 0.38s ease,
+          filter 0.38s ease;
+      }
+
+      body:not([data-wavee-embed='app']) .home-wave-trigger {
+        margin-top: 22px;
+      }
+
+      .home-wave-trigger:hover,
+      .home-wave-trigger:focus-visible {
+        filter: brightness(1.2) drop-shadow(0 0 25px rgba(146, 169, 225, 0.15));
+        transform: scale(1.02);
+      }
+
+      .home-wave-trigger:focus-visible {
+        outline: 0;
+      }
+
+      .home-wave-trigger:disabled {
+        cursor: not-allowed;
+        opacity: 0.38;
+      }
+
+
+      .home-wave-trigger.is-hidden {
+        opacity: 0;
+        transform: translateY(12px) scale(0.985);
+        filter: blur(1.5px);
+        pointer-events: none;
+      }
+
+      .hero-logo-svg {
+        display: block;
+        width: min(76vw, 560px);
+        height: auto;
+        overflow: visible;
+      }
+
+      .hero-logo-main {
+        fill: #ffffff;
+      }
+
+      .hero-logo-wave-link {
+        cursor: pointer;
+        outline: none;
+      }
+
+      .hero-logo-wave-glow {
+        fill: rgba(255, 255, 255, 0.22);
+        opacity: 0.12;
+        filter: blur(14px);
+        animation: hero-wave-glow 2.4s ease-in-out infinite;
+        transition: opacity 0.28s ease, filter 0.28s ease;
+      }
+
+      .hero-logo-wave {
+        fill: #f1f1f1;
+        animation: hero-wave-invite 2.8s ease-in-out infinite;
+        transition:
+          fill 0.28s ease,
+          filter 0.28s ease,
+          opacity 0.28s ease;
+      }
+
+      .hero-logo-wave-detail {
+        fill: #d2d2d2;
+        animation: hero-wave-detail-invite 2.8s ease-in-out infinite;
+        transition:
+          fill 0.28s ease,
+          filter 0.28s ease,
+          opacity 0.28s ease;
+      }
+
+      .hero-logo-wave-link:hover .hero-logo-wave,
+      .hero-logo-wave-link:focus-visible .hero-logo-wave {
+        fill: #ffffff;
+        filter:
+          drop-shadow(0 0 14px rgba(146, 169, 225, 0.34))
+          drop-shadow(0 0 30px rgba(146, 169, 225, 0.46));
+        opacity: 1;
+      }
+
+      .hero-logo-wave-link:hover .hero-logo-wave-detail,
+      .hero-logo-wave-link:focus-visible .hero-logo-wave-detail {
+        fill: #f0f0f0;
+        filter: drop-shadow(0 0 18px rgba(146, 169, 225, 0.3));
+        opacity: 1;
+      }
+
+      .hero-logo-wave-link:hover .hero-logo-wave-glow,
+      .hero-logo-wave-link:focus-visible .hero-logo-wave-glow {
+        opacity: 0.28;
+        filter: blur(18px);
+      }
+
+      .hero-logo-wave-link:hover .hero-logo-wave-detail,
+      .hero-logo-wave-link:focus-visible .hero-logo-wave-detail {
+        animation-play-state: paused;
+      }
+
+      .hero-logo-wave-link:hover .hero-logo-wave,
+      .hero-logo-wave-link:focus-visible .hero-logo-wave {
+        animation-play-state: paused;
+      }
+
+      @keyframes hero-wave-invite {
+        0%,
+        100% {
+          fill: #f1f1f1;
+          opacity: 0.97;
+          filter:
+            drop-shadow(0 0 0 rgba(146, 169, 225, 0))
+            drop-shadow(0 0 0 rgba(146, 169, 225, 0));
+        }
+        28% {
+          fill: #fafafa;
+          opacity: 1;
+          filter:
+            drop-shadow(0 0 12px rgba(146, 169, 225, 0.24))
+            drop-shadow(0 0 24px rgba(146, 169, 225, 0.18));
+        }
+        52% {
+          fill: #ffffff;
+          opacity: 1;
+          filter:
+            drop-shadow(0 0 18px rgba(146, 169, 225, 0.32))
+            drop-shadow(0 0 34px rgba(146, 169, 225, 0.2));
+        }
+        78% {
+          fill: #f2f2f2;
+          opacity: 0.98;
+          filter:
+            drop-shadow(0 0 10px rgba(146, 169, 225, 0.18))
+            drop-shadow(0 0 20px rgba(146, 169, 225, 0.12));
+        }
+      }
+
+      @keyframes hero-wave-detail-invite {
+        0%,
+        100% {
+          fill: #d2d2d2;
+          opacity: 1;
+        }
+        35% {
+          fill: #ededed;
+          opacity: 0.96;
+        }
+        65% {
+          fill: #d8d8d8;
+          opacity: 1;
+        }
+      }
+
+      @keyframes hero-wave-glow {
+        0%,
+        100% {
+          opacity: 0.08;
+          filter: blur(12px);
+        }
+        35% {
+          opacity: 0.2;
+          filter: blur(18px);
+        }
+        60% {
+          opacity: 0.14;
+          filter: blur(15px);
+        }
+      }
+
+      .home-wave-trigger-art {
+        display: none;
+        font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+        font-size: 8px;
+        font-weight: 400;
+        line-height: 1.07;
+        letter-spacing: 0.04em;
+        white-space: pre;
+        text-shadow:
+          0 0 10px rgba(146, 169, 225, 0.2),
+          0 0 24px rgba(146, 169, 225, 0.08);
+        user-select: none;
+        animation: home-wave-art-idle 3.6s ease-in-out infinite;
+        transition: color 0.28s ease, text-shadow 0.28s ease;
+      }
+
+      .home-wave-trigger-image {
+        display: block;
+        width: min(56vw, 520px);
+        height: clamp(150px, 24vw, 280px);
+        max-height: 280px;
+        min-height: 150px;
+        object-fit: contain;
+        user-select: none;
+        pointer-events: none;
+        filter: none;
+      }
+
+      .home-wave-trigger:hover .home-wave-trigger-art,
+      .home-wave-trigger:focus-visible .home-wave-trigger-art {
+        animation: home-wave-art-idle 3.6s ease-in-out infinite;
+        color: #cfddff;
+        text-shadow:
+          0 0 15px rgba(146, 169, 225, 0.35),
+          0 0 35px rgba(146, 169, 225, 0.18);
+      }
+
+      .home-wave-trigger.is-active .home-wave-trigger-art {
+        animation: home-wave-art-idle 3.6s ease-in-out infinite !important;
+        color: #ffffff;
+        text-shadow:
+          0 0 20px rgba(146, 169, 225, 0.45),
+          0 0 45px rgba(146, 169, 225, 0.25);
+      }
+
+      @keyframes home-wave-art-idle {
+        0%,
+        100% {
+          transform: translateY(0) scale(1);
+          opacity: 0.9;
+        }
+        50% {
+          transform: translateY(-1px);
+          opacity: 1;
+        }
+      }
+
+      @keyframes home-wave-art-hover {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        33% {
+          transform: translate(1px, -1px);
+        }
+        66% {
+          transform: translate(-1px, 1px);
+        }
+      }
+
+      @keyframes home-wave-art-active {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        25% {
+          transform: translate(1px, -1px);
+        }
+        50% {
+          transform: translate(-1px, 1px);
+        }
+        75% {
+          transform: translate(1px, 1px);
+        }
+      }
+
+
       .mix-card button,
       .home-genre-card,
       .home-genre-card button,
@@ -2402,6 +2675,221 @@
           color 0.25s ease,
           background 0.25s ease,
           border-color 0.25s ease;
+      }
+
+      /* Wave Controls Styles */
+      .home-wave-controls {
+        position: relative;
+        display: inline-flex;
+        align-items: stretch;
+        background: var(--wavee-shell-chrome-bg);
+        border: 0;
+        border-radius: 999px;
+        padding: 0;
+        margin-top: -28px;
+        backdrop-filter: var(--wavee-shell-chrome-blur);
+        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
+        z-index: 5;
+        box-shadow: none;
+        min-width: 280px;
+        max-width: 280px;
+        height: 52px;
+        overflow: hidden;
+        transition:
+          max-width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+          min-width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+          height 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+          background 0.2s ease,
+          backdrop-filter 0.2s ease,
+          transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+          opacity 0.2s ease;
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      .home-listen-button {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: #92A9E1;
+        color: #000;
+        border: 0;
+        border-radius: 999px;
+        padding: 0 40px;
+        font-family: var(--wavee-display-font);
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition:
+          background 0.2s ease,
+          filter 0.2s ease,
+          padding 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+          gap 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+        flex: 1.5;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .home-listen-button::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 6px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 999px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease, background 0.2s ease;
+      }
+
+      .home-listen-button > span:not(.home-listen-icons) {
+        display: inline-block;
+        max-width: 120px;
+        opacity: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        transition: max-width 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+      }
+
+      .home-listen-button:hover {
+        background: #a5b9eb;
+      }
+
+      .home-listen-button:active {
+        background: #8198d1;
+        transform: scale(0.97);
+      }
+
+      .home-listen-icons {
+        position: relative;
+        display: inline-grid;
+        place-items: center;
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+
+      .home-listen-button svg {
+        grid-area: 1 / 1;
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+        transition:
+          transform 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+          opacity 0.18s ease;
+      }
+
+      .home-listen-button .home-icon-play {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+      }
+
+      .home-listen-button .home-icon-pause {
+        opacity: 0;
+        transform: scale(0.55) rotate(18deg);
+      }
+
+      /* Active State for the Listen Button when Wave is playing */
+      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button .home-icon-play {
+        opacity: 0;
+        transform: scale(0.55) rotate(-18deg);
+      }
+
+      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button .home-icon-pause {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+      }
+
+      .home-wave-settings-button {
+        background: transparent;
+        color: #fff;
+        border: 0;
+        padding: 0 24px;
+        font-family: var(--wavee-display-font);
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.2s ease;
+      }
+
+      .home-wave-settings-button:hover:not(:disabled) {
+        opacity: 1;
+      }
+      
+      .home-wave-settings-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.35;
+      }
+
+      /* Override for existing settings toggle when placed inside controls */
+      .home-wave-controls .home-wave-settings-toggle {
+        position: static;
+        inset: auto;
+        width: 64px;
+        height: 100%;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        margin: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.6);
+        opacity: 1;
+        flex-shrink: 0;
+        overflow: hidden;
+        transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, background 0.2s ease, color 0.2s ease;
+      }
+
+      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-wave-settings-toggle {
+        width: 0;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .home-wave-controls .home-wave-settings-toggle svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .home-wave-controls .home-wave-settings-toggle:hover:not(:disabled) {
+        background: var(--wavee-shell-chrome-hover-bg);
+        color: #ffffff;
+      }
+
+      @media (max-width: 767px) {
+        .home-wave-controls {
+          min-width: 240px;
+          max-width: 240px;
+          height: 44px;
+          padding: 0;
+        }
+        #home-hero-listen[aria-pressed="true"] + .home-wave-controls {
+          max-width: 100px;
+          min-width: 100px;
+          height: 36px;
+        }
+        .home-listen-button {
+          padding: 0 24px;
+          font-size: 13px;
+        }
+        .home-wave-settings-button,
+        .home-wave-controls .home-wave-settings-toggle {
+          width: 52px;
+        }
       }
 
       @media (max-width: 1023px) {
@@ -2976,156 +3464,6 @@
           scroll-behavior: auto !important;
         }
       }
-
-      /* Home composition: a quiet, informative wave above the existing music rails. */
-      .home-intro {
-        width: min(100%, 1280px);
-        margin: 0 auto;
-        padding: 104px 32px 0;
-      }
-      .home-wave-stage {
-        position: relative;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        align-items: center;
-        column-gap: 24px;
-        padding: 36px 40px 0;
-        overflow: hidden;
-        border-radius: 32px;
-        background: #191b20;
-      }
-      .home-wave-copy { position: relative; z-index: 1; min-width: 0; }
-      .home-wave-eyebrow {
-        margin: 0 0 16px;
-        font-size: 11px;
-        font-weight: 500;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: #a3a7b0;
-      }
-      #home-wave-title {
-        margin: 0;
-        font-family: var(--wavee-display-font);
-        font-size: clamp(32px, 4.4vw, 56px);
-        font-weight: 700;
-        line-height: 1.14;
-        letter-spacing: -0.055em;
-      }
-      .home-wave-description {
-        max-width: 360px;
-        margin: 18px 0 24px;
-        color: #aeb1ba;
-        font-size: 14px;
-        line-height: 1.6;
-      }
-      .home-wave-actions { display: flex; align-items: center; gap: 10px; }
-      .home-wave-play {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        min-height: 48px;
-        padding: 0 24px;
-        border: 0;
-        border-radius: 999px;
-        background: #92a9e1;
-        color: #10131b;
-        font-family: var(--wavee-body-font);
-        font-size: 14px;
-        font-weight: 700;
-        cursor: pointer;
-      }
-      .home-wave-play:hover:not(:disabled) { background: #a9bced; }
-      .home-wave-play:active:not(:disabled) { transform: scale(0.97); }
-      .home-wave-play:disabled { opacity: 0.5; cursor: default; }
-      .home-wave-play svg { width: 20px; height: 20px; }
-      .home-wave-pause-icon,
-      .home-wave-play[aria-pressed='true'] .home-wave-play-icon { display: none; }
-      .home-wave-play[aria-pressed='true'] .home-wave-pause-icon { display: block; }
-      .home-wave-options {
-        display: grid;
-        place-items: center;
-        width: 48px;
-        height: 48px;
-        border: 1px solid #353840;
-        border-radius: 50%;
-        background: transparent;
-        color: #7e838f;
-      }
-      .home-wave-options svg { width: 20px; height: 20px; }
-      .home-wave-signal { color: #92a9e1; opacity: 0.58; min-width: 0; }
-      .home-wave-signal svg { display: block; width: 100%; height: auto; overflow: visible; }
-      .home-wave-signal rect { transform-origin: center; transform-box: fill-box; }
-      .home-wave-stage.is-playing .home-wave-signal { opacity: 0.9; }
-      .home-wave-stage.is-playing .home-wave-signal rect {
-        animation: home-signal-breathe 1.8s ease-in-out var(--wave-delay) infinite alternate;
-      }
-      @keyframes home-signal-breathe { from { transform: scaleY(0.55); } to { transform: scaleY(1); } }
-      .home-wave-caption {
-        grid-column: 1 / -1;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        min-width: 0;
-        margin-top: 32px;
-        padding: 18px 0;
-        border-top: 1px solid rgba(255,255,255,0.07);
-        color: #979ca7;
-        font-size: 12px;
-        line-height: 1.5;
-      }
-      .home-wave-status { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; }
-      .home-wave-status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #737987; }
-      .is-playing .home-wave-status::before { background: #92a9e1; }
-      .home-wave-context { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: right; }
-      .home-browse {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        padding: 26px 0 12px;
-      }
-      .home-browse-label { font-size: 12px; color: #9297a1; }
-      .home-browse-links { display: flex; gap: 6px; }
-      .home-browse-links a {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 14px;
-        color: #c4c7ce;
-        font-size: 12px;
-        text-decoration: none;
-        border-radius: 999px;
-        transition: color 0.2s, background-color 0.2s;
-      }
-      .home-browse-links a:hover { color: #fff; background: #202228; }
-      .section-shell { scroll-margin-top: 20px; padding-left: 32px; padding-right: 32px; }
-      .home-section-title { font-size: clamp(20px, 2.4vw, 28px); line-height: 1.25; font-weight: 700; letter-spacing: -0.04em; }
-      .home-section-title::after { width: 18px; height: 18px; }
-      .home-section-header { cursor: default; }
-      .home-section-header:hover .home-section-title { color: #fff; }
-      .home-section-title-link:hover .home-section-title { color: #b2c3ed; }
-      .home-carousel-empty { background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 16px 0; min-height: 64px; }
-      @media (max-width: 767px) {
-        .home-intro { padding: 84px 20px 0; }
-        .home-wave-stage { padding: 28px 24px 0; border-radius: 24px; gap: 0; }
-        .home-wave-copy { grid-column: 1 / -1; }
-        .home-wave-eyebrow { font-size: 10px; margin-bottom: 14px; }
-        #home-wave-title { font-size: clamp(30px, 7.6vw, 48px); }
-        .home-wave-description { margin: 14px 0 20px; font-size: 13px; max-width: 290px; }
-        .home-wave-signal { grid-column: 1 / -1; margin: 14px 0 0; height: 72px; overflow: hidden; }
-        .home-wave-signal svg { height: 100%; }
-        .home-wave-caption { margin-top: 16px; padding: 14px 0; flex-wrap: wrap; gap: 4px; font-size: 11px; }
-        .home-wave-context { width: 100%; text-align: left; }
-        .home-browse { padding: 14px 0 4px; gap: 4px; }
-        .home-browse-label { font-size: 11px; }
-        .home-browse-links { gap: 0; }
-        .home-browse-links a { padding: 12px 9px; font-size: 11px; }
-        .home-section-title { font-size: 20px; }
-        .home-section-header { margin-bottom: 16px; gap: 0; }
-        .home-section-actions:empty { display: none; }
-      }
     </style>
   </head>
   <body data-wavee-page="home" class="relative flex min-h-screen flex-col selection:bg-[#92A9E1] selection:text-black">
@@ -3136,88 +3474,66 @@
         </clipPath>
       </defs>
     </svg>
-    <section class="home-intro" aria-labelledby="home-wave-title">
-      <div id="home-wave-stage" class="home-wave-stage">
-        <div class="home-wave-copy">
-          <p id="home-wave-eyebrow" class="home-wave-eyebrow">Персональный поток</p>
-          <h1 id="home-wave-title">Моя волна</h1>
-          <p id="home-wave-description" class="home-wave-description">Знакомое и новые открытия — в одном потоке.</p>
-          <div class="home-wave-actions">
-            <button id="home-hero-listen" type="button" class="home-wave-play" aria-label="Слушать мою волну" aria-pressed="false">
-              <svg class="home-wave-play-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 4.8v14.4L20 12z" /></svg>
-              <svg class="home-wave-pause-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
-              <span id="home-wave-play-label">Слушать</span>
-            </button>
-            <button id="home-wave-settings-toggle" type="button" class="home-wave-options" aria-label="Настройки волны временно недоступны" title="Настройки волны временно недоступны" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="#191b20"/><circle cx="15" cy="17" r="3" fill="#191b20"/></svg>
-            </button>
+    <section class="hero-shell relative z-10 flex flex-col items-center justify-center overflow-visible pb-14 pt-32 text-center">
+      <div class="hero-logo-shell w-full flex flex-col justify-center items-center">
+        <button id="home-hero-listen" type="button" class="home-wave-trigger" aria-label="Слушать мою волну" aria-pressed="false">
+          <img id="home-wave-art-image" src="assets/animals/cat.png" alt="" class="home-wave-trigger-image" aria-hidden="true" loading="eager" decoding="async" fetchpriority="high" />
+        </button>
+
+        <div class="home-wave-controls">
+          <button type="button" class="home-listen-button" onclick="document.getElementById('home-hero-listen').click()">
+            <span class="home-listen-icons" aria-hidden="true">
+              <svg class="home-icon-play" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path></svg>
+              <svg class="home-icon-pause" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="14" y="3" width="5" height="18" rx="1"></rect><rect x="5" y="3" width="5" height="18" rx="1"></rect></svg>
+            </span>
+            <span>Слушать</span>
+          </button>
+          <button id="home-wave-settings-toggle" type="button" class="home-wave-settings-toggle" aria-label="Настройки волны временно недоступны" title="Настройки волны временно недоступны" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </button>
+        </div>
+
+        <div id="home-wave-settings-panel" class="home-wave-settings-panel" hidden data-status="temporarily-disabled">
+          <p class="home-wave-settings-title" style="display: block; color: #ffadad; font-size: 11px; margin-bottom: 0;">Функционал временно отключен</p>
+          <!-- Settings content preserved but hidden -->
+          <div class="home-wave-settings-group">
+            <span class="home-wave-settings-label">Цель</span>
+            <div class="home-wave-settings-options">
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="any">Любая</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="sleep">Сон</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="work">Работа</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="training">Тренировка</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="road">Дорога</button>
+            </div>
           </div>
-        </div>
-        <div class="home-wave-signal" aria-hidden="true">
-          <svg viewBox="0 0 490 200" fill="currentColor">
-              <rect x="4" y="94.0" width="3" height="12" rx="1.5" style="--wave-delay:-0.00s" />
-              <rect x="14" y="90.0" width="3" height="20" rx="1.5" style="--wave-delay:-0.19s" />
-              <rect x="24" y="83.5" width="3" height="33" rx="1.5" style="--wave-delay:-0.38s" />
-              <rect x="34" y="75.5" width="3" height="49" rx="1.5" style="--wave-delay:-0.57s" />
-              <rect x="44" y="68.0" width="3" height="64" rx="1.5" style="--wave-delay:-0.76s" />
-              <rect x="54" y="62.5" width="3" height="75" rx="1.5" style="--wave-delay:-0.95s" />
-              <rect x="64" y="60.0" width="3" height="80" rx="1.5" style="--wave-delay:-1.14s" />
-              <rect x="74" y="62.0" width="3" height="76" rx="1.5" style="--wave-delay:-1.33s" />
-              <rect x="84" y="68.0" width="3" height="64" rx="1.5" style="--wave-delay:-1.52s" />
-              <rect x="94" y="78.0" width="3" height="44" rx="1.5" style="--wave-delay:-0.00s" />
-              <rect x="104" y="92.0" width="3" height="16" rx="1.5" style="--wave-delay:-0.19s" />
-              <rect x="114" y="80.5" width="3" height="39" rx="1.5" style="--wave-delay:-0.38s" />
-              <rect x="124" y="64.5" width="3" height="71" rx="1.5" style="--wave-delay:-0.57s" />
-              <rect x="134" y="50.0" width="3" height="100" rx="1.5" style="--wave-delay:-0.76s" />
-              <rect x="144" y="39.0" width="3" height="122" rx="1.5" style="--wave-delay:-0.95s" />
-              <rect x="154" y="33.0" width="3" height="134" rx="1.5" style="--wave-delay:-1.14s" />
-              <rect x="164" y="33.0" width="3" height="134" rx="1.5" style="--wave-delay:-1.33s" />
-              <rect x="174" y="39.0" width="3" height="122" rx="1.5" style="--wave-delay:-1.52s" />
-              <rect x="184" y="51.5" width="3" height="97" rx="1.5" style="--wave-delay:-0.00s" />
-              <rect x="194" y="68.0" width="3" height="64" rx="1.5" style="--wave-delay:-0.19s" />
-              <rect x="204" y="88.5" width="3" height="23" rx="1.5" style="--wave-delay:-0.38s" />
-              <rect x="214" y="78.5" width="3" height="43" rx="1.5" style="--wave-delay:-0.57s" />
-              <rect x="224" y="58.5" width="3" height="83" rx="1.5" style="--wave-delay:-0.76s" />
-              <rect x="234" y="41.5" width="3" height="117" rx="1.5" style="--wave-delay:-0.95s" />
-              <rect x="244" y="30.0" width="3" height="140" rx="1.5" style="--wave-delay:-1.14s" />
-              <rect x="254" y="24.5" width="3" height="151" rx="1.5" style="--wave-delay:-1.33s" />
-              <rect x="264" y="26.0" width="3" height="148" rx="1.5" style="--wave-delay:-1.52s" />
-              <rect x="274" y="34.0" width="3" height="132" rx="1.5" style="--wave-delay:-0.00s" />
-              <rect x="284" y="47.5" width="3" height="105" rx="1.5" style="--wave-delay:-0.19s" />
-              <rect x="294" y="65.5" width="3" height="69" rx="1.5" style="--wave-delay:-0.38s" />
-              <rect x="304" y="86.0" width="3" height="28" rx="1.5" style="--wave-delay:-0.57s" />
-              <rect x="314" y="82.0" width="3" height="36" rx="1.5" style="--wave-delay:-0.76s" />
-              <rect x="324" y="64.0" width="3" height="72" rx="1.5" style="--wave-delay:-0.95s" />
-              <rect x="334" y="50.0" width="3" height="100" rx="1.5" style="--wave-delay:-1.14s" />
-              <rect x="344" y="41.0" width="3" height="118" rx="1.5" style="--wave-delay:-1.33s" />
-              <rect x="354" y="38.0" width="3" height="124" rx="1.5" style="--wave-delay:-1.52s" />
-              <rect x="364" y="40.5" width="3" height="119" rx="1.5" style="--wave-delay:-0.00s" />
-              <rect x="374" y="48.0" width="3" height="104" rx="1.5" style="--wave-delay:-0.19s" />
-              <rect x="384" y="59.5" width="3" height="81" rx="1.5" style="--wave-delay:-0.38s" />
-              <rect x="394" y="73.0" width="3" height="54" rx="1.5" style="--wave-delay:-0.57s" />
-              <rect x="404" y="87.0" width="3" height="26" rx="1.5" style="--wave-delay:-0.76s" />
-              <rect x="414" y="88.5" width="3" height="23" rx="1.5" style="--wave-delay:-0.95s" />
-              <rect x="424" y="78.5" width="3" height="43" rx="1.5" style="--wave-delay:-1.14s" />
-              <rect x="434" y="72.0" width="3" height="56" rx="1.5" style="--wave-delay:-1.33s" />
-              <rect x="444" y="70.0" width="3" height="60" rx="1.5" style="--wave-delay:-1.52s" />
-              <rect x="454" y="71.5" width="3" height="57" rx="1.5" style="--wave-delay:-0.00s" />
-              <rect x="464" y="76.0" width="3" height="48" rx="1.5" style="--wave-delay:-0.19s" />
-              <rect x="474" y="82.0" width="3" height="36" rx="1.5" style="--wave-delay:-0.38s" />
-              <rect x="484" y="88.5" width="3" height="23" rx="1.5" style="--wave-delay:-0.57s" />
-          </svg>
-        </div>
-        <div class="home-wave-caption">
-          <span id="home-wave-status" class="home-wave-status">В твоём ритме</span>
-          <span id="home-wave-context" class="home-wave-context">Музыка, которую хочется слушать дальше</span>
-        </div>
-      </div>
-      <div id="home-wave-settings-panel" hidden data-status="temporarily-disabled"></div>
-      <div class="home-browse" role="navigation" aria-label="Разделы главной">
-        <span class="home-browse-label">Открывай музыку</span>
-        <div class="home-browse-links">
-          <a href="#home-quick-access-section" data-home-jump="home-quick-access-section">Релизы</a>
-          <a href="#home-top-tracks-section" data-home-jump="home-top-tracks-section">Треки</a>
-          <a href="#home-mixes-section" data-home-jump="home-mixes-section">Миксы <span aria-hidden="true">↘</span></a>
+          <div class="home-wave-settings-group">
+            <span class="home-wave-settings-label">Настроение</span>
+            <div class="home-wave-settings-options">
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="any">Любое</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="energetic">Бодрое</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="happy">Веселое</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="calm">Спокойное</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="sad">Грустное</button>
+            </div>
+          </div>
+          <div class="home-wave-settings-group">
+            <span class="home-wave-settings-label">Характер</span>
+            <div class="home-wave-settings-options">
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="any">Любой</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="favorite">Любимое</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="unfamiliar">Незнакомое</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="popular">Популярное</button>
+            </div>
+          </div>
+          <div class="home-wave-settings-group">
+            <span class="home-wave-settings-label">Язык</span>
+            <div class="home-wave-settings-options">
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="any">Любой</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="ru">Русский</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="foreign">Иностранный</button>
+              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="instrumental">Без слов</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -3247,6 +3563,10 @@
           <article class="home-artist-card" data-carousel-card></article>
         </div>
       </div>
+    </section>
+
+    <section id="home-subtitle-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 pb-2 pt-0">
+      <p class="home-section-subline">Подборки хитов по исполнителям.</p>
     </section>
 
     <section id="home-top-tracks-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 pt-6">

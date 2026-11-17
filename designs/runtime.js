@@ -71,15 +71,8 @@
 
   document.body.dataset.waveeEmbed = embedMode ? 'app' : 'standalone'
 
-  let homeScrollInteracted = false
-  if (embedMode) {
-    ;['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach((type) => {
-      window.addEventListener(type, () => { homeScrollInteracted = true }, { once: true, passive: true })
-    })
-  }
-
   function resetEmbedScrollPosition() {
-    if (!embedMode || homeScrollInteracted) return
+    if (!embedMode) return
     try {
       if (typeof history !== 'undefined' && 'scrollRestoration' in history) {
         history.scrollRestoration = 'manual'
@@ -236,12 +229,9 @@
     hero: $('home-hero-listen'),
     homeWaveSettingsToggle: $('home-wave-settings-toggle'),
     homeWaveSettingsPanel: $('home-wave-settings-panel'),
-    homeWaveStage: $('home-wave-stage'),
-    homeWaveStatus: $('home-wave-status'),
-    homeWaveContext: $('home-wave-context'),
-    homeWavePlayLabel: $('home-wave-play-label'),
-    homeWaveEyebrow: $('home-wave-eyebrow'),
-    homeWaveDescription: $('home-wave-description'),
+    homeHeroTip: $('home-hero-tip'),
+    homeWaveArt: $('home-wave-art'),
+    homeWaveArtImage: $('home-wave-art-image'),
     homeGreeting: $('home-greeting'),
     homeFilterSection: $('home-filter-section'),
     homeFilterChips: $('home-filter-chips'),
@@ -447,6 +437,103 @@
     tone: 'Ð¢ÐµÐ¿Ð»Ñ‹Ð¹ Ñ Ñ„Ð¸Ñ€',
   }
 
+  const HERO_ART_VARIANTS = [
+    {
+      id: 'cat',
+      title: 'Кот',
+      role: 'Инди и лоуфай',
+      futureGenres: ['indie', 'lofi', 'dream pop', 'bedroom pop', 'alternative'],
+      image: 'assets/animals/cat.png',
+      idle: [],
+    },
+    {
+      id: 'bunny',
+      title: 'Заяц',
+      role: 'Поп и танцевальная музыка',
+      futureGenres: ['pop', 'dance', 'k pop', 'electropop', 'hyperpop'],
+      image: 'assets/animals/bunny.png',
+      idle: [],
+    },
+    {
+      id: 'otter',
+      title: 'Выдра',
+      role: 'Чилл и эмбиент',
+      futureGenres: ['ambient', 'chill', 'downtempo', 'chillout', 'lofi'],
+      image: 'assets/animals/otter.png',
+      idle: [],
+    },
+    {
+      id: 'raccoon',
+      title: 'Енот',
+      role: 'Брейкбит и гараж',
+      futureGenres: ['drum and bass', 'breakbeat', 'garage', 'uk garage', 'jungle'],
+      image: 'assets/animals/raccoon.png',
+      idle: [],
+    },
+    {
+      id: 'capybara',
+      title: 'Капибара',
+      role: 'Акустика и фолк',
+      futureGenres: ['acoustic', 'folk', 'indie folk', 'singer songwriter', 'soft rock'],
+      image: 'assets/animals/capybara.png',
+      idle: [],
+    },
+    {
+      id: 'bat',
+      title: 'Летучая мышь',
+      role: 'Темная электроника',
+      futureGenres: ['darkwave', 'post punk', 'synthwave', 'wave', 'industrial'],
+      image: 'assets/animals/bat.png',
+      idle: [],
+    },
+    {
+      id: 'mouse',
+      title: 'Мышь',
+      role: 'Хаус и техно',
+      futureGenres: ['house', 'techno', 'electronic', 'edm', 'minimal'],
+      image: 'assets/animals/mouse.png',
+      idle: [],
+    },
+    {
+      id: 'turtle',
+      title: 'Черепаха',
+      role: 'Классика и инструментал',
+      futureGenres: ['classical', 'instrumental', 'neo classical', 'piano', 'soundtrack'],
+      image: 'assets/animals/turtle.png',
+      idle: [],
+    },
+    {
+      id: 'duck',
+      title: 'Утка',
+      role: 'Фанк и диско',
+      futureGenres: ['funk', 'disco', 'nu disco', 'soul', 'boogie'],
+      image: 'assets/animals/duck.png',
+      idle: [],
+    },
+    {
+      id: 'repov',
+      title: 'Репов',
+      role: 'Рэп и хип-хоп',
+      futureGenres: ['rap', 'hip hop', 'trap', 'drill', 'grime'],
+      image: 'assets/animals/repov.png',
+      idle: [],
+    },
+  ]
+  const heroArtState = {
+    seedSource: '',
+    genreSignature: '',
+    variantIndex: 0,
+    invalidImageSrcs: new Set(),
+    variantLocked: false,
+    active: false,
+    phase: 0,
+    timer: null,
+  }
+
+  function clamp01(value) {
+    return clamp(value, 0, 1)
+  }
+
   function hashString(value) {
     let hash = 0
     const source = String(value || '')
@@ -457,34 +544,278 @@
     return hash
   }
 
-  function syncHomeWaveSummary() {
-    if (page !== 'home') return
-    const playing = Boolean(state.playing && state.ctx === 'my-wave')
-    const paused = Boolean(!state.playing && state.ctx === 'my-wave' && state.track)
-    if (el.homeWaveStage) el.homeWaveStage.classList.toggle('is-playing', playing)
-    if (el.homeWaveStatus) el.homeWaveStatus.textContent = playing ? 'Волна играет' : (paused ? 'На паузе' : 'В твоём ритме')
-    if (el.homeWavePlayLabel) el.homeWavePlayLabel.textContent = playing ? 'Пауза' : (paused ? 'Продолжить' : 'Слушать')
-    if (el.hero) el.hero.setAttribute('aria-label', playing ? 'Приостановить мою волну' : (paused ? 'Продолжить мою волну' : 'Слушать мою волну'))
-    const personalTracks = getMyWaveTracks()
-    const artists = [...new Set([...personalTracks, ...state.likedTracks].map((track) => formatArtistNames(track)).filter(Boolean))].slice(0, 3)
-    if (el.homeWaveContext) {
-      el.homeWaveContext.textContent = (playing || paused) && state.track
-        ? `${state.track.title || 'Трек'} · ${formatArtistNames(state.track)}`
-        : (artists.length ? `В основе: ${artists.join(', ')}` : 'Музыка, которую хочется слушать дальше')
+  function getHeroArtSeedSource() {
+    try {
+      const rawUser = localStorage.getItem('wavee_user')
+      if (rawUser) {
+        const user = JSON.parse(rawUser)
+        const direct = [user?.id, user?.email, user?.name].find((item) => typeof item === 'string' && item.trim())
+        if (direct) return direct
+      }
+    } catch {
+      // ignore malformed user payload
     }
-    if (el.homeWaveEyebrow) el.homeWaveEyebrow.textContent = hasSessionToken() ? 'Персональный поток' : 'Музыкальный поток'
-    if (el.homeWaveDescription) el.homeWaveDescription.textContent = hasSessionToken()
-      ? 'Знакомое и новые открытия — в одном потоке.'
-      : 'Войди, чтобы слушать волну по своему вкусу.'
+
+    const token = localStorage.getItem(TOKEN) || ''
+    if (token) return token.slice(0, 24)
+    return 'guest'
   }
 
-  function setHomeWaveActive(active) {
-    if (page !== 'home') return
-    if (el.hero) {
-      el.hero.classList.toggle('is-active', Boolean(active))
-      el.hero.setAttribute('aria-pressed', active ? 'true' : 'false')
+  function normalizeAnimalGenre(value) {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replaceAll('_', ' ')
+      .replaceAll('-', ' ')
+  }
+
+  function collectHomeGenreSignals() {
+    const signals = []
+    const pushGenres = (list) => {
+      if (!Array.isArray(list)) return
+      list.forEach((genre) => {
+        const normalized = normalizeAnimalGenre(genre)
+        if (normalized) signals.push(normalized)
+      })
     }
-    syncHomeWaveSummary()
+
+    if (Array.isArray(state.myWave) && state.myWave.length) {
+      state.myWave.forEach((item) => pushGenres(item?.track?.genres))
+    }
+
+    if (!signals.length && Array.isArray(state.tracks)) {
+      state.tracks.slice(0, 40).forEach((track) => pushGenres(track?.genres))
+    }
+
+    return signals
+  }
+
+  function scoreHeroVariant(variant, genreSignals) {
+    const targets = Array.isArray(variant?.futureGenres)
+      ? variant.futureGenres.map(normalizeAnimalGenre).filter(Boolean)
+      : []
+
+    if (!targets.length || !genreSignals.length) return 0
+
+    let score = 0
+    genreSignals.forEach((genre, index) => {
+      const weight = Math.max(1, 7 - Math.floor(index / 3))
+      targets.forEach((target) => {
+        if (genre === target) {
+          score += 3 * weight
+        } else if (genre.includes(target) || target.includes(genre)) {
+          score += 1 * weight
+        }
+      })
+    })
+
+    return score
+  }
+
+  function pickHeroArtVariant() {
+    if (heroArtState.variantLocked) {
+      return HERO_ART_VARIANTS[heroArtState.variantIndex] || HERO_ART_VARIANTS[0]
+    }
+
+    const seedSource = getHeroArtSeedSource()
+    const genreSignals = collectHomeGenreSignals()
+    const genreSignature = genreSignals.slice(0, 30).join('|')
+
+    if (seedSource === heroArtState.seedSource && genreSignature === heroArtState.genreSignature) {
+      return HERO_ART_VARIANTS[heroArtState.variantIndex] || HERO_ART_VARIANTS[0]
+    }
+
+    heroArtState.seedSource = seedSource
+    heroArtState.genreSignature = genreSignature
+
+    let bestIndex = -1
+    let bestScore = 0
+
+    HERO_ART_VARIANTS.forEach((variant, index) => {
+      const score = scoreHeroVariant(variant, genreSignals)
+      if (score > bestScore) {
+        bestScore = score
+        bestIndex = index
+        return
+      }
+
+      if (score === bestScore && score > 0) {
+        const currentId = bestIndex >= 0 ? HERO_ART_VARIANTS[bestIndex].id : ''
+        const currentTie = Math.abs(hashString(seedSource + ':' + currentId))
+        const nextTie = Math.abs(hashString(seedSource + ':' + variant.id))
+        if (nextTie > currentTie) {
+          bestIndex = index
+        }
+      }
+    })
+
+    if (bestIndex < 0) {
+      bestIndex = Math.abs(hashString(seedSource)) % HERO_ART_VARIANTS.length
+    }
+
+    heroArtState.variantIndex = bestIndex
+    return HERO_ART_VARIANTS[bestIndex] || HERO_ART_VARIANTS[0]
+  }
+
+  function setHeroAnimalImage(src) {
+    if (!el.homeWaveArtImage || !src) return false
+    const fallbackSrc = 'assets/animals/cat.png'
+    if (!el.homeWaveArtImage.dataset.waveeHeroImageBound) {
+      el.homeWaveArtImage.addEventListener('load', () => {
+        heroArtState.variantLocked = true
+      })
+      el.homeWaveArtImage.addEventListener('error', () => {
+        const currentSrc = el.homeWaveArtImage?.getAttribute('data-variant-src')
+          || el.homeWaveArtImage?.getAttribute('src')
+          || ''
+        if (currentSrc) {
+          heroArtState.invalidImageSrcs.add(currentSrc)
+        }
+        heroArtState.variantLocked = false
+        if (currentSrc !== fallbackSrc) {
+          el.homeWaveArtImage.setAttribute('data-variant-src', fallbackSrc)
+          el.homeWaveArtImage.setAttribute('src', fallbackSrc)
+        }
+      })
+      el.homeWaveArtImage.dataset.waveeHeroImageBound = '1'
+    }
+
+    const targetSrc = heroArtState.invalidImageSrcs.has(src)
+      ? fallbackSrc
+      : src
+
+    if (heroArtState.invalidImageSrcs.has(src)) {
+      heroArtState.variantLocked = false
+    }
+
+    const current = el.homeWaveArtImage.getAttribute('data-variant-src') || ''
+    if (current === targetSrc && el.homeWaveArtImage.getAttribute('src') === targetSrc) {
+      return true
+    }
+
+    el.homeWaveArtImage.setAttribute('data-variant-src', targetSrc)
+    el.homeWaveArtImage.setAttribute('src', targetSrc)
+    return true
+  }
+
+  function renderHeroArtIdle() {
+    if (page !== 'home') {
+      return
+    }
+
+    const variant = pickHeroArtVariant()
+    if (setHeroAnimalImage(variant?.image)) {
+      return
+    }
+
+    if (el.homeWaveArt) {
+      el.homeWaveArt.textContent = Array.isArray(variant?.idle) ? variant.idle.join('\n') : ''
+    }
+  }
+
+  function renderHeroArtActiveFrame() {
+    if (page !== 'home') {
+      return
+    }
+
+    const variant = pickHeroArtVariant()
+    if (setHeroAnimalImage(variant?.image)) {
+      return
+    }
+
+    if (!el.homeWaveArt) {
+      return
+    }
+
+    const waveRows = buildHeroWaveRows(heroArtState.phase)
+    const lines = [
+      '               \u0421 \u041b \u0423 \u0428 \u0410 \u0422 \u042c',
+      ...waveRows,
+    ]
+    el.homeWaveArt.textContent = lines.join('\n')
+  }
+
+  function stopHeroArtAnimation() {
+    if (heroArtState.timer) {
+      clearInterval(heroArtState.timer)
+      heroArtState.timer = null
+    }
+  }
+
+  function startHeroArtAnimation() {
+    if (el.homeWaveArtImage) {
+      stopHeroArtAnimation()
+      return
+    }
+
+    if (heroArtState.timer || page !== 'home' || (!el.homeWaveArt && !el.homeWaveArtImage)) {
+      return
+    }
+
+    heroArtState.timer = setInterval(() => {
+      if (!heroArtState.active) {
+        return
+      }
+      heroArtState.phase = (heroArtState.phase + 1) % 10_000
+      renderHeroArtActiveFrame()
+    }, 96)
+  }
+
+  function buildHeroWaveRows(phase) {
+    const width = 27
+    const height = 6
+    const palette = ['.', ':', '+', '#', '@']
+    const rows = []
+
+    for (let row = height; row >= 1; row -= 1) {
+      let line = ''
+      for (let column = 0; column < width; column += 1) {
+        const motion = (
+          Math.sin((column * 0.38) + (phase * 0.2))
+          + (Math.sin((column * 0.16) - (phase * 0.27)) * 0.52)
+          + 2
+        ) / 3.4
+        const level = Math.max(1, Math.round(clamp01(motion) * height))
+
+        if (level >= row) {
+          const density = clamp(Math.round(((height - row + 1) + (motion * height)) / 2), 1, height)
+          const glyphIndex = clamp(Math.round((density / height) * (palette.length - 1)), 0, palette.length - 1)
+          line += `${palette[glyphIndex]} `
+        } else {
+          line += '  '
+        }
+      }
+      rows.push(`      ${line.trimEnd()}`)
+    }
+
+    return rows
+  }
+
+
+  function setHomeWaveActive(active) {
+    if (page !== 'home' || !document.body) {
+      return
+    }
+
+    const next = Boolean(active)
+    heroArtState.active = next
+    if (el.hero) {
+      el.hero.classList.toggle('is-active', next)
+      el.hero.setAttribute('aria-pressed', next ? 'true' : 'false')
+    }
+
+    if (next) {
+      heroArtState.phase = 0
+      renderHeroArtActiveFrame()
+      if (el.homeWaveArtImage) {
+        stopHeroArtAnimation()
+      } else {
+        startHeroArtAnimation()
+      }
+    } else {
+      stopHeroArtAnimation()
+      renderHeroArtIdle()
+    }
   }
 
   const playIcon = (isPlaying) => isPlaying
@@ -2234,7 +2565,6 @@
       el.play.setAttribute('aria-label', state.playing ? 'ÐŸÐ°ÑƒÐ·Ð°' : 'Ð˜Ð³Ñ€Ð°Ñ‚ÑŒ')
       el.play.title = state.playing ? 'ÐŸÐ°ÑƒÐ·Ð°' : 'Ð˜Ð³Ñ€Ð°Ñ‚ÑŒ'
     }
-    setHomeWaveActive(Boolean(state.playing && state.ctx === 'my-wave'))
     syncLikes()
   }
 
@@ -2748,7 +3078,7 @@
         railTargetState.delete(row)
         rememberHomeRailPosition(row)
       },
-      respectReducedMotion: true,
+      respectReducedMotion: false,
     })
   }
 
@@ -2786,18 +3116,6 @@
       return
     }
 
-    row.tabIndex = 0
-    row.setAttribute('role', 'region')
-    row.onkeydown = (event) => {
-      if (event.target !== row || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
-      event.preventDefault()
-      if (event.key === 'Home' || event.key === 'End') {
-        row.scrollTo({ left: event.key === 'Home' ? 0 : row.scrollWidth, behavior: 'instant' })
-        sync()
-      } else {
-        scrollHomeRail(row, prevButton, nextButton, event.key === 'ArrowLeft' ? -1 : 1)
-      }
-    }
     row.addEventListener('scroll', scheduleSync, { passive: true })
 
     prevButton.onclick = () => {
@@ -3509,7 +3827,7 @@
       visible: isTrendsMode,
     })
 
-    setSectionVisibility(el.homeSubtitleSection, false)
+    setSectionVisibility(el.homeSubtitleSection, isForYouMode)
 
     const recommendedBestTracks = isForYouMode
       ? getPersonalTracksFromRecommendationBlock(recommendationBlocks?.bestTracks)
@@ -3638,8 +3956,17 @@
       const myWaveTracks = getMyWaveTracks()
       const hasSession = hasSessionToken()
       const canStart = hasSession || myWaveTracks.length > 0
+      const hasPersonalWave = myWaveTracks.length > 0
+
       el.hero.disabled = !canStart
-      syncHomeWaveSummary()
+      const heroVariant = pickHeroArtVariant()
+      const heroAnimalTitle = heroVariant?.title || 'Зверек'
+      const heroLabelBase = hasPersonalWave ? 'Слушать мою волну' : 'Слушать волну'
+      el.hero.setAttribute('aria-label', heroLabelBase + ': ' + heroAnimalTitle)
+      el.hero.classList.toggle('is-muted', !canStart)
+      if (!heroArtState.active) {
+        renderHeroArtIdle()
+      }
     }
 
   }
@@ -3849,17 +4176,14 @@
         triggerRuntimeHaptic('medium')
         void triggerHero()
       }
-
+      el.hero.onkeydown = (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          void triggerHero()
+        }
+      }
     }
-    document.querySelectorAll('[data-home-jump]').forEach((link) => {
-      link.addEventListener('click', (event) => {
-        const section = document.getElementById(link.dataset.homeJump)
-        if (!section) return
-        event.preventDefault()
-        section.scrollIntoView({ behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ? 'instant' : 'smooth', block: 'start' })
-      })
-    })
-    if (el.homeWaveSettingsToggle && !el.homeWaveSettingsToggle.disabled && el.homeWaveSettingsPanel) {
+    if (el.homeWaveSettingsToggle && el.homeWaveSettingsPanel) {
       el.homeWaveSettingsToggle.onclick = (event) => {
         event.preventDefault()
         event.stopPropagation()
@@ -4308,6 +4632,7 @@
     document.addEventListener('visibilitychange', handleVisibilityRefresh)
     window.addEventListener('pagehide', () => {
       endPlaybackSession({ completed: false, contextType: 'pagehide' })
+      stopHeroArtAnimation()
       window.removeEventListener('focus', handleFocusRefresh)
       document.removeEventListener('visibilitychange', handleVisibilityRefresh)
     }, { once: true })
