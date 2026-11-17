@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wavee - Your Sonic Wave</title>
+    <title>Wavee — Главная</title>
     <link rel="preload" href="../fonts/EtudeNoire-Regular.ttf" as="font" type="font/ttf" crossorigin />
     <link rel="preload" href="../fonts/EtudeNoire-Bold.ttf" as="font" type="font/ttf" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=Tektur:wght@400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800;900&display=swap" />
@@ -27,12 +27,9 @@
 
       :root {
         --bg-dark: #111214;
-        --glass-border: rgba(255, 255, 255, 0.1);
-        --glass-bg: #202228;
-        --accent-lime: #f2f2f2;
-        --home-wave-primary: #f2f2f2;
-        --home-wave-secondary: #bdbdbd;
-        --home-wave-tertiary: #5f5f5f;
+        --wavee-accent: #92A9E1;
+        --wavee-accent-hover: #a5b9eb;
+        --wavee-accent-active: #8198d1;
         --wavee-display-font: 'Unbounded', system-ui, sans-serif;
         --wavee-heading-font: 'Unbounded', system-ui, sans-serif;
         --wavee-body-font: 'Onest', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -41,7 +38,7 @@
         --wavee-shell-chrome-hover-bg: rgba(132, 134, 140, 0.30);
         --wavee-shell-chrome-blur: blur(60px) saturate(160%);
         --text-main: #ffffff;
-        --text-muted: rgba(255, 255, 255, 0.5);
+        --text-muted: rgba(255, 255, 255, 0.56);
       }
 
       * {
@@ -79,49 +76,6 @@
         background: transparent !important;
       }
 
-      body[data-wavee-embed='app'] .hero-shell {
-        padding-top: 96px !important;
-        padding-bottom: 12px !important;
-      }
-
-      body[data-wavee-embed='app'] .hero-logo-shell {
-        min-height: 176px;
-      }
-
-      body[data-wavee-embed='app'] .home-wave-trigger {
-        margin-top: 14px;
-        transform: scale(0.72);
-        transform-origin: center top;
-      }
-
-      body[data-wavee-embed='app'] .home-wave-trigger:hover,
-      body[data-wavee-embed='app'] .home-wave-trigger:focus-visible {
-        transform: scale(0.745);
-      }
-
-      body[data-wavee-embed='app'] .home-wave-trigger:active {
-        transform: scale(0.7);
-      }
-
-      body[data-wavee-embed='app'] #home-filter-section {
-        padding-top: 0.5rem !important;
-        padding-bottom: 0.75rem !important;
-      }
-
-      body[data-wavee-embed='app'] #home-quick-access-section {
-        padding-top: 0.25rem !important;
-      }
-
-      .home-embed-scroll-spacer {
-        display: none;
-        height: 0;
-      }
-
-      body[data-wavee-embed='app'] .home-embed-scroll-spacer {
-        display: block;
-        height: clamp(112px, 12vh, 148px);
-      }
-
       body::before,
       body::after {
         display: none;
@@ -136,2575 +90,171 @@
         scrollbar-width: none;
       }
 
-      .glass-panel {
-        background: var(--wavee-shell-chrome-bg);
-        border: 0;
-        box-shadow: none;
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-      }
-
-      nav {
-        top: 0.8rem !important;
-        width: min(1400px, calc(100% - 1.4rem)) !important;
-        padding: 0.9rem 1.25rem !important;
-      }
-
-      .section-shell {
-        position: relative;
-        z-index: 1;
-      }
-
-      .section-shell::before {
-        content: none;
-      }
-
-      .section-shell > * {
-        position: relative;
-        z-index: 1;
-      }
-
-      .hero-shell::before {
-        opacity: 0;
-      }
-
-      .hero-shell {
-        padding-top: 96px !important;
-        padding-bottom: 16px !important;
-      }
-
-      body:not([data-wavee-embed='app']) .hero-shell {
-        padding-top: 148px !important;
-      }
-
-      nav .bg-\[\#92A9E1\],
-      nav [data-nav-route="/"] {
-        background: var(--wavee-shell-chrome-bg) !important;
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        color: #ffffff !important;
-        box-shadow: none;
-      }
-
-      nav [data-nav-route="/"] {
-        border: 0;
-      }
-
-      nav .bg-\[\#92A9E1\] svg {
-        fill: #ffffff;
-      }
-
-      .card-soft {
-        border-radius: 28px;
-        background: var(--wavee-shell-chrome-bg);
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        border: 0;
-        box-shadow: none;
-        transition: transform 0.2s ease, background-color 0.2s ease;
-      }
-
-      .card-soft:hover {
-        background: var(--wavee-shell-chrome-hover-bg);
-        transform: translateY(-3px);
-      }
-
-      .track-card-surface.card-soft,
-      .track-card-surface.card-soft:hover,
-      .track-card-surface.card-active {
-        border: 0 !important;
-        background: transparent !important;
-        box-shadow: none !important;
-      }
-
-      .card-active {
-        background: var(--wavee-shell-chrome-hover-bg);
-        border: 0;
-        box-shadow: none;
-      }
-
-      .track-card-accent .track-card-meta h3,
-      .track-card-accent .track-card-meta p {
-        color: #ffffff;
-      }
-
-      .section-shell h2[style*='Unbounded'],
-      .track-card-meta h3,
-      .mix-card-copy h4,
-      .home-genre-card-title,
-      .artist-spotlight-kicker {
-        font-family: var(--wavee-display-font) !important;
-      }
-
-      nav [data-nav-route],
-      nav .nav-links a {
-        font-family: var(--wavee-display-font) !important;
-      }
-
-      .track-row {
-        margin-top: -0.5rem;
-        padding-top: 0.5rem;
-      }
-
-      .mix-card-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .home-genres-toolbar {
-        display: inline-flex;
-        align-items: center;
-        gap: 0;
-        padding: 4px;
-        border-radius: 999px;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        box-shadow: none;
-      }
-      
-      .home-genres-tab {
-        min-height: 2.2rem;
-        padding: 0 1.25rem;
-        border-radius: 999px;
-        border: 0;
-        background: transparent;
-        color: rgba(255, 255, 255, 0.55);
-        font-family: var(--wavee-body-font);
-        font-size: 0.85rem;
-        font-weight: 600;
-        letter-spacing: 0.01em;
-        text-transform: none;
-        transition: background-color 0.2s ease, color 0.2s ease;
-        cursor: pointer;
-      }
-      
-      .home-genres-tab:hover:not(.is-active) {
-        color: #ffffff;
-        background: var(--wavee-shell-chrome-hover-bg);
-      }
-      
-      .home-genres-tab.is-active {
-        background: var(--wavee-accent, #92A9E1) !important;
-        color: #111214 !important;
-        font-weight: 800;
-        box-shadow: none !important;
-      }
-
-      .mix-card-play {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border: 0;
-        border-radius: 0;
-        clip-path: url(#wavee-star-clip);
-        -webkit-clip-path: url(#wavee-star-clip);
-        background: var(--wavee-shell-chrome-bg);
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        box-shadow: none;
-        color: #ffffff;
-        cursor: pointer;
-        transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease;
-      }
-
-      .mix-card-play:hover {
-        background: var(--wavee-shell-chrome-hover-bg);
-        box-shadow: none;
-        transform: scale(1.07) rotate(18deg);
-      }
-
-      .mix-card-play:active {
-        transform: scale(0.94);
-      }
-
-      .mix-card-body {
-        margin-top: 14px;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 74px;
-        gap: 14px;
-        align-items: end;
-      }
-
-      .mix-card-feature .mix-card-body {
-        grid-template-columns: minmax(0, 1fr) 108px;
-      }
-
-      .mix-card-cover {
-        width: 100%;
-        aspect-ratio: 1 / 1;
-        border-radius: 16px;
-        overflow: hidden;
-        background: rgba(0, 0, 0, 0.18);
-      }
-
-      .mix-card-copy h4,
-      .mix-card-copy p,
-      .mix-card-copy span {
-        margin: 0;
-      }
-
-      .mix-card-copy h4 {
-        color: #ffffff;
-        font-family: var(--wavee-heading-font);
-        font-size: 13px;
-        font-weight: 500;
-        line-height: 1.2;
-      }
-
-      .mix-card-copy p {
-        margin-top: 4px;
-        color: rgba(255, 255, 255, 0.72);
-        font-family: var(--wavee-body-font);
-        font-size: 11px;
-      }
-
-      .mix-card-copy span {
-        display: block;
-        margin-top: 8px;
-        color: rgba(255, 255, 255, 0.56);
-        font-family: var(--wavee-body-font);
-        font-size: 10px;
-      }
-
-      .home-genres-section {
-        position: relative;
-      }
-
-      .home-genres-section::before {
+      .home-embed-scroll-spacer {
         display: none;
-      }
-
-      .home-genres-head {
-        position: relative;
-        z-index: 1;
-        display: grid;
-        gap: 16px;
-        padding: clamp(16px, 2.2vw, 24px);
-        border-radius: 30px;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        box-shadow: none;
-      }
-
-      .home-genres-top {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 18px;
-      }
-
-      .home-genres-title-wrap {
-        display: grid;
-        gap: 8px;
-      }
-
-      .home-genres-subtitle {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.62);
-        font-family: var(--wavee-body-font);
-        font-size: 13px;
-        letter-spacing: 0.03em;
-      }
-
-      #home-genres-grid {
-        position: relative;
-        z-index: 1;
-        display: grid;
-        grid-template-columns: repeat(12, minmax(0, 1fr));
-        grid-auto-rows: minmax(80px, auto);
-        gap: 16px;
-      }
-
-      .home-genre-card {
-        position: relative;
-        grid-column: span 4;
-        min-height: 176px;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: end;
-        gap: 14px;
-        padding: 18px 18px 54px;
-        overflow: hidden;
-        border-radius: 26px;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        box-shadow: none;
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        transition:
-          transform 0.2s ease,
-          background-color 0.2s ease;
-      }
-
-      .home-genre-card::before,
-      .home-genre-card::after {
-        content: none;
-      }
-
-      .home-genre-card:hover {
-        background: var(--wavee-shell-chrome-hover-bg);
-        box-shadow: none;
-      }
-
-      .home-genre-card.is-featured {
-        grid-column: span 6;
-        grid-row: span 2;
-        min-height: 236px;
-        padding-bottom: 58px;
-        grid-template-columns: minmax(0, 1fr) auto;
-      }
-
-      .home-genre-card.is-wide {
-        grid-column: span 6;
-      }
-
-      .home-genre-card-body,
-      .home-genre-card-art,
-      .home-genre-card-play {
-        position: relative;
-        z-index: 1;
-      }
-
-      .home-genre-card-body {
-        min-width: 0;
-        display: grid;
-        align-content: start;
-        gap: 8px;
-      }
-
-      .home-genre-card-topline {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .home-genre-card-index,
-      .home-genre-card-mood {
-        display: inline-flex;
-        align-items: center;
-        min-height: 1.5rem;
-        padding: 0.2rem 0.65rem;
-        border-radius: 999px;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        font-family: var(--wavee-heading-font);
-        font-size: 8.5px;
-        font-weight: 800;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-      }
-
-      .home-genre-card-index {
-        color: rgba(255, 255, 255, 0.94);
-      }
-
-      .home-genre-card-mood {
-        color: rgba(255, 255, 255, 0.72);
-      }
-
-      .home-genre-card-title {
-        margin: 0;
-        color: #ffffff;
-        font-size: clamp(18px, 1.65vw, 24px);
-        font-weight: 600;
-        letter-spacing: -0.03em;
-        line-height: 0.96;
-      }
-
-      .home-genre-card-caption {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.7);
-        font-family: var(--wavee-body-font);
-        font-size: 12px;
-        line-height: 1.4;
-      }
-
-      .home-genre-card-track {
-        display: grid;
-        gap: 2px;
-        margin-top: 8px;
-      }
-
-      .home-genre-card-track strong,
-      .home-genre-card-track span {
-        margin: 0;
-        display: block;
-        min-width: 0;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        white-space: nowrap;
-      }
-
-      .home-genre-card-track strong {
-        color: #ffffff;
-        font-family: var(--wavee-body-font);
-        font-size: 12px;
-        font-weight: 600;
-      }
-
-      .home-genre-card-track span {
-        color: rgba(255, 255, 255, 0.52);
-        font-family: var(--wavee-body-font);
-        font-size: 11px;
-      }
-
-      .home-genre-card-art {
-        width: 92px;
-        height: 92px;
-        border-radius: 20px;
-        overflow: hidden;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        box-shadow: none;
-      }
-
-      .home-genre-card.is-featured .home-genre-card-art {
-        width: 114px;
-        height: 114px;
-      }
-
-      .home-genre-card-art .home-genre-pixel-art {
-        width: 100%;
-        height: 100%;
-        display: block;
-      }
-
-      .home-genre-card-play {
-        position: absolute;
-        right: 16px;
-        bottom: 14px;
-        z-index: 2;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 0;
-        clip-path: url(#wavee-star-clip);
-        -webkit-clip-path: url(#wavee-star-clip);
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        color: #ffffff;
-        box-shadow: none;
-        transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease, color 0.2s ease;
-      }
-
-      .home-genre-card-play:hover {
-        background: #92A9E1 !important;
-        color: #111214;
-        box-shadow: none;
-        transform: scale(1.07) rotate(18deg);
-      }
-
-      .home-genre-card-play:active {
-        transform: scale(0.94);
-      }
-
-      .home-genre-empty {
-        grid-column: 1 / -1;
-        border-radius: 22px;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        box-shadow: none;
-        padding: 20px;
-        color: rgba(255, 255, 255, 0.58);
-        font-size: 14px;
-      }
-
-      @media (max-width: 1023px) {
-        .home-genres-head {
-          border-radius: 24px;
-          padding: 16px;
-        }
-
-        .home-genres-top {
-          align-items: flex-start;
-        }
-
-        #home-genres-grid {
-          grid-template-columns: repeat(6, minmax(0, 1fr));
-        }
-
-        .home-genre-card {
-          grid-column: span 3;
-          min-height: 164px;
-          border-radius: 22px;
-        }
-
-        .home-genre-card.is-featured,
-        .home-genre-card.is-wide {
-          grid-column: span 6;
-        }
-
-        .home-genre-card.is-featured {
-          min-height: 206px;
-        }
-
-        .home-genre-card-art {
-          width: 84px;
-          height: 84px;
-        }
-
-        .home-genre-card.is-featured .home-genre-card-art {
-          width: 98px;
-          height: 98px;
-        }
-      }
-
-      .artists-carousel-shell {
-        position: relative;
-      }
-
-      .artists-carousel-head {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 18px;
-        margin-bottom: 1.25rem;
-      }
-
-      .artists-carousel-copy {
-        max-width: none;
-        min-width: 0;
-        flex: 1;
-      }
-
-      .artists-carousel-copy h2 {
-        white-space: nowrap;
-        font-size: clamp(24px, 3.1vw, 36px) !important;
-      }
-
-      .artists-carousel-copy p {
-        display: none;
-      }
-
-      .artists-carousel-controls {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        flex-shrink: 0;
-      }
-
-      .artists-carousel-control {
-        width: 46px;
-        height: 46px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        color: rgba(255, 255, 255, 0.82);
-        box-shadow: none;
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        transition: background-color 0.2s ease, color 0.2s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-      }
-
-      .artists-carousel-control:hover:not(:disabled) {
-        background: var(--wavee-shell-chrome-hover-bg);
-        box-shadow: none;
-        color: #ffffff;
-        transform: scale(1.05);
-      }
-
-      .artists-carousel-control:active:not(:disabled) {
-        transform: scale(0.93);
-      }
-
-      .artists-carousel-control:disabled {
-        opacity: 0.38;
-        cursor: default;
-      }
-
-      .artists-carousel-mask {
-        position: relative;
-      }
-
-      .artists-carousel-mask::before,
-      .artists-carousel-mask::after {
-        content: none;
-      }
-
-      .artists-carousel-track {
-        display: flex;
-        gap: 18px;
-        overflow-x: auto;
-        padding: 8px 4px 14px;
-        scroll-snap-type: x mandatory;
-        scroll-padding-left: 4px;
-        scroll-behavior: auto;
-        overscroll-behavior-x: contain;
-        cursor: grab;
-      }
-
-      .artists-carousel-track:active {
-        cursor: grabbing;
-      }
-
-      .artist-spotlight-card {
-        position: relative;
-        width: 356px;
-        min-width: 356px;
-        max-width: 356px;
-        flex: 0 0 auto;
-        display: grid;
-        grid-template-rows: auto auto auto;
-        gap: 12px;
-        padding: 18px;
-        border-radius: 26px;
-        background: var(--wavee-shell-chrome-bg);
-        border: 0;
-        box-shadow: none;
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        scroll-snap-align: start;
-        transition:
-          transform 0.2s ease,
-          background-color 0.2s ease;
-      }
-
-      .artist-spotlight-card::after {
-        content: none;
-      }
-
-      .artist-spotlight-card:hover {
-        transform: translateY(-4px);
-        background: var(--wavee-shell-chrome-hover-bg);
-        box-shadow: none;
-      }
-
-      .artist-spotlight-top {
-        position: relative;
-        z-index: 2;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 12px;
-      }
-
-      .artist-spotlight-rank {
-        display: inline-flex;
-        align-items: center;
-        font-family: var(--wavee-heading-font);
-        font-size: 9px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .artist-spotlight-rank {
-        height: 24px;
-        padding: 0 10px;
-        border-radius: 999px;
-        border: 0;
-        color: rgba(255, 255, 255, 0.78);
-        background: var(--wavee-shell-chrome-bg);
-      }
-
-      .artist-spotlight-main {
-        display: grid;
-        grid-template-columns: 116px minmax(0, 1fr);
-        align-items: center;
-        gap: 16px;
-        min-height: 116px;
-      }
-
-      .artist-spotlight-stage {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-      }
-
-      .artist-spotlight-cover-shell {
-        position: relative;
-        width: 116px;
-        height: 116px;
-        border-radius: 0;
-        clip-path: url(#wavee-star-clip);
-        -webkit-clip-path: url(#wavee-star-clip);
-        overflow: hidden;
-        padding: 0;
-        background: transparent;
-        border: 0;
-        box-shadow: none;
-      }
-
-      .artist-spotlight-cover-shell img,
-      .artist-spotlight-cover-fallback {
-        width: 100%;
-        height: 100%;
-        border-radius: 0;
-        object-fit: cover;
-        box-shadow: none;
-      }
-
-      .artist-spotlight-cover-fallback {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 243, 251, 0.94));
-        color: rgba(21, 25, 33, 0.9);
-        font-family: var(--wavee-heading-font);
-        font-size: 22px;
-      }
-
-      .artist-spotlight-copy {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: flex-end;
-        gap: 8px;
-        min-width: 0;
-        padding-right: 4px;
-        text-align: left;
-      }
-
-      .artist-spotlight-name {
-        margin: 0;
-        color: #ffffff;
-        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
-        font-size: 18px;
-        font-weight: 500;
-        letter-spacing: -0.01em;
-        line-height: 1.05;
-        white-space: normal;
-        overflow-wrap: anywhere;
-        word-break: break-word;
-      }
-
-      .artist-spotlight-meta {
-        margin: 0;
-        max-width: 100%;
-        color: rgba(255, 255, 255, 0.62);
-        font-family: var(--wavee-body-font);
-        font-size: 11px;
-        letter-spacing: 0.02em;
-        line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .artist-spotlight-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .artist-spotlight-play,
-      .artist-spotlight-follow {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        transition:
-          transform 0.25s ease,
-          border-color 0.25s ease,
-          background 0.25s ease,
-          color 0.25s ease,
-          box-shadow 0.25s ease;
-      }
-
-      .artist-spotlight-play {
-        gap: 8px;
-        flex: 1;
-        min-width: 0;
-        height: 42px;
-        border: 0;
-        background: var(--wavee-accent, #92A9E1);
-        color: #111214;
-        box-shadow: none;
-        font-family: var(--wavee-display-font);
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-
-      .artist-spotlight-play:hover {
-        box-shadow: none;
-        background: #a7bbf0;
-      }
-
-      .artist-spotlight-follow {
-        width: 42px;
-        min-width: 42px;
-        height: 42px;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        color: rgba(255, 255, 255, 0.78);
-      }
-
-      .artist-spotlight-follow:hover {
-        box-shadow: none;
-        background: var(--wavee-shell-chrome-hover-bg);
-        color: #ffffff;
-      }
-
-      .home-filter-chips {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        overflow-x: auto;
-        padding: 4px 2px 2px;
-      }
-
-      .home-filter-chip {
-        appearance: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 40px;
-        padding: 0 18px;
-        border-radius: 999px;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        color: rgba(255, 255, 255, 0.72);
-        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
-        font-size: 10px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        white-space: nowrap;
-        transition:
-          transform 0.2s ease,
-          background-color 0.2s ease,
-          color 0.2s ease;
-      }
-
-      .home-filter-chip:hover {
-        color: #ffffff;
-        background: var(--wavee-shell-chrome-hover-bg);
-      }
-
-      .home-filter-chip.is-active {
-        background: var(--wavee-accent, #92A9E1) !important;
-        color: #111214 !important;
-        font-weight: 800;
-        border: 0 !important;
-        box-shadow: none !important;
-      }
-
-      .home-section-header {
-        position: relative;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        margin-bottom: 1.25rem;
-        cursor: pointer;
-      }
-      
-      .home-section-header:hover .home-section-title {
-        color: #B2C3ED;
-      }
-      
-      .home-section-header:hover .home-section-title::after {
-        transform: translateX(8px);
-        opacity: 0.8;
-        color: #92A9E1;
-      }
-
-      .home-section-head-copy {
-        min-width: 0;
-        z-index: 2;
-      }
-
-      .home-section-head-copy .home-section-subline {
-        margin-top: 0.32rem;
-      }
-
-      .home-section-title {
-        margin: 0;
-        color: #ffffff;
-        font-family: var(--wavee-display-font);
-        font-size: clamp(24px, 3.2vw, 36px);
-        font-weight: 900;
-        letter-spacing: -0.01em;
-        line-height: 1;
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-        -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.05);
-      }
-      
-      .home-section-title::after {
-        content: '';
-        display: inline-block;
-        width: 1.1em;
-        height: 1.1em;
-        background-color: currentColor;
-        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
-        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
-        mask-repeat: no-repeat;
-        -webkit-mask-repeat: no-repeat;
-        mask-position: center;
-        -webkit-mask-position: center;
-        mask-size: contain;
-        -webkit-mask-size: contain;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        opacity: 0.35;
-      }
-
-      .home-section-actions {
-        display: inline-flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 10px;
-        position: relative;
-        z-index: 5;
-      }
-
-      .home-section-title-link {
-        text-decoration: none;
-        color: inherit;
-        display: block;
-        min-width: 0;
-      }
-
-      .home-section-subline {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.52);
-        font-family: var(--wavee-body-font);
-        font-size: 13px;
-        line-height: 1.35;
-      }
-
-      .home-carousel-mask {
-        position: relative;
-        overflow: hidden;
-      }
-
-      .home-carousel-mask::before,
-      .home-carousel-mask::after {
-        content: none;
-      }
-
-      .home-carousel-track {
-        display: flex;
-        gap: 16px;
-        overflow-x: auto;
-        padding: 4px 2px 16px 2px;
-        scroll-snap-type: x mandatory;
-        scroll-padding-left: 2px;
-        overscroll-behavior-x: contain;
-        scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      .home-carousel-empty {
-        width: 100%;
-        border-radius: 20px;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        padding: 18px;
-        color: rgba(255, 255, 255, 0.56);
-        font-size: 13px;
-      }
-
-      .home-artist-card {
-        width: 176px;
-        min-width: 176px;
-        flex: 0 0 auto;
-        display: grid;
-        gap: 0;
-        scroll-snap-align: start;
-        cursor: pointer;
-      }
-
-      .home-artist-media {
-        position: relative;
-        z-index: 1;
-      }
-
-      .home-artist-cover-shell {
-        width: 100%;
-        aspect-ratio: 1 / 1;
-        border-radius: 0;
-        clip-path: url(#wavee-star-clip);
-        -webkit-clip-path: url(#wavee-star-clip);
-        overflow: hidden;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        box-shadow: none;
-      }
-
-      .home-artist-cover-shell img,
-      .home-artist-cover-fallback {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .home-artist-cover-fallback {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: rgba(255, 255, 255, 0.82);
-        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
-        font-size: 22px;
-        background: var(--wavee-shell-chrome-bg);
-      }
-
-      .home-artist-play {
-        position: absolute;
-        right: 8px;
-        bottom: 52px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 38px;
-        height: 38px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%),
-          rgba(0, 0, 0, 0.36);
-        color: #ffffff;
-        box-shadow:
-          0 10px 22px rgba(0, 0, 0, 0.22),
-          inset 0 1px 0 rgba(255, 255, 255, 0.18);
-        opacity: 0;
-        transform: translateY(6px);
-        visibility: hidden;
-        pointer-events: none;
-        transition:
-          opacity 0.25s ease,
-          transform 0.25s ease,
-          visibility 0s linear 0.25s;
-        z-index: 3;
-      }
-
-      .home-artist-card:hover .home-artist-play,
-      .home-artist-card:focus-within .home-artist-play {
-        opacity: 1;
-        transform: translateY(0);
-        visibility: visible;
-        pointer-events: auto;
-        transition-delay: 0s;
-      }
-
-      .home-artist-info {
-        position: relative;
-        z-index: 2;
-        width: calc(100% - 12px);
-        margin: -44px auto 0;
-        border-radius: 14px;
-        padding: 7px 14px;
-        min-height: 56px;
-        display: grid;
-        align-content: center;
-        justify-items: center;
-        gap: 4px;
-        text-align: center;
-        background: var(--wavee-shell-chrome-bg);
-        box-shadow: none;
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-      }
-
-      .home-artist-name {
-        margin: 0;
-        color: #ffffff;
-        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
-        font-size: 14px;
-        font-weight: 700;
-        line-height: 1.15;
-        display: block;
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        text-align: center;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .home-artist-name.is-long {
-        font-size: 12px;
-      }
-
-      .home-artist-name.is-xlong {
-        font-size: 10px;
-      }
-
-      .home-artist-monthly {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.68);
-        font-family: var(--wavee-body-font);
-        font-size: 11px;
-        line-height: 1.2;
-        text-align: center;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .home-artist-role {
-        display: none !important;
-      }
-
-      .home-card-play {
-        position: absolute;
-        right: 10px;
-        bottom: 10px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 38px;
-        height: 38px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.08) 100%),
-          rgba(0, 0, 0, 0.34);
-        color: #ffffff;
-        box-shadow:
-          0 10px 22px rgba(0, 0, 0, 0.22),
-          inset 0 1px 0 rgba(255, 255, 255, 0.18);
-        opacity: 0;
-        transform: translateY(6px);
-        visibility: hidden;
-        pointer-events: none;
-        transition:
-          opacity 0.25s ease,
-          transform 0.25s ease,
-          visibility 0s linear 0.25s;
-      }
-
-      .group:hover .home-card-play,
-      .group:focus-within .home-card-play {
-        opacity: 1;
-        transform: translateY(0);
-        visibility: visible;
-        pointer-events: auto;
-        transition-delay: 0s;
-      }
-
-      .home-playlist-card {
-        width: 236px;
-        min-width: 236px;
-        flex: 0 0 auto;
-        display: grid;
-        gap: 10px;
-        scroll-snap-align: start;
-        cursor: pointer;
-      }
-
-      .home-playlist-cover {
-        position: relative;
-        aspect-ratio: 1 / 1;
-        border-radius: 24px;
-        overflow: hidden;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        box-shadow: none;
-      }
-
-      .home-playlist-overlay {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, rgba(0, 0, 0, 0.14) 18%, rgba(0, 0, 0, 0.8) 100%);
-      }
-
-      .home-playlist-overlay.is-compact {
-        background: linear-gradient(180deg, rgba(0, 0, 0, 0.16) 8%, rgba(0, 0, 0, 0.56) 100%);
-      }
-
-      .home-playlist-logo {
-        position: absolute;
-        left: 12px;
-        top: 12px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 24px;
-        height: 24px;
-        border-radius: 8px;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        color: rgba(255, 255, 255, 0.92);
-        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
-        font-size: 9px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-      }
-
-      .home-playlist-copy {
-        position: absolute;
-        left: 12px;
-        right: 12px;
-        bottom: 12px;
-        display: grid;
-        gap: 4px;
-      }
-
-      .home-playlist-kicker {
-        color: rgba(255, 255, 255, 0.86);
-        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
-        font-size: 9px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-      }
-
-      .home-playlist-artist {
-        margin: 0;
-        color: #ffffff;
-        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
-        font-size: 14px;
-        font-weight: 700;
-        line-height: 1.08;
-      }
-
-      .home-playlist-description {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.58);
-        font-family: var(--wavee-body-font);
-        font-size: 12px;
-        line-height: 1.32;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        line-clamp: 2;
-      }
-
-      .home-album-card {
-        width: 206px;
-        min-width: 206px;
-        flex: 0 0 auto;
-        display: grid;
-        gap: 10px;
-        scroll-snap-align: start;
-        cursor: pointer;
-      }
-
-      .home-album-cover {
-        position: relative;
-        aspect-ratio: 1 / 1;
-        border-radius: 20px;
-        overflow: hidden;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        box-shadow: none;
-      }
-
-      .home-album-cover::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.6) 100%);
-        pointer-events: none;
-      }
-
-      .home-album-title {
-        margin: 0;
-        color: #ffffff;
-        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
-        font-size: 13px;
-        font-weight: 700;
-        line-height: 1.15;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .home-album-subtitle {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.56);
-        font-family: var(--wavee-body-font);
-        font-size: 12px;
-        line-height: 1.25;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .home-small-card {
-        width: 270px;
-        min-width: 270px;
-        min-height: 84px;
-        flex: 0 0 auto;
-        display: grid;
-        grid-template-columns: 72px minmax(0, 1fr);
-        align-items: center;
-        gap: 12px;
-        padding: 8px;
-        border-radius: 18px;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        box-shadow: none;
-        scroll-snap-align: start;
-        cursor: pointer;
-        transition:
-          transform 0.2s ease,
-          background-color 0.2s ease;
-      }
-
-      .home-small-card:hover {
-        transform: translateY(-2px);
-        background: var(--wavee-shell-chrome-hover-bg);
-      }
-
-      .home-small-media {
-        position: relative;
-        width: 72px;
-        height: 72px;
-        border-radius: 14px;
-        overflow: hidden;
-        border: 0;
-      }
-
-      /* Remove thin outlines from home content elements */
-      .artists-carousel-control,
-      .home-filter-chip,
-      .home-section-link,
-      .home-carousel-empty,
-      .home-artist-cover-shell,
-      .home-artist-play,
-      .home-card-play,
-      .home-playlist-cover,
-      .home-playlist-logo,
-      .home-album-cover,
-      .home-small-card,
-      .home-small-media {
-        border: none !important;
-      }
-
-      .artists-carousel-control:hover:not(:disabled),
-      .home-filter-chip:hover,
-      .home-filter-chip.is-active,
-      .home-section-link:hover,
-      .home-small-card:hover {
-        border-color: transparent !important;
-      }
-
-      .section-shell {
-        content-visibility: auto;
-        contain-intrinsic-size: 420px;
-        opacity: 0;
-        transform: translateY(18px);
-        transition:
-          opacity 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-          transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
-      }
-
-      .section-shell.is-in-view {
-        opacity: 1;
-        transform: translateY(0);
-      }
-
-      /* Hover spotlight removed so backdrop stays driven cleanly by the global ambient wave */
-
-      .section-shell.is-mode-enter {
-        animation: home-mode-enter 0.44s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-        animation-delay: var(--mode-enter-delay, 0ms);
-      }
-
-      @keyframes home-mode-enter {
-        0% {
-          opacity: 0;
-          transform: translateY(16px);
-        }
-        100% {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .home-section-controls {
-        opacity: 1;
-        pointer-events: auto;
-        transform: none;
-        transition: none;
-      }
-
-      .section-shell:hover .home-section-controls,
-      .section-shell:focus-within .home-section-controls {
-        opacity: 1;
-        pointer-events: auto;
-        transform: none;
-      }
-
-      .home-section-link {
-        gap: 6px;
-        transition:
-          transform 0.2s ease,
-          color 0.2s ease,
-          background 0.2s ease;
-      }
-
-      .home-section-link svg {
-        transition: transform 0.2s ease;
-      }
-
-      .home-section-link:hover svg,
-      .home-section-link:focus-visible svg {
-        transform: translateX(2px);
-      }
-
-      .home-carousel-track {
-        scroll-behavior: smooth;
-      }
-
-      .home-carousel-track [data-carousel-card] {
-        position: relative;
-        transform-origin: center bottom;
-        transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
-        scroll-snap-stop: always;
-        transform: none;
-      }
-
-      .home-carousel-track .home-artist-card:hover,
-      .home-carousel-track .home-artist-card:focus-within,
-      .home-carousel-track .home-playlist-card:hover,
-      .home-carousel-track .home-playlist-card:focus-within,
-      .home-carousel-track .home-small-card:hover,
-      .home-carousel-track .home-small-card:focus-within,
-      .home-carousel-track .home-album-card:hover,
-      .home-carousel-track .home-album-card:focus-within {
-        transform: none;
-      }
-
-      .home-carousel-track [data-carousel-card]:active {
-        transform: translateY(-1px) scale(0.985);
-      }
-
-      .home-carousel-track.is-scrolling [data-carousel-card],
-      .home-carousel-track.is-scrolling [data-carousel-card]:hover,
-      .home-carousel-track.is-scrolling [data-carousel-card]:focus-within,
-      .home-carousel-track.is-scrolling [data-carousel-card]:active {
-        transition: none !important;
-        transform: none !important;
-      }
-
-      .home-carousel-track.is-scrolling .home-card-play,
-      .home-carousel-track.is-scrolling .home-artist-play {
-        transition: none !important;
-      }
-
-      .home-carousel-track [data-carousel-card].is-stagger-ready {
-        animation: home-card-enter 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-        animation-delay: var(--card-delay, 0ms);
-      }
-
-      @keyframes home-card-enter {
-        0% {
-          opacity: 0;
-          transform: translateY(14px) scale(0.98);
-        }
-        100% {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-        }
-      }
-
-      .home-lazy-cover {
-        opacity: 0;
-        transition:
-          opacity 0.2s ease;
-      }
-
-      .home-lazy-cover.is-loaded {
-        filter: blur(0);
-        opacity: 1;
-      }
-
-      .home-card-badge {
-        position: absolute;
-        left: 10px;
-        top: 10px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 20px;
-        padding: 0 8px;
-        border-radius: 999px;
-        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
-        font-size: 7px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        z-index: 3;
-        background: rgba(10, 11, 14, 0.5);
-        color: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-      }
-
-      .home-card-badge--soft {
-        background: rgba(255, 255, 255, 0.22);
-        color: #111217;
-      }
-
-      .home-card-badge--hot {
-        background: rgba(255, 255, 255, 0.9);
-        color: #090a0e;
-      }
-
-      .home-card-meta {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.72);
-        font-size: 11px;
-        line-height: 1.25;
-      }
-
-      .home-small-body .home-card-meta {
-        color: rgba(255, 255, 255, 0.62);
-        font-size: 10px;
-      }
-
-      .home-small-card.is-large {
-        width: 332px;
-        min-width: 332px;
-        min-height: 104px;
-        grid-template-columns: 92px minmax(0, 1fr);
-      }
-
-      .home-small-card.is-medium {
-        width: 296px;
-        min-width: 296px;
-      }
-
-      .home-playlist-card.is-featured {
-        width: 272px;
-        min-width: 272px;
-      }
-
-      .home-album-card.is-featured {
-        width: 230px;
-        min-width: 230px;
-      }
-
-      .home-artist-cover-shell::after,
-      .home-small-media::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.38) 100%);
-        pointer-events: none;
-        opacity: 0.25;
-        transition: opacity 0.25s ease;
-      }
-
-      .home-artist-card:hover .home-artist-cover-shell::after,
-      .home-artist-card:focus-within .home-artist-cover-shell::after,
-      .home-small-card:hover .home-small-media::after,
-      .home-small-card:focus-within .home-small-media::after {
-        opacity: 0.48;
-      }
-
-      .home-playlist-copy {
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-      }
-
-      .home-artist-card:hover .home-artist-play,
-      .home-artist-card:focus-within .home-artist-play,
-      .group:hover .home-card-play,
-      .group:focus-within .home-card-play {
-        animation: home-play-bounce 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-      }
-
-      .home-artist-play::after,
-      .home-card-play::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 70%);
-        opacity: 0;
-        transform: scale(0.2);
-        pointer-events: none;
-      }
-
-      .home-artist-play.is-rippling::after,
-      .home-card-play.is-rippling::after {
-        animation: home-play-ripple 0.46s ease-out both;
-      }
-
-      @keyframes home-play-bounce {
-        0% {
-          transform: translateY(8px) scale(0.9);
-        }
-        65% {
-          transform: translateY(-1px) scale(1.08);
-        }
-        100% {
-          transform: translateY(0) scale(1);
-        }
-      }
-
-      @keyframes home-play-ripple {
-        0% {
-          opacity: 0.55;
-          transform: scale(0.22);
-        }
-        100% {
-          opacity: 0;
-          transform: scale(1.25);
-        }
-      }
-
-      .home-filter-chip:focus-visible,
-      .home-section-link:focus-visible,
-      .artists-carousel-control:focus-visible,
-      .home-card-play:focus-visible,
-      .home-artist-play:focus-visible,
-      .home-carousel-track [data-carousel-card]:focus-within {
-        outline: 2px solid rgba(255, 255, 255, 0.6);
-        outline-offset: 2px;
-      }
-
-      .home-skeleton-card {
-        position: relative;
-        overflow: hidden;
-        border-radius: 20px;
-        background: var(--wavee-shell-chrome-bg);
-      }
-
-      .home-skeleton-card--artist {
-        width: 176px;
-        min-width: 176px;
-        aspect-ratio: 1 / 1.16;
-        border-radius: 999px 999px 20px 20px;
-      }
-
-      .home-skeleton-card--large {
-        width: 332px;
-        min-width: 332px;
-        min-height: 104px;
-      }
-
-      .home-skeleton-card--small {
-        width: 270px;
-        min-width: 270px;
-        min-height: 84px;
-      }
-
-      .home-skeleton-card--medium {
-        width: 220px;
-        min-width: 220px;
-        min-height: 220px;
-      }
-
-      .home-runtime-loading {
-        width: 100%;
-        min-height: 220px;
-        display: grid;
-        place-items: center;
-      }
-
-      .home-runtime-loading-spinner {
-        width: 36px;
-        height: 36px;
-        border: 2px solid rgba(255, 255, 255, 0.14);
-        border-top-color: #92A9E1;
-        border-right-color: rgba(146, 169, 225, 0.72);
-        border-radius: 999px;
-        animation: wavee-spin 0.85s linear infinite;
-      }
-
-      .home-skeleton-shimmer {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(110deg, rgba(255, 255, 255, 0.04) 8%, rgba(255, 255, 255, 0.24) 28%, rgba(255, 255, 255, 0.04) 46%);
-        transform: translateX(-100%);
-        animation: home-skeleton-shimmer 1.3s ease-in-out infinite;
-      }
-
-      /* Disable highlight/glow accents */
-      .section-shell::after {
-        content: none !important;
-      }
-
-      .home-carousel-track [data-carousel-card]:hover,
-      .home-carousel-track [data-carousel-card]:focus-within {
-        filter: none !important;
-      }
-
-      .home-artist-cover-shell::after,
-      .home-small-media::after {
-        content: none !important;
-      }
-
-      .home-artist-play::after,
-      .home-card-play::after {
-        display: none !important;
-      }
-
-      @keyframes home-skeleton-shimmer {
-        100% {
-          transform: translateX(120%);
-        }
-      }
-
-      /* Home cards refresh: unified frosted chrome surfaces */
-      .home-filter-chip,
-      .home-section-link,
-      .artists-carousel-control {
-        background: var(--wavee-shell-chrome-bg) !important;
-        color: rgba(255, 255, 255, 0.8) !important;
-        border: 0 !important;
-        box-shadow: none !important;
-        backdrop-filter: var(--wavee-shell-chrome-blur) !important;
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur) !important;
-        transition:
-          transform 0.2s ease,
-          background-color 0.2s ease,
-          color 0.2s ease;
-      }
-
-      .home-filter-chip:hover,
-      .home-section-link:hover,
-      .artists-carousel-control:hover:not(:disabled) {
-        background: var(--wavee-shell-chrome-hover-bg) !important;
-        color: #ffffff !important;
-        border: 0 !important;
-        box-shadow: none !important;
-      }
-
-      .home-card-play,
-      .home-artist-play {
-        background: transparent !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-      }
-
-      .home-filter-chip {
-        min-height: 40px;
-        padding: 0 18px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-        text-shadow: none;
-        box-shadow: none;
-      }
-
-      .home-filter-chip::before {
-        content: none;
-      }
-
-      .home-filter-chip::after {
-        content: none;
-      }
-
-      .home-filter-chip:hover {
-        background: var(--wavee-shell-chrome-hover-bg) !important;
-        color: #ffffff !important;
-        box-shadow: none;
-      }
-
-      .home-filter-chip:active {
-        transform: translateY(0);
-      }
-
-      .home-filter-chip.is-active {
-        background: var(--wavee-accent, #92A9E1) !important;
-        color: #111214 !important;
-        font-weight: 800;
-        border: 0 !important;
-        box-shadow: none !important;
-      }
-
-      .home-filter-chip.is-active:hover {
-        background: #a7bbf0 !important;
-        color: #111214 !important;
-      }
-
-      .home-small-card,
-      .home-playlist-cover,
-      .home-album-cover,
-      .home-artist-cover-shell,
-      .home-carousel-empty {
-        background: var(--wavee-shell-chrome-bg) !important;
-        box-shadow: none !important;
-        backdrop-filter: var(--wavee-shell-chrome-blur) !important;
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur) !important;
-        transform: translateZ(0);
-      }
-
-      .home-small-card {
-        width: 352px;
-        min-width: 352px;
-        min-height: 110px;
-        grid-template-columns: 102px minmax(0, 1fr);
-        gap: 14px;
-        padding: 12px 14px;
-        border-radius: 26px;
-      }
-
-      .home-small-card.is-large {
-        width: 396px;
-        min-width: 396px;
-        min-height: 120px;
-        grid-template-columns: 112px minmax(0, 1fr);
-      }
-
-      .home-small-card.is-medium {
-        width: 336px;
-        min-width: 336px;
-      }
-
-      .home-small-media {
-        width: 102px;
-        height: 102px;
-        border-radius: 20px;
-      }
-
-      .home-playlist-card {
-        width: 266px;
-        min-width: 266px;
-      }
-
-      .home-playlist-card.is-featured {
-        width: 300px;
-        min-width: 300px;
-      }
-
-      .home-album-card {
-        width: 232px;
-        min-width: 232px;
-      }
-
-      .home-album-card.is-featured {
-        width: 258px;
-        min-width: 258px;
-      }
-
-      .home-artist-card {
-        width: 186px;
-        min-width: 186px;
-      }
-
-      .home-artist-name {
-        font-size: 14px;
-      }
-
-      .home-artist-role,
-      .home-card-meta,
-      .home-playlist-description {
-        display: none !important;
-      }
-
-      #home-top-tracks-row .home-playlist-logo,
-      #home-top-tracks-row .home-playlist-copy {
-        display: none !important;
-      }
-
-      #home-top-tracks-row .home-playlist-card {
-        width: 232px;
-        min-width: 232px;
-        gap: 8px;
-      }
-
-      #home-top-tracks-row .home-playlist-cover {
-        border-radius: 22px;
-      }
-
-      #home-top-tracks-row .home-playlist-overlay {
-        background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 6%, rgba(0, 0, 0, 0.4) 100%);
-      }
-
-      #home-top-tracks-row .home-card-play {
-        top: 50%;
-        left: 50%;
-        right: auto;
-        bottom: auto;
-        transform: translate(-50%, -50%) scale(0.97);
-      }
-
-      #home-top-tracks-row .group:hover .home-card-play,
-      #home-top-tracks-row .group:focus-within .home-card-play {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-        visibility: visible;
-        pointer-events: auto;
-      }
-
-      #home-top-tracks-row .home-card-play:active {
-        transform: translate(-50%, -50%) scale(0.97);
-      }
-
-      /* Unified play button: centered, large icon, no capsule background */
-      .home-card-play,
-      .home-artist-play {
-        top: 50%;
-        left: 50%;
-        right: auto;
-        bottom: auto;
-        width: 58px;
-        height: 58px;
-        border: 0 !important;
-        border-radius: 0;
-        background: transparent !important;
-        box-shadow: none !important;
-        color: rgba(255, 255, 255, 0.97);
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transform: translate(-50%, -50%) scale(0.84) rotate(-12deg);
-        transition:
-          opacity 0.22s ease,
-          transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-          visibility 0s linear 0.24s;
-        z-index: 4;
-      }
-
-      .home-card-play svg,
-      .home-artist-play svg {
-        width: 30px;
-        height: 30px;
-        filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.55));
-      }
-
-      .home-card-play::after,
-      .home-artist-play::after {
-        display: none !important;
-      }
-
-      .home-artist-card:hover .home-artist-play,
-      .home-artist-card:focus-within .home-artist-play,
-      .group:hover .home-card-play,
-      .group:focus-within .home-card-play {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-        transform: translate(-50%, -50%) scale(1) rotate(0deg);
-        transition-delay: 0s;
-        animation: none;
-      }
-
-      .home-card-play:active,
-      .home-artist-play:active {
-        transform: translate(-50%, -50%) scale(0.92);
-      }
-
-      /* Keep covers stable; the overlay supplies hover contrast. */
-      .home-playlist-cover .home-lazy-cover,
-      .home-album-cover .home-lazy-cover,
-      .home-small-media .home-lazy-cover,
-      .home-artist-cover-shell .home-lazy-cover {
-        transition:
-          opacity 0.18s ease;
-      }
-
-      .home-artist-card:hover .home-artist-cover-shell .home-lazy-cover,
-      .home-artist-card:focus-within .home-artist-cover-shell .home-lazy-cover,
-      .home-small-card:hover .home-small-media .home-lazy-cover,
-      .home-small-card:focus-within .home-small-media .home-lazy-cover,
-      .group:hover .home-playlist-cover .home-lazy-cover,
-      .group:focus-within .home-playlist-cover .home-lazy-cover,
-      .group:hover .home-album-cover .home-lazy-cover,
-      .group:focus-within .home-album-cover .home-lazy-cover {
-        transform: none;
-      }
-
-      .home-artist-card:hover .home-artist-cover-shell .home-lazy-cover,
-      .home-artist-card:focus-within .home-artist-cover-shell .home-lazy-cover {
-        transform: none;
-      }
-
-      .home-playlist-cover::after,
-      .home-album-cover::after,
-      .home-small-media::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.24s ease;
-        background: radial-gradient(circle at center, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.34) 58%, rgba(0, 0, 0, 0.5) 100%);
-      }
-
-      .group:hover .home-playlist-cover::after,
-      .group:focus-within .home-playlist-cover::after,
-      .group:hover .home-album-cover::after,
-      .group:focus-within .home-album-cover::after,
-      .home-small-card:hover .home-small-media::before,
-      .home-small-card:focus-within .home-small-media::before {
-        opacity: 1;
-      }
-
-      #home-top-tracks-row .home-top-track-meta {
-        min-width: 0;
-        display: grid;
-        gap: 3px;
-        padding: 2px 4px 0;
-      }
-
-      #home-top-tracks-row .home-top-track-title {
-        margin: 0;
-        color: #ffffff;
-        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
-        font-size: 12px;
-        line-height: 1.15;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      #home-top-tracks-row .home-top-track-artist {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.66);
-        font-family: var(--wavee-body-font);
-        font-size: 11px;
-        line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .home-small-body {
-        min-width: 0;
-        display: grid;
-        gap: 6px;
-      }
-
-      .home-small-kicker {
-        display: none !important;
-      }
-
-      .home-small-title {
-        margin: 0;
-        color: #ffffff;
-        font-family: var(--wavee-display-font), 'Unbounded', sans-serif;
-        font-size: 15px;
-        line-height: 1.14;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .home-small-subtitle {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.66);
-        font-family: var(--wavee-body-font);
-        font-size: 13px;
-        line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .wave-animation {
-        display: flex;
-        align-items: flex-end;
-        gap: 2px;
-        height: 12px;
-      }
-
-      .wave-bar {
-        width: 2px;
-        background: currentColor;
-        border-radius: 2px;
-        animation: wave-grow 1s ease-in-out infinite;
-      }
-
-      @keyframes wave-grow {
-        0%,
-        100% {
-          height: 4px;
-        }
-
-        50% {
-          height: 12px;
-        }
-      }
-
-      .text-gradient {
-        background: linear-gradient(to right, #fff, #bbb);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-
-      .hero-logo-shell {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 240px;
-        margin-bottom: 0;
-      }
-
-      .home-wave-settings-toggle {
-        position: absolute;
-        right: max(18vw, calc(50% - 310px));
-        top: 24px;
-        z-index: 4;
-        width: 44px;
-        height: 44px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 0;
-        border-radius: 999px;
-        background: var(--wavee-shell-chrome-bg);
-        color: rgba(255, 255, 255, 0.84);
-        box-shadow: none;
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        cursor: pointer;
-        transition: transform 0.2s ease, background-color 0.2s ease;
-      }
-
-      .home-wave-settings-toggle:hover,
-      .home-wave-settings-toggle:focus-visible,
-      .home-wave-settings-toggle[aria-expanded='true'] {
-        transform: translateY(-1px);
-        background: var(--wavee-shell-chrome-hover-bg);
-      }
-
-      .home-wave-settings-panel {
-        position: absolute;
-        left: 50%;
-        top: 84px;
-        transform: translateX(-50%);
-        z-index: 1000;
-        width: min(1000px, calc(100vw - 32px));
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 24px;
-        padding: 20px;
-        border-radius: 24px;
-        border: 0;
-        background: var(--wavee-shell-chrome-bg);
-        box-shadow: none;
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        text-align: left;
-      }
-
-      .home-wave-settings-panel[hidden] {
-        display: none;
-      }
-
-      .home-wave-settings-title {
-        display: none;
-      }
-
-      .home-wave-settings-group {
-        display: grid;
-        gap: 8px;
-        flex: 0 1 auto;
-      }
-
-      .home-wave-settings-label {
-        color: rgba(255, 255, 255, 0.4);
-        font-family: var(--wavee-heading-font);
-        font-size: 10px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      .home-wave-settings-options {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 6px;
-        overflow-x: auto;
-        padding-bottom: 2px;
-      }
-
-      .home-wave-settings-options::-webkit-scrollbar {
         height: 0;
       }
 
-      .home-wave-setting-chip {
-        white-space: nowrap;
-        min-height: 34px;
-        padding: 0 14px;
-        border-radius: 999px;
-        border: 0;
+      body[data-wavee-embed='app'] .home-embed-scroll-spacer {
+        display: block;
+        height: clamp(112px, 12vh, 148px);
+      }
+
+      /* ====================================================================
+         Hero Stage: Моя волна
+         ==================================================================== */
+      .hero-shell {
+        position: relative;
+        z-index: 10;
+        padding-top: 98px;
+        padding-bottom: 12px;
+      }
+
+      body:not([data-wavee-embed='app']) .hero-shell {
+        padding-top: 36px;
+      }
+
+      .home-wave-hero {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+        gap: clamp(18px, 2.4vw, 28px);
+        align-items: stretch;
+        padding: clamp(20px, 2.6vw, 30px);
+        border-radius: 30px;
         background: var(--wavee-shell-chrome-bg);
         backdrop-filter: var(--wavee-shell-chrome-blur);
         -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
+        border: 0;
         box-shadow: none;
-        color: rgba(255, 255, 255, 0.72);
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.2s ease, color 0.2s ease;
       }
 
-      .home-wave-setting-chip.is-accent,
-      .home-wave-setting-chip:hover,
-      .home-wave-setting-chip:focus-visible {
-        background: var(--wavee-shell-chrome-hover-bg);
-        color: #ffffff;
+      .home-wave-hero-main {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 18px;
+        min-width: 0;
+        text-align: left;
       }
 
-      .home-wave-setting-chip.is-active {
-        background: var(--wavee-accent, #92A9E1) !important;
-        color: #111 !important;
-        border: 0 !important;
-        box-shadow: none !important;
+      .home-wave-kicker-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
       }
 
-      @media (max-width: 767px) {
-        .home-wave-settings-toggle {
-          right: 14px;
-          top: 8px;
-        }
-
-        .home-wave-settings-panel {
-          top: 64px;
-          flex-direction: column;
-          gap: 16px;
-          padding: 16px;
-        }
-        
-        .home-wave-settings-options {
-          flex-wrap: wrap;
-        }
-      }
-
-      body:not([data-wavee-embed='app']) .hero-logo-shell {
-        min-height: 280px;
-      }
-
-      .home-wave-trigger {
-        appearance: none;
+      .home-wave-status {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        min-height: clamp(150px, 24vw, 280px);
-        border: 0;
-        padding: 0;
-        background: none;
-        color: #b2c5f7;
-        cursor: pointer;
-        transition:
-          opacity 0.32s ease,
-          transform 0.38s ease,
-          filter 0.38s ease;
+        gap: 8px;
+        font-family: var(--wavee-body-font);
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.72);
       }
 
-      body:not([data-wavee-embed='app']) .home-wave-trigger {
-        margin-top: 22px;
+      .home-wave-status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.4);
+        flex-shrink: 0;
+        transition: background-color 0.2s ease;
       }
 
-      .home-wave-trigger:hover,
-      .home-wave-trigger:focus-visible {
-        filter: brightness(1.2) drop-shadow(0 0 25px rgba(146, 169, 225, 0.15));
-        transform: scale(1.02);
+      .home-wave-hero.is-wave-playing .home-wave-status-dot {
+        background: var(--wavee-accent);
       }
 
-      .home-wave-trigger:focus-visible {
-        outline: 0;
+      .home-wave-count {
+        font-family: var(--wavee-mono-font);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        color: rgba(255, 255, 255, 0.5);
+        letter-spacing: 0.02em;
       }
 
-      .home-wave-trigger:disabled {
-        cursor: not-allowed;
-        opacity: 0.38;
+      .home-wave-headline-wrap {
+        display: grid;
+        gap: 8px;
+        min-width: 0;
       }
 
-
-      .home-wave-trigger.is-hidden {
-        opacity: 0;
-        transform: translateY(12px) scale(0.985);
-        filter: blur(1.5px);
-        pointer-events: none;
-      }
-
-      .hero-logo-svg {
-        display: block;
-        width: min(76vw, 560px);
-        height: auto;
-        overflow: visible;
-      }
-
-      .hero-logo-main {
-        fill: #ffffff;
-      }
-
-      .hero-logo-wave-link {
-        cursor: pointer;
-        outline: none;
-      }
-
-      .hero-logo-wave-glow {
-        fill: rgba(255, 255, 255, 0.22);
-        opacity: 0.12;
-        filter: blur(14px);
-        animation: hero-wave-glow 2.4s ease-in-out infinite;
-        transition: opacity 0.28s ease, filter 0.28s ease;
-      }
-
-      .hero-logo-wave {
-        fill: #f1f1f1;
-        animation: hero-wave-invite 2.8s ease-in-out infinite;
-        transition:
-          fill 0.28s ease,
-          filter 0.28s ease,
-          opacity 0.28s ease;
-      }
-
-      .hero-logo-wave-detail {
-        fill: #d2d2d2;
-        animation: hero-wave-detail-invite 2.8s ease-in-out infinite;
-        transition:
-          fill 0.28s ease,
-          filter 0.28s ease,
-          opacity 0.28s ease;
-      }
-
-      .hero-logo-wave-link:hover .hero-logo-wave,
-      .hero-logo-wave-link:focus-visible .hero-logo-wave {
-        fill: #ffffff;
-        filter:
-          drop-shadow(0 0 14px rgba(146, 169, 225, 0.34))
-          drop-shadow(0 0 30px rgba(146, 169, 225, 0.46));
-        opacity: 1;
-      }
-
-      .hero-logo-wave-link:hover .hero-logo-wave-detail,
-      .hero-logo-wave-link:focus-visible .hero-logo-wave-detail {
-        fill: #f0f0f0;
-        filter: drop-shadow(0 0 18px rgba(146, 169, 225, 0.3));
-        opacity: 1;
-      }
-
-      .hero-logo-wave-link:hover .hero-logo-wave-glow,
-      .hero-logo-wave-link:focus-visible .hero-logo-wave-glow {
-        opacity: 0.28;
-        filter: blur(18px);
-      }
-
-      .hero-logo-wave-link:hover .hero-logo-wave-detail,
-      .hero-logo-wave-link:focus-visible .hero-logo-wave-detail {
-        animation-play-state: paused;
-      }
-
-      .hero-logo-wave-link:hover .hero-logo-wave,
-      .hero-logo-wave-link:focus-visible .hero-logo-wave {
-        animation-play-state: paused;
-      }
-
-      @keyframes hero-wave-invite {
-        0%,
-        100% {
-          fill: #f1f1f1;
-          opacity: 0.97;
-          filter:
-            drop-shadow(0 0 0 rgba(146, 169, 225, 0))
-            drop-shadow(0 0 0 rgba(146, 169, 225, 0));
-        }
-        28% {
-          fill: #fafafa;
-          opacity: 1;
-          filter:
-            drop-shadow(0 0 12px rgba(146, 169, 225, 0.24))
-            drop-shadow(0 0 24px rgba(146, 169, 225, 0.18));
-        }
-        52% {
-          fill: #ffffff;
-          opacity: 1;
-          filter:
-            drop-shadow(0 0 18px rgba(146, 169, 225, 0.32))
-            drop-shadow(0 0 34px rgba(146, 169, 225, 0.2));
-        }
-        78% {
-          fill: #f2f2f2;
-          opacity: 0.98;
-          filter:
-            drop-shadow(0 0 10px rgba(146, 169, 225, 0.18))
-            drop-shadow(0 0 20px rgba(146, 169, 225, 0.12));
-        }
-      }
-
-      @keyframes hero-wave-detail-invite {
-        0%,
-        100% {
-          fill: #d2d2d2;
-          opacity: 1;
-        }
-        35% {
-          fill: #ededed;
-          opacity: 0.96;
-        }
-        65% {
-          fill: #d8d8d8;
-          opacity: 1;
-        }
-      }
-
-      @keyframes hero-wave-glow {
-        0%,
-        100% {
-          opacity: 0.08;
-          filter: blur(12px);
-        }
-        35% {
-          opacity: 0.2;
-          filter: blur(18px);
-        }
-        60% {
-          opacity: 0.14;
-          filter: blur(15px);
-        }
-      }
-
-      .home-wave-trigger-art {
-        display: none;
-        font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
-        font-size: 8px;
-        font-weight: 400;
-        line-height: 1.07;
-        letter-spacing: 0.04em;
-        white-space: pre;
-        text-shadow:
-          0 0 10px rgba(146, 169, 225, 0.2),
-          0 0 24px rgba(146, 169, 225, 0.08);
-        user-select: none;
-        animation: home-wave-art-idle 3.6s ease-in-out infinite;
-        transition: color 0.28s ease, text-shadow 0.28s ease;
-      }
-
-      .home-wave-trigger-image {
-        display: block;
-        width: min(56vw, 520px);
-        height: clamp(150px, 24vw, 280px);
-        max-height: 280px;
-        min-height: 150px;
-        object-fit: contain;
-        user-select: none;
-        pointer-events: none;
-        filter: none;
-      }
-
-      .home-wave-trigger:hover .home-wave-trigger-art,
-      .home-wave-trigger:focus-visible .home-wave-trigger-art {
-        animation: home-wave-art-idle 3.6s ease-in-out infinite;
-        color: #cfddff;
-        text-shadow:
-          0 0 15px rgba(146, 169, 225, 0.35),
-          0 0 35px rgba(146, 169, 225, 0.18);
-      }
-
-      .home-wave-trigger.is-active .home-wave-trigger-art {
-        animation: home-wave-art-idle 3.6s ease-in-out infinite !important;
+      .home-wave-title {
+        margin: 0;
         color: #ffffff;
-        text-shadow:
-          0 0 20px rgba(146, 169, 225, 0.45),
-          0 0 45px rgba(146, 169, 225, 0.25);
+        font-family: var(--wavee-display-font);
+        font-size: clamp(28px, 3.6vw, 44px);
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        line-height: 1.04;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
-      @keyframes home-wave-art-idle {
-        0%,
-        100% {
-          transform: translateY(0) scale(1);
-          opacity: 0.9;
-        }
-        50% {
-          transform: translateY(-1px);
-          opacity: 1;
-        }
+      .home-wave-summary {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.64);
+        font-family: var(--wavee-body-font);
+        font-size: 14px;
+        line-height: 1.45;
+        max-width: 54ch;
       }
 
-      @keyframes home-wave-art-hover {
-        0%,
-        100% {
-          transform: translate(0, 0);
-        }
-        33% {
-          transform: translate(1px, -1px);
-        }
-        66% {
-          transform: translate(-1px, 1px);
-        }
+      .home-wave-genre-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
       }
 
-      @keyframes home-wave-art-active {
-        0%,
-        100% {
-          transform: translate(0, 0);
-        }
-        25% {
-          transform: translate(1px, -1px);
-        }
-        50% {
-          transform: translate(-1px, 1px);
-        }
-        75% {
-          transform: translate(1px, 1px);
-        }
+      .home-wave-genre-tags:empty {
+        display: none;
       }
 
-
-      .mix-card button,
-      .home-genre-card,
-      .home-genre-card button,
-      .home-genres-tab,
-      .track-card button,
-      nav a,
-      #home-hero-listen {
-        transition:
-          opacity 0.25s ease,
-          transform 0.25s ease,
-          color 0.25s ease,
-          background 0.25s ease,
-          border-color 0.25s ease;
+      .home-wave-genre-tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 0 13px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.07);
+        color: rgba(255, 255, 255, 0.84);
+        font-family: var(--wavee-body-font);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s ease, color 0.2s ease, transform 0.16s ease;
       }
 
-      /* Wave Controls Styles */
+      .home-wave-genre-tag:hover {
+        background: rgba(255, 255, 255, 0.14);
+        color: #ffffff;
+      }
+
+      .home-wave-genre-tag:active {
+        transform: scale(0.97);
+      }
+
+      .home-wave-actions-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding-top: 4px;
+      }
+
       .home-wave-controls {
         position: relative;
         display: inline-flex;
-        align-items: stretch;
-        background: var(--wavee-shell-chrome-bg);
-        border: 0;
-        border-radius: 999px;
-        padding: 0;
-        margin-top: -28px;
-        backdrop-filter: var(--wavee-shell-chrome-blur);
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
-        z-index: 5;
-        box-shadow: none;
-        min-width: 280px;
-        max-width: 280px;
-        height: 52px;
-        overflow: hidden;
-        transition:
-          max-width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
-          min-width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
-          height 0.34s cubic-bezier(0.22, 1, 0.36, 1),
-          background 0.2s ease,
-          backdrop-filter 0.2s ease,
-          transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-          opacity 0.2s ease;
-        transform: scale(1);
-        opacity: 1;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
       }
 
       .home-listen-button {
@@ -2712,60 +262,35 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 12px;
-        background: #92A9E1;
-        color: #000;
+        gap: 10px;
+        height: 46px;
+        padding: 0 26px;
         border: 0;
         border-radius: 999px;
-        padding: 0 40px;
+        background: var(--wavee-accent);
+        color: #111214;
         font-family: var(--wavee-display-font);
-        font-weight: 700;
-        font-size: 15px;
-        letter-spacing: 0.05em;
+        font-weight: 800;
+        font-size: 12px;
+        letter-spacing: 0.04em;
         text-transform: uppercase;
         cursor: pointer;
-        transition:
-          background 0.2s ease,
-          filter 0.2s ease,
-          padding 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-          gap 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-          transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
-        flex: 1.5;
-        height: 100%;
-        overflow: hidden;
-      }
-
-      .home-listen-button::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        height: 6px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 999px;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.2s ease, background 0.2s ease;
-      }
-
-      .home-listen-button > span:not(.home-listen-icons) {
-        display: inline-block;
-        max-width: 120px;
-        opacity: 1;
         white-space: nowrap;
-        overflow: hidden;
-        transition: max-width 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+        transition: background-color 0.2s ease, transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
       }
 
-      .home-listen-button:hover {
-        background: #a5b9eb;
+      .home-listen-button:hover:not(:disabled) {
+        background: var(--wavee-accent-hover);
       }
 
-      .home-listen-button:active {
-        background: #8198d1;
+      .home-listen-button:active:not(:disabled) {
+        background: var(--wavee-accent-active);
         transform: scale(0.97);
+      }
+
+      .home-listen-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
       }
 
       .home-listen-icons {
@@ -2781,10 +306,7 @@
         grid-area: 1 / 1;
         width: 14px;
         height: 14px;
-        flex-shrink: 0;
-        transition:
-          transform 0.26s cubic-bezier(0.22, 1, 0.36, 1),
-          opacity 0.18s ease;
+        transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease;
       }
 
       .home-listen-button .home-icon-play {
@@ -2797,589 +319,82 @@
         transform: scale(0.55) rotate(18deg);
       }
 
-      /* Active State for the Listen Button when Wave is playing */
-      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button .home-icon-play {
+      #home-hero-listen[aria-pressed="true"] .home-icon-play {
         opacity: 0;
         transform: scale(0.55) rotate(-18deg);
       }
 
-      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-listen-button .home-icon-pause {
+      #home-hero-listen[aria-pressed="true"] .home-icon-pause {
         opacity: 1;
         transform: scale(1) rotate(0deg);
       }
 
-      .home-wave-settings-button {
-        background: transparent;
-        color: #fff;
-        border: 0;
-        padding: 0 24px;
-        font-family: var(--wavee-display-font);
-        font-weight: 700;
-        font-size: 15px;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        cursor: pointer;
-        opacity: 0.8;
-        transition: opacity 0.2s ease;
-      }
-
-      .home-wave-settings-button:hover:not(:disabled) {
-        opacity: 1;
-      }
-      
-      .home-wave-settings-button:disabled {
-        cursor: not-allowed;
-        opacity: 0.35;
-      }
-
-      /* Override for existing settings toggle when placed inside controls */
-      .home-wave-controls .home-wave-settings-toggle {
-        position: static;
-        inset: auto;
-        width: 64px;
-        height: 100%;
-        background: transparent;
-        border: none;
-        box-shadow: none;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-        margin: 0;
+      .home-wave-settings-toggle {
+        width: 46px;
+        height: 46px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: rgba(255, 255, 255, 0.6);
-        opacity: 1;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.07);
+        color: rgba(255, 255, 255, 0.56);
+        cursor: pointer;
         flex-shrink: 0;
-        overflow: hidden;
-        transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, background 0.2s ease, color 0.2s ease;
+        transition: background-color 0.2s ease, color 0.2s ease;
       }
 
-      #home-hero-listen[aria-pressed="true"] + .home-wave-controls .home-wave-settings-toggle {
-        width: 0;
-        opacity: 0;
-        pointer-events: none;
+      .home-wave-settings-toggle:disabled {
+        cursor: not-allowed;
+        opacity: 0.38;
       }
 
-      .home-wave-controls .home-wave-settings-toggle svg {
-        width: 20px;
-        height: 20px;
+      .home-wave-settings-toggle svg {
+        width: 18px;
+        height: 18px;
       }
 
-      .home-wave-controls .home-wave-settings-toggle:hover:not(:disabled) {
-        background: var(--wavee-shell-chrome-hover-bg);
-        color: #ffffff;
+      .home-wave-settings-panel[hidden] {
+        display: none;
       }
 
-      @media (max-width: 767px) {
-        .home-wave-controls {
-          min-width: 240px;
-          max-width: 240px;
-          height: 44px;
-          padding: 0;
-        }
-        #home-hero-listen[aria-pressed="true"] + .home-wave-controls {
-          max-width: 100px;
-          min-width: 100px;
-          height: 36px;
-        }
-        .home-listen-button {
-          padding: 0 24px;
-          font-size: 13px;
-        }
-        .home-wave-settings-button,
-        .home-wave-controls .home-wave-settings-toggle {
-          width: 52px;
-        }
-      }
-
-      @media (max-width: 1023px) {
-        nav {
-          width: calc(100% - 24px) !important;
-          padding: 14px 18px !important;
-        }
-
-        nav .nav-links {
-          display: none;
-        }
-
-        .section-shell {
-          padding-left: 20px !important;
-          padding-right: 20px !important;
-        }
-
-        .home-section-title {
-          font-size: clamp(22px, 5vw, 32px);
-        }
-
-        .home-artist-card {
-          width: 158px;
-          min-width: 158px;
-        }
-
-        .home-playlist-card {
-          width: 216px;
-          min-width: 216px;
-        }
-
-        .home-album-card {
-          width: 188px;
-          min-width: 188px;
-        }
-
-        .home-small-card {
-          width: 244px;
-          min-width: 244px;
-        }
-
-        .home-small-card.is-large {
-          width: 292px;
-          min-width: 292px;
-        }
-
-        .home-small-card.is-medium {
-          width: 260px;
-          min-width: 260px;
-        }
-
-        .home-playlist-card.is-featured {
-          width: 244px;
-          min-width: 244px;
-        }
-
-        .home-album-card.is-featured {
-          width: 204px;
-          min-width: 204px;
-        }
-
-        .home-skeleton-card--large {
-          width: 292px;
-          min-width: 292px;
-        }
-
-        .home-skeleton-card--small {
-          width: 244px;
-          min-width: 244px;
-        }
-
-        .home-skeleton-card--medium {
-          width: 204px;
-          min-width: 204px;
-          min-height: 204px;
-        }
-
-        .home-skeleton-card--artist {
-          width: 158px;
-          min-width: 158px;
-        }
-
-      }
-
-      @media (max-width: 767px) {
-        body[data-wavee-embed='app'] {
-          padding-bottom: 0;
-        }
-
-        body[data-wavee-embed='app'] .home-embed-scroll-spacer {
-          height: calc(132px + env(safe-area-inset-bottom));
-        }
-
-        body::before,
-        body::after {
-          filter: blur(70px);
-        }
-
-        .hero-shell {
-          padding: 108px 20px 22px !important;
-        }
-
-        .hero-logo-shell {
-          min-height: 220px;
-        }
-
-        .home-wave-settings-toggle {
-          right: 14px;
-          top: 8px;
-          width: 40px;
-          height: 40px;
-        }
-
-        .home-wave-settings-panel {
-          right: 0;
-          left: 0;
-          top: 58px;
-          margin: 0 auto;
-        }
-
-        .home-wave-trigger {
-          max-width: 96vw;
-        }
-
-        .home-wave-trigger-art {
-          font-size: 7px;
-          letter-spacing: 0.04em;
-        }
-
-        .home-filter-chips {
-          gap: 8px;
-        }
-
-        .home-filter-chip {
-          min-height: 36px;
-          padding: 0 14px;
-          font-size: 9px;
-        }
-
-        .home-section-header {
-          align-items: center;
-        }
-
-        .home-section-actions {
-          width: 100%;
-          justify-content: space-between;
-        }
-
-        .home-section-controls {
-          display: none !important;
-        }
-
-        .home-section-link {
-          min-height: 34px;
-          padding: 0 12px;
-          font-size: 9px;
-        }
-
-        .home-carousel-track {
-          gap: 12px;
-          padding-bottom: 14px;
-        }
-
-        .home-artist-card {
-          width: 130px;
-          min-width: 130px;
-          gap: 0;
-        }
-
-        .home-artist-play {
-          top: 50%;
-          left: 50%;
-          bottom: auto;
-          width: 50px;
-          height: 50px;
-          opacity: 0;
-          visibility: hidden;
-          pointer-events: none;
-          transform: translate(-50%, -50%) scale(0.97);
-        }
-
-        .home-artist-info {
-          width: calc(100% - 8px);
-          margin-top: -34px;
-          min-height: 46px;
-          padding: 6px 10px;
-          border-radius: 12px;
-        }
-
-        .home-artist-name {
-          font-size: 11px;
-        }
-
-        .home-artist-name.is-long {
-          font-size: 9px;
-        }
-
-        .home-artist-name.is-xlong {
-          font-size: 8px;
-        }
-
-        .home-artist-monthly {
-          font-size: 9px;
-        }
-
-        .home-playlist-card {
-          width: 176px;
-          min-width: 176px;
-          gap: 8px;
-        }
-
-        .home-album-card {
-          width: 158px;
-          min-width: 158px;
-          gap: 8px;
-        }
-
-        .home-small-card {
-          width: 212px;
-          min-width: 212px;
-          min-height: 74px;
-          grid-template-columns: 58px minmax(0, 1fr);
-          gap: 10px;
-          padding: 7px;
-        }
-
-        .home-small-card.is-large {
-          width: 250px;
-          min-width: 250px;
-          min-height: 86px;
-          grid-template-columns: 66px minmax(0, 1fr);
-        }
-
-        .home-small-card.is-medium {
-          width: 224px;
-          min-width: 224px;
-        }
-
-        .home-small-media {
-          width: 58px;
-          height: 58px;
-          border-radius: 12px;
-        }
-
-        .home-playlist-cover {
-          border-radius: 20px;
-        }
-
-        .home-playlist-kicker {
-          font-size: 8px;
-        }
-
-        .home-playlist-artist {
-          font-size: 12px;
-        }
-
-        .home-playlist-description {
-          font-size: 11px;
-        }
-
-        .home-album-title {
-          font-size: 11px;
-        }
-
-        .home-album-subtitle {
-          font-size: 10px;
-        }
-
-        .home-playlist-card.is-featured {
-          width: 196px;
-          min-width: 196px;
-        }
-
-        .home-album-card.is-featured {
-          width: 168px;
-          min-width: 168px;
-        }
-
-        .home-skeleton-card--large {
-          width: 250px;
-          min-width: 250px;
-          min-height: 86px;
-        }
-
-        .home-skeleton-card--small {
-          width: 212px;
-          min-width: 212px;
-          min-height: 74px;
-        }
-
-        .home-skeleton-card--medium {
-          width: 176px;
-          min-width: 176px;
-          min-height: 176px;
-        }
-
-        .home-skeleton-card--artist {
-          width: 130px;
-          min-width: 130px;
-        }
-
-        .home-small-kicker {
-          display: none !important;
-        }
-
-        .home-small-title {
-          font-size: 12px;
-        }
-
-        .home-small-subtitle {
-          font-size: 11px;
-        }
-
-        .home-card-play {
-          top: 50%;
-          left: 50%;
-          width: 50px;
-          height: 50px;
-          opacity: 0;
-          visibility: hidden;
-          pointer-events: none;
-          transform: translate(-50%, -50%) scale(0.97);
-        }
-
-        .home-carousel-track [data-carousel-card]:hover,
-        .home-carousel-track [data-carousel-card]:focus-within {
-          border-color: rgba(255,255,255,0.3);
-        }
-
-        .track-row {
-          gap: 16px !important;
-        }
-
-        .track-card {
-          width: 250px !important;
-        }
-
-        .mix-card-body,
-        .mix-card-feature .mix-card-body {
-          grid-template-columns: minmax(0, 1fr) 72px;
-        }
-
-        #home-genres-grid {
-          grid-template-columns: 1fr !important;
-          gap: 14px;
-        }
-
-        .home-genres-toolbar {
-          flex-wrap: nowrap;
-          overflow-x: auto;
-          width: 100%;
-          padding-bottom: 2px;
-        }
-
-        .home-genres-tab {
-          white-space: nowrap;
-        }
-
-        .home-genre-card,
-        .home-genre-card.is-featured,
-        .home-genre-card.is-wide {
-          grid-column: 1 / -1;
-          min-height: 170px;
-          padding: 14px 14px 50px;
-          grid-template-columns: minmax(0, 1fr) 78px;
-          gap: 10px;
-        }
-
-        .home-genre-card-title {
-          font-size: 20px;
-        }
-
-        .home-genre-card-caption {
-          font-size: 11px;
-        }
-
-        .home-genre-card-art,
-        .home-genre-card.is-featured .home-genre-card-art {
-          width: 78px;
-          height: 78px;
-          border-radius: 16px;
-        }
-
-        .home-genre-card-topline {
-          flex-wrap: wrap;
-          gap: 6px;
-        }
-
-        .artists-carousel-head {
-          align-items: flex-start;
-        }
-
-        .artists-carousel-copy h2 {
-          white-space: normal;
-        }
-
-        .artists-carousel-controls {
-          margin-left: auto;
-        }
-
-        .artist-spotlight-card {
-          width: 292px;
-          min-width: 292px;
-          max-width: 292px;
-          padding: 16px;
-        }
-
-        .artist-spotlight-main {
-          grid-template-columns: 90px minmax(0, 1fr);
-          min-height: 90px;
-          gap: 12px;
-        }
-
-        .artist-spotlight-cover-shell {
-          width: 90px;
-          height: 90px;
-          border-radius: 26px;
-          padding: 5px;
-        }
-
-        .artist-spotlight-name {
-          font-size: 15px;
-        }
-
-        .artist-spotlight-copy {
-          min-width: 0;
-          gap: 6px;
-          padding-right: 0;
-        }
-
-        .artist-spotlight-meta {
-          font-size: 10px;
-        }
-
-        .artist-spotlight-play {
-          height: 38px;
-          font-size: 9px;
-          gap: 6px;
-        }
-
-        .artist-spotlight-follow {
-          width: 38px;
-          min-width: 38px;
-          height: 38px;
-        }
-
-        .hero-logo-svg {
-          width: min(88vw, 460px) !important;
-        }
-      }
-
-      /* Home filter switch: oversized segmented control */
+      /* Mode Segmented Switch */
       #home-filter-chips.home-filter-chips {
-        display: inline-flex !important;
-        align-items: stretch;
-        gap: 6px;
-        padding: 6px;
-        border: 0 !important;
-        border-radius: 100px;
-        background: var(--wavee-shell-chrome-bg) !important;
-        backdrop-filter: var(--wavee-shell-chrome-blur) !important;
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur) !important;
-        box-shadow: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      #home-filter-chips:empty {
+        display: none;
       }
 
       #home-filter-chips .home-filter-chip {
-        display: inline-flex !important;
+        appearance: none;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 48px;
-        min-width: 140px;
-        padding: 0 28px;
-        border: 0 !important;
-        border-radius: 100px;
-        background: transparent !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        color: rgba(255, 255, 255, 0.55) !important;
+        min-height: 38px;
+        padding: 0 18px;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.62);
         font-family: var(--wavee-display-font);
-        font-size: 0.95rem;
+        font-size: 12px;
         font-weight: 700;
-        letter-spacing: 0.01em;
-        text-transform: none;
-        transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        white-space: nowrap;
         cursor: pointer;
+        transition: background-color 0.2s ease, color 0.2s ease, transform 0.16s ease;
       }
 
       #home-filter-chips .home-filter-chip:hover {
-        color: #ffffff !important;
-        background: var(--wavee-shell-chrome-hover-bg) !important;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.08);
       }
 
       #home-filter-chips .home-filter-chip:active {
@@ -3387,75 +402,1072 @@
       }
 
       #home-filter-chips .home-filter-chip.is-active {
-        background: var(--wavee-accent, #92A9E1) !important;
-        color: #111 !important;
-        font-weight: 850;
-        box-shadow: none !important;
+        background: var(--wavee-accent);
+        color: #111214;
+        font-weight: 800;
       }
 
       #home-filter-chips .home-filter-chip.is-active:hover {
-        background: #a7bbf0 !important;
-        color: #111 !important;
-        box-shadow: none !important;
+        background: var(--wavee-accent-hover);
+        color: #111214;
       }
 
-      #home-filter-chips .home-filter-chip-label {
+      /* Hero Right Panel: Live Wave Queue Preview */
+      .home-wave-queue-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+        padding: 12px;
+        border-radius: 22px;
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      .home-wave-queue-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 2px 6px 4px;
+      }
+
+      .home-wave-queue-label {
+        font-family: var(--wavee-display-font);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.68);
+      }
+
+      .home-wave-queue-sub {
+        font-family: var(--wavee-body-font);
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.45);
+      }
+
+      .home-wave-queue-list {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .home-wave-queue-item {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 6px 8px;
+        border: 0;
+        border-radius: 14px;
+        background: transparent;
+        color: #ffffff;
+        text-align: left;
+        cursor: pointer;
+        transition: background-color 0.18s ease, transform 0.16s ease;
+      }
+
+      .home-wave-queue-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .home-wave-queue-item:active {
+        transform: scale(0.99);
+      }
+
+      .home-wave-queue-item.is-playing {
+        background: rgba(146, 169, 225, 0.14);
+      }
+
+      .home-wave-queue-thumb {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.06);
+        flex-shrink: 0;
+      }
+
+      .home-wave-queue-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .home-wave-queue-thumb-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.45);
+        color: #ffffff;
+        opacity: 0;
+        transition: opacity 0.18s ease;
+      }
+
+      .home-wave-queue-item:hover .home-wave-queue-thumb-overlay,
+      .home-wave-queue-item.is-playing .home-wave-queue-thumb-overlay {
+        opacity: 1;
+      }
+
+      .home-wave-queue-meta {
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+      }
+
+      .home-wave-queue-title {
+        margin: 0;
+        font-family: var(--wavee-body-font);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.25;
+        color: #ffffff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .home-wave-queue-item.is-playing .home-wave-queue-title {
+        color: var(--wavee-accent);
+      }
+
+      .home-wave-queue-artist {
+        margin: 0;
+        font-family: var(--wavee-body-font);
+        font-size: 12px;
+        line-height: 1.25;
+        color: rgba(255, 255, 255, 0.56);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .home-wave-queue-duration {
+        font-family: var(--wavee-mono-font);
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+        color: rgba(255, 255, 255, 0.45);
+        padding-right: 4px;
+      }
+
+      .home-wave-queue-empty {
+        padding: 20px 12px;
+        color: rgba(255, 255, 255, 0.48);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      /* ====================================================================
+         Sections & Headers
+         ==================================================================== */
+      .section-shell {
+        position: relative;
+        z-index: 1;
+        opacity: 0;
+        transform: translateY(14px);
+        transition:
+          opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .section-shell.is-in-view {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .section-shell.is-mode-enter {
+        animation: home-mode-enter 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-delay: var(--mode-enter-delay, 0ms);
+      }
+
+      @keyframes home-mode-enter {
+        0% {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .home-section-header {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 1.1rem;
+      }
+
+      .home-section-title-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        min-width: 0;
+      }
+
+      .home-section-head-copy {
+        min-width: 0;
+      }
+
+      .home-section-title {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font);
+        font-size: clamp(22px, 2.8vw, 32px);
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        line-height: 1.05;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: color 0.2s ease;
+      }
+
+      .home-section-title::after {
+        content: '';
+        display: inline-block;
+        width: 0.9em;
+        height: 0.9em;
+        background-color: currentColor;
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+        mask-repeat: no-repeat;
+        -webkit-mask-repeat: no-repeat;
+        mask-position: center;
+        -webkit-mask-position: center;
+        mask-size: contain;
+        -webkit-mask-size: contain;
+        opacity: 0.35;
+        transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, color 0.2s ease;
+      }
+
+      .home-section-title-link:hover .home-section-title {
+        color: #b2c3ed;
+      }
+
+      .home-section-title-link:hover .home-section-title::after {
+        transform: translateX(5px);
+        opacity: 0.85;
+        color: var(--wavee-accent);
+      }
+
+      .home-section-subline {
+        margin: 0.3rem 0 0;
+        color: rgba(255, 255, 255, 0.52);
+        font-family: var(--wavee-body-font);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .home-section-actions {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .artists-carousel-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .artists-carousel-control {
+        width: 40px;
+        height: 40px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        line-height: 1;
+        border-radius: 999px;
+        border: 0;
+        background: var(--wavee-shell-chrome-bg);
+        color: rgba(255, 255, 255, 0.82);
+        backdrop-filter: var(--wavee-shell-chrome-blur);
+        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
+        cursor: pointer;
+        transition: background-color 0.2s ease, color 0.2s ease, transform 0.18s ease, opacity 0.2s ease;
+      }
+
+      .artists-carousel-control:hover:not(:disabled) {
+        background: var(--wavee-shell-chrome-hover-bg);
+        color: #ffffff;
+        transform: scale(1.05);
+      }
+
+      .artists-carousel-control:active:not(:disabled) {
+        transform: scale(0.93);
+      }
+
+      .artists-carousel-control:disabled {
+        opacity: 0.34;
+        cursor: default;
+      }
+
+      /* ====================================================================
+         Horizontal Carousel & Smooth Scrolling
+         ==================================================================== */
+      .home-carousel-mask {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .home-carousel-track {
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        padding: 4px 2px 14px 2px;
+        scroll-snap-type: x proximity;
+        scroll-padding-left: 2px;
+        overscroll-behavior-x: contain;
+        scroll-behavior: auto;
+        -webkit-overflow-scrolling: touch;
+        cursor: grab;
+        user-select: none;
+      }
+
+      .home-carousel-track.is-dragging {
+        cursor: grabbing;
+        scroll-snap-type: none;
+      }
+
+      .home-carousel-track.is-dragging [data-carousel-card] {
+        pointer-events: none;
+      }
+
+      .home-carousel-track [data-carousel-card] {
+        position: relative;
+        scroll-snap-align: start;
+        transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .home-carousel-track [data-carousel-card]:active {
+        transform: scale(0.985);
+      }
+
+      .home-carousel-track.is-scrolling [data-carousel-card]:active {
+        transform: none;
+      }
+
+      .home-carousel-track [data-carousel-card].is-stagger-ready {
+        animation: home-card-enter 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-delay: var(--card-delay, 0ms);
+      }
+
+      @keyframes home-card-enter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .home-carousel-empty {
+        width: 100%;
+        border-radius: 20px;
+        border: 0;
+        background: var(--wavee-shell-chrome-bg);
+        backdrop-filter: var(--wavee-shell-chrome-blur);
+        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
+        padding: 18px;
+        color: rgba(255, 255, 255, 0.56);
+        font-size: 13px;
+      }
+
+      .home-lazy-cover {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .home-lazy-cover.is-loaded {
+        opacity: 1;
+      }
+
+      /* ====================================================================
+         Unified Play Overlay & Now-Playing Indicator
+         ==================================================================== */
+      .home-card-play,
+      .home-artist-play {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 52px;
+        height: 52px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(17, 18, 20, 0.65);
+        color: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translate(-50%, -50%) scale(0.86);
+        transition:
+          opacity 0.2s ease,
+          transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+          background-color 0.2s ease,
+          visibility 0s linear 0.2s;
+        z-index: 4;
+        cursor: pointer;
+      }
+
+      .home-card-play svg,
+      .home-artist-play svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .home-artist-card:hover .home-artist-play,
+      .home-artist-card:focus-within .home-artist-play,
+      .group:hover .home-card-play,
+      .group:focus-within .home-card-play {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translate(-50%, -50%) scale(1);
+        transition-delay: 0s;
+      }
+
+      .home-card-play:hover,
+      .home-artist-play:hover {
+        background: var(--wavee-accent);
+        color: #111214;
+      }
+
+      .home-card-play:active,
+      .home-artist-play:active {
+        transform: translate(-50%, -50%) scale(0.92);
+      }
+
+      .home-card-badge {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        z-index: 3;
+        display: inline-flex;
+        align-items: center;
+        min-height: 20px;
+        padding: 0 8px;
+        border-radius: 999px;
+        font-family: var(--wavee-display-font);
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: rgba(17, 18, 20, 0.72);
+        color: rgba(255, 255, 255, 0.92);
+        pointer-events: none;
+      }
+
+      .home-card-now-badge {
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        z-index: 3;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        background: var(--wavee-accent);
+        color: #111214;
+        pointer-events: none;
+      }
+
+      .wave-animation {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 11px;
+      }
+
+      .wave-bar {
+        width: 2px;
+        background: currentColor;
+        border-radius: 2px;
+        animation: wave-grow 0.9s ease-in-out infinite;
+      }
+
+      @keyframes wave-grow {
+        0%, 100% { height: 3px; }
+        50% { height: 11px; }
+      }
+
+      .is-active-track .home-album-title,
+      .is-active-track .home-top-track-title,
+      .is-active-track .home-small-title {
+        color: var(--wavee-accent) !important;
+      }
+
+      /* ====================================================================
+         Card Types
+         ==================================================================== */
+
+      /* 1. Artist Card */
+      .home-artist-card {
+        width: 184px;
+        min-width: 184px;
+        flex: 0 0 auto;
+        display: grid;
+        gap: 0;
+        cursor: pointer;
+      }
+
+      .home-artist-media {
         position: relative;
         z-index: 1;
       }
 
+      .home-artist-cover-shell {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border-radius: 0;
+        clip-path: url(#wavee-star-clip);
+        -webkit-clip-path: url(#wavee-star-clip);
+        overflow: hidden;
+        background: var(--wavee-shell-chrome-bg);
+        backdrop-filter: var(--wavee-shell-chrome-blur);
+        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
+      }
+
+      .home-artist-cover-shell img,
+      .home-artist-cover-fallback {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .home-artist-cover-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.84);
+        font-family: var(--wavee-display-font);
+        font-size: 22px;
+        font-weight: 700;
+      }
+
+      .home-artist-info {
+        position: relative;
+        z-index: 2;
+        width: calc(100% - 12px);
+        margin: -42px auto 0;
+        border-radius: 14px;
+        padding: 7px 14px;
+        min-height: 54px;
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: 3px;
+        text-align: center;
+        text-decoration: none;
+        background: var(--wavee-shell-chrome-bg);
+        backdrop-filter: var(--wavee-shell-chrome-blur);
+        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
+        transition: background-color 0.18s ease;
+      }
+
+      .home-artist-info:hover {
+        background: var(--wavee-shell-chrome-hover-bg);
+      }
+
+      .home-artist-name {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font);
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.15;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .home-artist-name.is-long { font-size: 11.5px; }
+      .home-artist-name.is-xlong { font-size: 10px; }
+
+      .home-artist-monthly {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.64);
+        font-family: var(--wavee-body-font);
+        font-size: 11px;
+        line-height: 1.2;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* 2. Album / Release Card */
+      .home-album-card {
+        width: 220px;
+        min-width: 220px;
+        flex: 0 0 auto;
+        display: grid;
+        gap: 8px;
+        cursor: pointer;
+      }
+
+      .home-album-cover {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        border-radius: 20px;
+        overflow: hidden;
+        background: var(--wavee-shell-chrome-bg);
+        backdrop-filter: var(--wavee-shell-chrome-blur);
+        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
+      }
+
+      .home-album-cover::after,
+      .home-playlist-cover::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        background: rgba(0, 0, 0, 0.3);
+      }
+
+      .group:hover .home-album-cover::after,
+      .group:focus-within .home-album-cover::after,
+      .group:hover .home-playlist-cover::after,
+      .group:focus-within .home-playlist-cover::after {
+        opacity: 1;
+      }
+
+      .home-album-title {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font);
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.18;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 2px;
+      }
+
+      .home-album-subtitle {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.56);
+        font-family: var(--wavee-body-font);
+        font-size: 12px;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 2px;
+      }
+
+      /* 3. Playlist / Mix & Top-Track Card */
+      .home-playlist-card {
+        width: 248px;
+        min-width: 248px;
+        flex: 0 0 auto;
+        display: grid;
+        gap: 8px;
+        cursor: pointer;
+      }
+
+      .home-playlist-card.is-compact {
+        width: 220px;
+        min-width: 220px;
+      }
+
+      .home-playlist-cover {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        border-radius: 22px;
+        overflow: hidden;
+        background: var(--wavee-shell-chrome-bg);
+        backdrop-filter: var(--wavee-shell-chrome-blur);
+        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
+      }
+
+      .home-playlist-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 35%, rgba(0, 0, 0, 0.78) 100%);
+        pointer-events: none;
+      }
+
+      .home-playlist-overlay.is-compact {
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.04) 40%, rgba(0, 0, 0, 0.36) 100%);
+      }
+
+      .home-playlist-copy {
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 14px;
+        display: grid;
+        gap: 3px;
+        z-index: 2;
+        pointer-events: none;
+      }
+
+      .home-playlist-kicker {
+        color: rgba(255, 255, 255, 0.78);
+        font-family: var(--wavee-display-font);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .home-playlist-artist {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font);
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.12;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .home-playlist-description {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.56);
+        font-family: var(--wavee-body-font);
+        font-size: 12px;
+        line-height: 1.28;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 2px;
+      }
+
+      .home-top-track-meta {
+        min-width: 0;
+        display: grid;
+        gap: 3px;
+        padding: 0 2px;
+      }
+
+      .home-top-track-title {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font);
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.18;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .home-top-track-artist {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.58);
+        font-family: var(--wavee-body-font);
+        font-size: 12px;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* 4. Small Horizontal Card (Genres, Recent, Playlists) */
+      .home-small-card {
+        width: 318px;
+        min-width: 318px;
+        min-height: 92px;
+        flex: 0 0 auto;
+        display: grid;
+        grid-template-columns: 72px minmax(0, 1fr);
+        align-items: center;
+        gap: 14px;
+        padding: 10px 14px 10px 10px;
+        border-radius: 22px;
+        border: 0;
+        background: var(--wavee-shell-chrome-bg);
+        backdrop-filter: var(--wavee-shell-chrome-blur);
+        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur);
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+      }
+
+      .home-small-card.is-medium {
+        width: 344px;
+        min-width: 344px;
+      }
+
+      .home-small-card:hover {
+        background: var(--wavee-shell-chrome-hover-bg);
+      }
+
+      .home-small-media {
+        position: relative;
+        width: 72px;
+        height: 72px;
+        border-radius: 14px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .home-small-card .home-card-play {
+        width: 40px;
+        height: 40px;
+      }
+
+      .home-small-card .home-card-play svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .home-small-body {
+        min-width: 0;
+        display: grid;
+        gap: 4px;
+      }
+
+      .home-small-title {
+        margin: 0;
+        color: #ffffff;
+        font-family: var(--wavee-display-font);
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.16;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .home-small-subtitle {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.58);
+        font-family: var(--wavee-body-font);
+        font-size: 12px;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* ====================================================================
+         Loading & Skeleton States
+         ==================================================================== */
+      .home-runtime-loading {
+        width: 100%;
+        min-height: 180px;
+        display: grid;
+        place-items: center;
+      }
+
+      .home-runtime-loading-spinner {
+        width: 34px;
+        height: 34px;
+        border: 2px solid rgba(255, 255, 255, 0.14);
+        border-top-color: var(--wavee-accent);
+        border-right-color: rgba(146, 169, 225, 0.72);
+        border-radius: 999px;
+        animation: wavee-spin 0.85s linear infinite;
+      }
+
+      @keyframes wavee-spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .home-skeleton-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        background: var(--wavee-shell-chrome-bg);
+      }
+
+      .home-skeleton-card--artist {
+        width: 184px;
+        min-width: 184px;
+        aspect-ratio: 1 / 1.12;
+        border-radius: 999px 999px 20px 20px;
+      }
+
+      .home-skeleton-card--small {
+        width: 318px;
+        min-width: 318px;
+        min-height: 92px;
+      }
+
+      .home-skeleton-card--medium {
+        width: 220px;
+        min-width: 220px;
+        min-height: 220px;
+      }
+
+      .home-skeleton-shimmer {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(110deg, rgba(255, 255, 255, 0.03) 8%, rgba(255, 255, 255, 0.14) 28%, rgba(255, 255, 255, 0.03) 46%);
+        transform: translateX(-100%);
+        animation: home-skeleton-shimmer 1.3s ease-in-out infinite;
+      }
+
+      @keyframes home-skeleton-shimmer {
+        100% { transform: translateX(120%); }
+      }
+
+      /* Focus & Accessibility */
+      :where(button, a, input, [tabindex]):focus-visible {
+        outline: 2px solid #b8c9ff;
+        outline-offset: 2px;
+      }
+
+      /* ====================================================================
+         Responsive Breakpoints
+         ==================================================================== */
+      @media (max-width: 1023px) {
+        .home-wave-hero {
+          grid-template-columns: 1fr;
+        }
+
+        .section-shell,
+        .hero-shell {
+          padding-left: 20px !important;
+          padding-right: 20px !important;
+        }
+
+        .home-artist-card { width: 158px; min-width: 158px; }
+        .home-album-card,
+        .home-playlist-card.is-compact { width: 188px; min-width: 188px; }
+        .home-playlist-card { width: 214px; min-width: 214px; }
+        .home-small-card { width: 280px; min-width: 280px; }
+        .home-small-card.is-medium { width: 300px; min-width: 300px; }
+      }
+
       @media (max-width: 767px) {
+        .hero-shell {
+          padding-top: 94px !important;
+          padding-bottom: 8px !important;
+          padding-left: 16px !important;
+          padding-right: 16px !important;
+        }
+
+        .section-shell {
+          padding-left: 16px !important;
+          padding-right: 16px !important;
+        }
+
+        .home-wave-hero {
+          padding: 18px;
+          border-radius: 24px;
+          gap: 16px;
+        }
+
+        .home-wave-title {
+          font-size: clamp(24px, 6.5vw, 32px);
+        }
+
+        .home-wave-summary {
+          font-size: 13px;
+        }
+
+        .home-wave-actions-bar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .home-wave-controls {
+          width: 100%;
+        }
+
+        .home-listen-button {
+          flex: 1;
+          height: 44px;
+          padding: 0 20px;
+        }
+
+        .home-wave-settings-toggle {
+          width: 44px;
+          height: 44px;
+        }
+
         #home-filter-chips.home-filter-chips {
           width: 100%;
-          gap: 4px;
         }
 
         #home-filter-chips .home-filter-chip {
-          min-width: 0;
-          min-height: 46px;
-          flex: 1 1 0;
+          flex: 1;
+          min-height: 36px;
           padding: 0 12px;
-          font-size: 0.9rem;
+        }
+
+        .home-wave-queue-panel {
+          padding: 10px;
+          border-radius: 18px;
+        }
+
+        .home-section-controls {
+          display: none !important;
+        }
+
+        .home-carousel-track {
+          gap: 12px;
+          padding-bottom: 12px;
+        }
+
+        .home-artist-card { width: 136px; min-width: 136px; }
+        .home-artist-info {
+          width: calc(100% - 8px);
+          margin-top: -34px;
+          min-height: 46px;
+          padding: 6px 10px;
+        }
+        .home-artist-name { font-size: 11px; }
+        .home-artist-name.is-long { font-size: 9.5px; }
+        .home-artist-name.is-xlong { font-size: 8.5px; }
+        .home-artist-monthly { font-size: 9.5px; }
+
+        .home-album-card,
+        .home-playlist-card.is-compact { width: 162px; min-width: 162px; }
+        .home-playlist-card { width: 184px; min-width: 184px; }
+        .home-small-card,
+        .home-small-card.is-medium {
+          width: 248px;
+          min-width: 248px;
+          min-height: 76px;
+          grid-template-columns: 58px minmax(0, 1fr);
+          gap: 10px;
+          padding: 8px 12px 8px 8px;
+        }
+        .home-small-media { width: 58px; height: 58px; border-radius: 12px; }
+
+        body[data-wavee-embed='app'] .home-embed-scroll-spacer {
+          height: calc(132px + env(safe-area-inset-bottom));
         }
       }
 
-      /* Shared shell chrome for compact interactive surfaces. */
-      .home-wave-controls,
-      #home-filter-chips.home-filter-chips,
-      .artists-carousel-control,
-      .home-section-link,
-      .home-artist-info,
-      .home-small-card {
-        background: var(--wavee-shell-chrome-bg) !important;
-        backdrop-filter: var(--wavee-shell-chrome-blur) !important;
-        -webkit-backdrop-filter: var(--wavee-shell-chrome-blur) !important;
-        border: 0 !important;
-        box-shadow: none !important;
-      }
-
-      .artists-carousel-control:hover:not(:disabled),
-      .home-section-link:hover {
-        background: var(--wavee-shell-chrome-hover-bg) !important;
-        border: 0 !important;
-        box-shadow: none !important;
-      }
-
-      :where(button, a, input, [tabindex]):focus-visible {
-        outline: 2px solid #b8c9ff;
-        outline-offset: 4px;
-      }
       @media (hover: none) {
-        .home-card-play, .home-artist-play {
+        .home-card-play,
+        .home-artist-play {
           opacity: 1;
           visibility: visible;
           pointer-events: auto;
           transform: translate(-50%, -50%);
         }
       }
+
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
           animation-duration: 0.01ms !important;
@@ -3474,71 +1486,65 @@
         </clipPath>
       </defs>
     </svg>
-    <section class="hero-shell relative z-10 flex flex-col items-center justify-center overflow-visible pb-14 pt-32 text-center">
-      <div class="hero-logo-shell w-full flex flex-col justify-center items-center">
-        <button id="home-hero-listen" type="button" class="home-wave-trigger" aria-label="Слушать мою волну" aria-pressed="false">
-          <img id="home-wave-art-image" src="assets/animals/cat.png" alt="" class="home-wave-trigger-image" aria-hidden="true" loading="eager" decoding="async" fetchpriority="high" />
-        </button>
 
-        <div class="home-wave-controls">
-          <button type="button" class="home-listen-button" onclick="document.getElementById('home-hero-listen').click()">
-            <span class="home-listen-icons" aria-hidden="true">
-              <svg class="home-icon-play" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path></svg>
-              <svg class="home-icon-pause" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="14" y="3" width="5" height="18" rx="1"></rect><rect x="5" y="3" width="5" height="18" rx="1"></rect></svg>
+    <section class="hero-shell relative z-10 mx-auto w-full max-w-7xl px-8">
+      <div id="home-wave-hero" class="home-wave-hero">
+        <div class="home-wave-hero-main">
+          <div class="home-wave-kicker-row">
+            <span class="home-wave-status">
+              <span class="home-wave-status-dot" aria-hidden="true"></span>
+              <span id="home-wave-kicker-text">Персональный поток</span>
             </span>
-            <span>Слушать</span>
-          </button>
-          <button id="home-wave-settings-toggle" type="button" class="home-wave-settings-toggle" aria-label="Настройки волны временно недоступны" title="Настройки волны временно недоступны" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-          </button>
+            <span id="home-wave-count" class="home-wave-count"></span>
+          </div>
+
+          <div class="home-wave-headline-wrap">
+            <h1 id="home-wave-title" class="home-wave-title">Моя волна</h1>
+            <p id="home-wave-summary" class="home-wave-summary">Подбираем поток по вашим вкусам и новинкам каталога.</p>
+          </div>
+
+          <div id="home-wave-genres" class="home-wave-genre-tags" aria-label="Жанры волны"></div>
+
+          <div class="home-wave-actions-bar">
+            <div class="home-wave-controls">
+              <button id="home-hero-listen" type="button" class="home-listen-button" aria-label="Слушать мою волну" aria-pressed="false">
+                <span class="home-listen-icons" aria-hidden="true">
+                  <svg class="home-icon-play" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path></svg>
+                  <svg class="home-icon-pause" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="14" y="3" width="5" height="18" rx="1"></rect><rect x="5" y="3" width="5" height="18" rx="1"></rect></svg>
+                </span>
+                <span id="home-hero-listen-label">Слушать</span>
+              </button>
+              <button id="home-wave-settings-toggle" type="button" class="home-wave-settings-toggle" aria-label="Настройки волны временно недоступны" title="Настройки волны временно недоступны" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              </button>
+            </div>
+
+            <div id="home-filter-chips" class="home-filter-chips" role="tablist" aria-label="Режим главной страницы"></div>
+          </div>
+
+          <div id="home-wave-settings-panel" class="home-wave-settings-panel" hidden data-status="temporarily-disabled"></div>
         </div>
 
-        <div id="home-wave-settings-panel" class="home-wave-settings-panel" hidden data-status="temporarily-disabled">
-          <p class="home-wave-settings-title" style="display: block; color: #ffadad; font-size: 11px; margin-bottom: 0;">Функционал временно отключен</p>
-          <!-- Settings content preserved but hidden -->
-          <div class="home-wave-settings-group">
-            <span class="home-wave-settings-label">Цель</span>
-            <div class="home-wave-settings-options">
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="any">Любая</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="sleep">Сон</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="work">Работа</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="training">Тренировка</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="activity" data-wave-value="road">Дорога</button>
-            </div>
+        <div class="home-wave-queue-panel">
+          <div class="home-wave-queue-head">
+            <span id="home-wave-queue-label" class="home-wave-queue-label">В потоке</span>
+            <span id="home-wave-queue-sub" class="home-wave-queue-sub">Быстрый запуск</span>
           </div>
-          <div class="home-wave-settings-group">
-            <span class="home-wave-settings-label">Настроение</span>
-            <div class="home-wave-settings-options">
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="any">Любое</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="energetic">Бодрое</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="happy">Веселое</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="calm">Спокойное</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="mood" data-wave-value="sad">Грустное</button>
-            </div>
-          </div>
-          <div class="home-wave-settings-group">
-            <span class="home-wave-settings-label">Характер</span>
-            <div class="home-wave-settings-options">
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="any">Любой</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="favorite">Любимое</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="unfamiliar">Незнакомое</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="character" data-wave-value="popular">Популярное</button>
-            </div>
-          </div>
-          <div class="home-wave-settings-group">
-            <span class="home-wave-settings-label">Язык</span>
-            <div class="home-wave-settings-options">
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="any">Любой</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="ru">Русский</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="foreign">Иностранный</button>
-              <button type="button" class="home-wave-setting-chip" data-wave-setting="language" data-wave-value="instrumental">Без слов</button>
-            </div>
+          <div id="home-wave-queue-list" class="home-wave-queue-list" aria-label="Ближайшие треки волны">
+            <div class="home-wave-queue-empty">Собираем поток…</div>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="home-quick-access-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-6">
+    <section id="home-recent-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-5" style="display: none;">
+      <div id="home-recent-header"></div>
+      <div class="home-carousel-mask">
+        <div id="home-recent-row" class="home-carousel-track hide-scrollbar" aria-label="Недавно слушали"></div>
+      </div>
+    </section>
+
+    <section id="home-quick-access-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-5">
       <div id="home-quick-access-header"></div>
       <div class="home-carousel-mask">
         <div id="home-quick-access-row" class="home-carousel-track hide-scrollbar" aria-label="Новые релизы">
@@ -3547,7 +1553,7 @@
       </div>
     </section>
 
-    <section id="home-favorite-artists-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-6">
+    <section id="home-favorite-artists-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-5">
       <div id="home-favorite-artists-header"></div>
       <div class="home-carousel-mask">
         <div id="home-favorite-artists-row" class="home-carousel-track hide-scrollbar" aria-label="Любимые исполнители">
@@ -3556,7 +1562,7 @@
       </div>
     </section>
 
-    <section id="home-popular-artists-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-6">
+    <section id="home-popular-artists-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-5">
       <div id="home-popular-artists-header"></div>
       <div class="home-carousel-mask">
         <div id="home-popular-artists-row" class="home-carousel-track hide-scrollbar" aria-label="Популярные исполнители">
@@ -3565,11 +1571,7 @@
       </div>
     </section>
 
-    <section id="home-subtitle-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 pb-2 pt-0">
-      <p class="home-section-subline">Подборки хитов по исполнителям.</p>
-    </section>
-
-    <section id="home-top-tracks-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 pt-6">
+    <section id="home-top-tracks-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-5">
       <div id="home-top-tracks-header"></div>
       <div class="home-carousel-mask">
         <div id="home-top-tracks-row" class="home-carousel-track hide-scrollbar" aria-label="Лучшие треки">
@@ -3578,7 +1580,7 @@
       </div>
     </section>
 
-    <section id="home-mixes-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-6">
+    <section id="home-mixes-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-5">
       <div id="home-mixes-header"></div>
       <div class="home-carousel-mask">
         <div id="home-mixes-row" class="home-carousel-track hide-scrollbar" aria-label="Подборки и миксы">
@@ -3587,7 +1589,14 @@
       </div>
     </section>
 
-    <section id="home-extra-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 pb-10 pt-6">
+    <section id="home-playlists-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 py-5" style="display: none;">
+      <div id="home-playlists-header"></div>
+      <div class="home-carousel-mask">
+        <div id="home-playlists-row" class="home-carousel-track hide-scrollbar" aria-label="Ваши плейлисты"></div>
+      </div>
+    </section>
+
+    <section id="home-extra-section" class="section-shell relative z-10 mx-auto w-full max-w-7xl px-8 pb-10 pt-5">
       <div id="home-extra-header"></div>
       <div class="home-carousel-mask">
         <div id="home-extra-row" class="home-carousel-track hide-scrollbar" aria-label="Тренды и жанры">
