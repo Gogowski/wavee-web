@@ -513,9 +513,12 @@
   }
 
   function reasonLabel(reason) {
-    if (reason === 'artist-match') return 'ÐŸÐ¾ Ð»ÑŽÐ±Ð¸Ð¼Ñ‹Ð¼ Ð°Ñ€Ñ‚Ð¸ÑÑ‚Ð°Ð¼'
-    if (reason === 'genre-match') return 'ÐŸÐ¾ Ñ‚Ð²Ð¾Ð¸Ð¼ Ð¶Ð°Ð½Ñ€Ð°Ð¼'
-    return 'Ð¡Ð¾Ð±Ñ€Ð°Ð½Ð¾ Ð´Ð»Ñ Ñ‚ÐµÐ±Ñ'
+    if (reason === 'artist-match' || reason === 'artist-taste-hit') return 'По любимым артистам'
+    if (reason === 'genre-match') return 'По твоим жанрам'
+    if (reason === 'personal-favorite-hit') return 'Из твоих лайков'
+    if (reason === 'fresh-release') return 'Свежий релиз'
+    if (reason === 'vector-exploration') return 'Новое для тебя'
+    return 'Собрано для тебя'
   }
 
   function isRussianTrack(track) {
@@ -3299,7 +3302,7 @@
       ? getPersonalTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
       : getTracksFromRecommendationBlock(recommendationBlocks?.newReleases)
     const getTrackReleaseTs = (t) => {
-      const candidates = [t?.releasedAt, t?.releaseDate, t?.yandex?.releaseDate, t?.album?.releasedAt, t?.album?.releaseDate, t?.createdAt]
+      const candidates = [t?.releasedAt, t?.releaseDate, t?.yandex?.releaseDate, t?.album?.releasedAt, t?.album?.releaseDate]
       for (const c of candidates) {
         if (!c) continue
         if (typeof c === 'number') return c > 1e12 ? c : c * 1000
@@ -3741,14 +3744,12 @@
           return
         }
 
-        let playbackList = getMyWaveTracks()
-
-        if (!playbackList.length && embedMode) {
-          setHomeWaveActive(true)
+        if (embedMode) {
           notifyParent('wavee-start-wave', {})
           return
         }
 
+        let playbackList = getMyWaveTracks()
         if (!playbackList.length) {
           playbackList = getHomeTrackPool()
         }
