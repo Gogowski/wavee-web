@@ -1509,10 +1509,10 @@
         content-visibility: auto;
         contain-intrinsic-size: 420px;
         opacity: 0;
-        transform: translateY(18px);
+        transform: translateY(10px);
         transition:
-          opacity 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-          transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+          opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
       }
 
       .section-shell.is-in-view {
@@ -1523,14 +1523,14 @@
       /* Hover spotlight removed so backdrop stays driven cleanly by the global ambient wave */
 
       .section-shell.is-mode-enter {
-        animation: home-mode-enter 0.44s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        animation: home-mode-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) backwards;
         animation-delay: var(--mode-enter-delay, 0ms);
       }
 
       @keyframes home-mode-enter {
         0% {
           opacity: 0;
-          transform: translateY(16px);
+          transform: translateY(8px);
         }
         100% {
           opacity: 1;
@@ -1610,18 +1610,18 @@
       }
 
       .home-carousel-track [data-carousel-card].is-stagger-ready {
-        animation: home-card-enter 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        animation: home-card-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) backwards;
         animation-delay: var(--card-delay, 0ms);
       }
 
       @keyframes home-card-enter {
         0% {
           opacity: 0;
-          transform: translateY(14px) scale(0.98);
+          transform: translateY(7px);
         }
         100% {
           opacity: 1;
-          transform: translateY(0) scale(1);
+          transform: none;
         }
       }
 
@@ -1724,13 +1724,6 @@
         -webkit-backdrop-filter: none;
       }
 
-      .home-artist-card:hover .home-artist-play,
-      .home-artist-card:focus-within .home-artist-play,
-      .group:hover .home-card-play,
-      .group:focus-within .home-card-play {
-        animation: home-play-bounce 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-      }
-
       .home-artist-play::after,
       .home-card-play::after {
         content: '';
@@ -1746,18 +1739,6 @@
       .home-artist-play.is-rippling::after,
       .home-card-play.is-rippling::after {
         animation: home-play-ripple 0.46s ease-out both;
-      }
-
-      @keyframes home-play-bounce {
-        0% {
-          transform: translateY(8px) scale(0.9);
-        }
-        65% {
-          transform: translateY(-1px) scale(1.08);
-        }
-        100% {
-          transform: translateY(0) scale(1);
-        }
       }
 
       @keyframes home-play-ripple {
@@ -3457,6 +3438,7 @@
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
           animation-duration: 0.01ms !important;
+          animation-delay: 0ms !important;
           animation-iteration-count: 1 !important;
           transition-duration: 0.01ms !important;
           scroll-behavior: auto !important;
