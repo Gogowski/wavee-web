@@ -314,7 +314,7 @@ body [data-carousel-card] :is(.home-card-play, .home-artist-play) {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
-  transform: translate(-50%, -50%) !important;
+  transform: translate(-50%, -50%) scale(0.76) rotate(-14deg) !important;
   transition: opacity 140ms cubic-bezier(0.2, 0, 0, 1),
     transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
     visibility 0s linear 140ms;
@@ -407,7 +407,7 @@ body [data-carousel-card] :is(.home-card-play, .home-artist-play) svg {
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
-    transform: translate(-50%, -50%) !important;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg) !important;
     transition-delay: 0s;
   }
 
@@ -420,7 +420,7 @@ body [data-carousel-card]:has(button:focus-visible) :is(.home-card-play, .home-a
   opacity: 1 !important;
   visibility: visible !important;
   pointer-events: auto !important;
-  transform: translate(-50%, -50%) !important;
+  transform: translate(-50%, -50%) scale(1) rotate(0deg) !important;
   transition-delay: 0s;
 }
 
@@ -442,7 +442,7 @@ body .home-small-media::before {
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
-    transform: translate(-50%, -50%) !important;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg) !important;
   }
 
   [data-carousel-card] .home-card-playing-mark {

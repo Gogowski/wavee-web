@@ -2038,13 +2038,13 @@
         left: 50%;
         right: auto;
         bottom: auto;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) scale(0.97);
       }
 
       #home-top-tracks-row .group:hover .home-card-play,
       #home-top-tracks-row .group:focus-within .home-card-play {
         opacity: 1;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) scale(1);
         visibility: visible;
         pointer-events: auto;
       }
@@ -2070,7 +2070,7 @@
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) scale(0.84) rotate(-12deg);
         transition:
           opacity 0.22s ease,
           transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
@@ -2097,7 +2097,7 @@
         opacity: 1;
         visibility: visible;
         pointer-events: auto;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
         transition-delay: 0s;
         animation: none;
       }
@@ -3068,7 +3068,7 @@
           opacity: 0;
           visibility: hidden;
           pointer-events: none;
-          transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%) scale(0.97);
         }
 
         .home-artist-info {
@@ -3211,7 +3211,7 @@
           opacity: 0;
           visibility: hidden;
           pointer-events: none;
-          transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%) scale(0.97);
         }
 
         .home-carousel-track [data-carousel-card]:hover,
