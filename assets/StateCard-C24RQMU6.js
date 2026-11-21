@@ -1,0 +1,1 @@
+import{j as r,L as o}from"./index-Bz4-mn2g.js";function d({variant:t="empty",className:e="",children:i,style:n}){return t==="loading"?r.jsx(o,{className:e}):r.jsx("div",{className:`wavee-state-card${t?` is-${t}`:""}${e?` ${e}`:""}`,style:n,children:i})}export{d as S};
