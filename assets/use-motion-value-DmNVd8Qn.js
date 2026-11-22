@@ -1,1 +1,0 @@
-import{b as s}from"./router-D59JAwOs.js";import{u,M as a}from"./index-BJsbUsTx.js";import{n as r}from"./proxy-DEBC27iR.js";function m(t,o,n){s.useInsertionEffect(()=>t.on(o,n),[t,o,n])}function p(t){const o=u(()=>r(t)),{isStatic:n}=s.useContext(a);if(n){const[,e]=s.useState(t);s.useEffect(()=>o.on("change",e),[])}return o}export{m as a,p as u};
